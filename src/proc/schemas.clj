@@ -1,5 +1,10 @@
 (ns proc.schemas)
 
+(def inscope-schema
+  {:TimeStamp :text
+   :SRC       :text
+   :Reason    :text})
+
 (def deprecordschema {"ID"	        :int
                       "DeploymentID"	:int
                       "Location"	:text

@@ -114,8 +114,8 @@
   `(let [srcs# (set ~xs)
          filterf# (fn [v#] (contains? srcs# v#))]
      (binding [~'proc.core/*demand-trend-pre-filter*  filterf#
-               ~'proc.core/*demand-trend-filter* (where-key :SRC filterf#)
-               ~'proc.core/*location-record-filter* (where-key :SRC filterf#)
+               ~'proc.core/*demand-trend-filter*      (where-key :SRC filterf#)
+               ~'proc.core/*location-record-filter*   (where-key :SRC filterf#)
                ~'proc.core/*deployment-record-filter* (where-key :DemandType filterf#)]
        ~@expr)))
 
@@ -243,13 +243,36 @@
 
 (defn demand-name [d]
   (clojure.string/join "_" [(:Priority d) (:Vignette d) (:SRC d) (str "[" (:StartDay d) "..." 
-                                                                       (+ (:StartDay d) (:Duration d)) "]")]))
+                                                                      (+ (:StartDay d) (:Duration d)) "]")]))
+
+(def lastmap (atom nil))
+
+;;this is a hack to ensure we are generating demand names just like marathon.
+(defn inscope-srcs [path]
+ (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/inscope-schema path))
+      (tbl/table-records)
+      (map :SRC)
+      (set)))  
+
 (defn load-demand-map [path]
-  (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/drecordschema path))
-       (tbl/table-records)
-       (filter (fn [r] (and (:Enabled r) (*demand-trend-filter* r))))
-       (reduce (fn [acc r]
-                 (assoc acc (demand-name r) r)) {} )))
+  (let [scope-path  (clojure.string/replace path "AUDIT_DemandRecords" "AUDIT_InScope")
+        inscope     (inscope-srcs scope-path)
+        unique-name (fn [m r] (let [nm (demand-name r)] (if (contains? m nm)
+                                                          (str nm "_" (inc (count m)))
+                                                           nm)))
+        ]
+    (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/drecordschema path))
+         (tbl/table-records)
+         (filter (fn [r]
+                   (and (:Enabled r)
+                        (inscope (:SRC r))
+                                        ;(*demand-trend-filter* r)
+                        )))
+         (reduce (fn [acc r]
+                   (assoc acc (let [uname (unique-name acc r)]
+                                (println uname)
+                                 uname)  r)) {} )
+         (reset! lastmap))))
   
 ;;once we have the demandrecords, we'd "like" to slurp in the records
 ;;that are of interest, to augment our demand meta data.
@@ -421,8 +444,6 @@
                              (assoc r :Unfilled fl))))
             (tbl/records->table))
        @tlast  @demandmeta (persistent! @unfilled)])))
-
-
   
 (defn unfilled-demands [dtrends]
   (tbl/select :from dtrends :where (fn [r] (pos? (:Unfilled r))))) 
@@ -660,7 +681,7 @@
 ;;each of those records, convert them to unfilled units, then to
 ;;deployments.
 ;;These records should be identical to our deployment records above, 
-;;since they are merely a join between a location record and a
+;;since they are merely a join between a location record and at
 ;;deployment (in this case, a fake deployment).  We should be able 
 ;;to simply append these records to the merged deployment records and
 ;;have the fill sampler like as normal.
@@ -793,16 +814,16 @@
 ;;Assuming we have demand records, we know which records are unfilled.
 (defn dump-fills-with-ghosts
   [rootpath outname splitkey loctable deploymap demandtrends demandmap]
-     (let [outpath    (str rootpath outname)
+     (let [outpath      (str rootpath outname)
            lazy-headers (atom nil) 
-           ms         (util/mstream rootpath outname lazy-headers)
-           _          (io/hock outpath "") ;creates folder structure and
+           ms           (util/mstream rootpath outname lazy-headers)
+           _            (io/hock outpath "") ;creates folder structure and
                                         ;whatnot
-           _          (println [:emitting :fills outpath])    
-           _          (println [:preparing :samples])
-           _          (println [:computing :missed-deployments])
-           missed-map (into {} (group-by splitkey (derive-missed-deployments 
-                                                   demandtrends demandmap)))
+           _            (println [:emitting :fills outpath])    
+           _            (println [:preparing :samples])
+           _            (println [:computing :missed-deployments])
+           missed-map   (into {} (group-by splitkey (derive-missed-deployments 
+                                                    demandtrends demandmap)))
            ]
        
        (with-open [stream ms]
