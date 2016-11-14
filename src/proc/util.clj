@@ -4,7 +4,186 @@
             [spork.util.table :as tbl]
             [clojure.edn]
             [incanter.core :refer :all]
-            [incanter.io :refer :all]))
+            [incanter.io :refer :all]
+            [spork.util.temporal :as temp]
+            [proc.schemas :as schemas]
+            [clojure.core.reducers :as r]            
+            [iota :as iota]
+            [spork.util.parsing :as parse]
+            [spork.util.zipfile :as z]
+            [spork.util.general :as general]))
+
+(ns spork.util.table)
+
+;patched this for 2 reasons.  
+;1) If the last field has no value, we need to patch in an empty string for it.  Else, we try to aget an array                               
+;index which isn't present.                               
+;2) We can now bind *split-by* to #"," for csv files                           
+(def ^:dynamic *split-by* #"\t")
+(defn lines->records
+  "Produces a reducible stream of 
+   records that conforms to the specifications of the 
+   schema.  Unlike typed-lines->table, it does not store
+   data as primitives.  Records are potentially ephemeral 
+   and will be garbage collected unless retained.  If no 
+   schema is provided, one will be derived."
+  [ls schema & {:keys [parsemode keywordize-fields?] 
+                :or   {parsemode :scientific
+                       keywordize-fields? true}}]
+  (let [raw-headers   (mapv clojure.string/trim (clojure.string/split  (general/first-any ls) *split-by*))
+        fields        (mapv (fn [h]
+                              (let [root  (if (= (first h) \:) (subs h  1) h)]
+                                (if keywordize-fields?
+                                  (keyword root)
+                                  root)))
+                            raw-headers)
+        schema    (if (empty? schema)
+                    (let [types (derive-schema (general/first-any (r/drop 1 ls)) :parsemode parsemode)]
+                      (into {} (map vector fields types)))
+                    schema)
+        s         (unify-schema schema fields)
+        parser    (spork.util.parsing/parsing-scheme s)
+        idx       (atom 0)
+        idx->fld  (reduce (fn [acc h]
+                            (if (get s h)
+                              (let [nxt (assoc acc @idx h)
+                                    _   (swap! idx unchecked-inc)]
+                                nxt)
+                              (do (swap! idx unchecked-inc) acc))) {} fields)
+        ;;throw an error if the fld is not in the schema.
+        _ (let [known   (set (map name (vals idx->fld)))
+                missing (filter (complement known) (map name (keys s)))]
+            (assert (empty? missing) (str [:missing-fields missing])))]                                          
+    (->> ls
+         (r/drop 1)
+         (r/map  (fn [^String ln] (.split ln (if (= (.pattern *split-by*) "\\t") "\t" ","))))
+         (r/map  (fn [^objects xs]
+                   ;if the final field is empty, we won't get an extra empty string when splitting by tab.  If other fields are empty, we'll get an extra string.
+                  (let [last-fld-idx (apply max (keys idx->fld))
+                        last-fld-empty? (= (alength xs) last-fld-idx)]
+                   (reduce-kv (fn [acc idx fld]
+                                (let [new-val (if (and (= idx last-fld-idx) last-fld-empty?) "" (aget xs idx))]
+                                  (assoc acc fld (parser fld new-val)
+                                         
+                                         )))
+                              {} idx->fld))))
+         )))
+
+;wanted to patch this in case there is no value for the last field but didn't do anything yet (see comment)
+(defn typed-lines->table
+  "A variant of lines->table that a) uses primitives to build
+   up our table columns, if applicable, using rrb-trees.
+   b) enforces the schema, ignoring fields that aren't specified.
+   c) throws an exception on missing fields."
+  [ls schema & {:keys [parsemode keywordize-fields?] 
+                :or   {parsemode :scientific
+                       keywordize-fields? true}}]
+  (let [raw-headers   (mapv clojure.string/trim (clojure.string/split  (general/first-any ls) #"\t" ))
+        fields        (mapv (fn [h]
+                              (let [root  (if (= (first h) \:) (subs h  1) h)]
+                                (if keywordize-fields?
+                                  (keyword root)
+                                  root)))
+                            raw-headers)
+        s         (unify-schema schema fields)
+        parser    (spork.util.parsing/parsing-scheme s)
+        idx       (atom 0)
+        idx->fld  (reduce (fn [acc h]
+                            (if (get s h)
+                              (let [nxt (assoc acc @idx h)
+                                    _   (swap! idx unchecked-inc)]
+                                nxt)
+                              (do (swap! idx unchecked-inc) acc))) {} fields)
+        ;;throw an error if the fld is not in the schema.
+        _ (let [known   (set (map name (vals idx->fld)))
+                missing (filter (complement known) (map name (keys s)))]
+            (assert (empty? missing) (str [:missing-fields missing :names (vals idx->fld)])))
+        cols    (volatile-hashmap! (into {} (for [[k v] s]
+                                              [k (typed-col v)])))]                                          
+    (->> ls
+       
+         (r/drop 1)
+         (r/map  (fn [^String ln] (.split ln "\t")))
+         (reduce (fn [acc  ^objects xs] ;xs are a tab-split line)
+                   (let [last-fld-idx (apply max (keys idx->fld))
+                        last-fld-empty? (= (alength xs) last-fld-idx)]
+                   (reduce-kv (fn [acc idx fld]
+                                (let [c (get cols fld)]
+                                  (do (vswap! c conj! 
+                                              ;(if (and (= idx last-fld-idx) last-fld-empty?)
+                                                ;"" This doesn't work.  Besides, we'd have strings mixed with other types now.
+                                                (parser fld  (aget xs idx))) 
+                                                
+                                      acc))) acc idx->fld))) cols)
+    
+ 
+         
+         (unvolatile-hashmap!)
+         (make-table)
+         )))
+
+
+;patched because craig wanted to specify an order of the fields and wanted to write to the same file multiple times in separate calls.
+;;this is a pretty useful util function.  could go in table.
+(defn records->file [xs dest & {:keys [flds append? headers?] :or {flds (vec (keys (first xs))) append? false headers? true}}]
+  (let [hd   (first xs)
+        sep  (str \tab)
+        header-record (reduce-kv (fn [acc k v]
+                                   (assoc acc k
+                                          (name k)))
+                                 hd
+                                 hd)
+        
+        write-record! (fn [^java.io.BufferedWriter w r]
+                        (doto ^java.io.BufferedWriter
+                          (reduce (fn [^java.io.BufferedWriter w fld]
+                                    (let [x (get r fld)]
+                                      (doto w
+                                        (.write (str x))
+                                        (.write sep))))
+                                  w
+                                  flds)
+                            (.newLine)))]
+    (with-open [out (clojure.java.io/writer dest :append append?)]
+      (do (when headers? (write-record! out header-record))
+      (reduce (fn [o r]                
+                (write-record! o r))
+               out
+              xs)))))
+
+
+(ns proc.util)
+;;Utility to help grab resources, primarily test data.
+(defn get-res
+  "Gets the resource provided by the path.  If we want a text file, we 
+   call '(get-res \"blah.txt\")"
+  [nm]
+  (clojure.java.io/input-stream (clojure.java.io/resource nm)))
+
+(defn resource-lines [filename]
+  "Given a string literal that encodes a path to a resource, i.e. a file in the 
+   /resources folder, returns a reducible obj that iterates over each line (string) 
+   delimited by \newline."
+  [filename]
+  (let [reader-fn clojure.java.io/reader]
+    (reify clojure.core.protocols/CollReduce
+      (coll-reduce [o f init]
+        (with-open [^java.io.BufferedReader rdr (reader-fn (get-res filename))]
+          (loop [acc init]
+            (if (reduced? acc) @acc 
+                (if-let [ln (.readLine rdr)]
+                  (recur (f acc ln))
+                  acc)))))
+      (coll-reduce [o f]
+        (with-open [^java.io.BufferedReader rdr (reader-fn (get-res filename))]
+          (if-let [l1 (.readLine rdr)]
+            (loop [acc l1]
+              (if (reduced? acc) @acc 
+                  (if-let [ln (.readLine rdr)]
+                    (recur (f acc ln))
+                    acc)))
+            nil)))
+      )))
 
 ;;to keep from having to reload datasets that may be expensive, we can
 ;;keep a cache of recently loaded items.
@@ -160,4 +339,305 @@
                                (get acc (keyword fld)))]
                 acc 
                 (assoc acc fld :text)))
-            s hs)))         
+            s hs))) 
+
+(defn drop-nth
+  "Drops the n item in coll"
+  [n coll]
+  (concat
+    (take n coll)
+    (drop (inc n) coll)))
+
+;;make it easy to get at the state in our charts..
+;;note, this only really works well if we have ;;compatible charts, specifically if there's nothing weird in the ;;plot, like having multiple trends, or axes.  I'm assuming a simple ;;set of axes and coords here.
+(defprotocol IState  (state [obj]))
+(extend-protocol IState
+  nil
+  (state [o] nil)
+  org.jfree.chart.JFreeChart
+  (state [obj]
+    (let [plt    (.getPlot obj)
+          x      (.getDomainAxis plt)
+          xrange (state x)
+          y      (.getRangeAxis plt)
+          yrange (state y)]
+      {:x-axis  (.getDomainAxis plt)
+       :x-range xrange
+       :bounds    [(state xrange)
+                   (state yrange)]
+       :y-axis  (.getRangeAxis  plt)
+       :y-range yrange
+       }
+      ))
+  org.jfree.chart.axis.NumberAxis
+  (state [obj] (.getRange obj))
+  org.jfree.chart.axis.CategoryAxis
+  (state [obj] nil) ;;categories are weird....
+  org.jfree.data.Range
+  (state [obj] [(.getLowerBound obj) (.getUpperBound obj)]))
+
+(defn sync-scales 
+  "Syncs the scales of simple charts so that they all have the same x and y bounds.  
+  Use :axis :y-axis to the sync the y axes and use :axis :x-axis to sync the x axes"
+  [charts & {:keys [axis] :or {axis :y-axis}}]
+  (let [dims (map (juxt axis (case axis :y-axis (comp second :bounds) :x-axis (comp first :bounds))) (map state charts))
+        [axmin axmax] (reduce (fn [[axmin axmax] [xs [axmin? axmax?]]]                                       
+                                [(min axmin axmin?)
+                                 (max axmax axmax?)])
+                              [Double/MAX_VALUE
+                               Double/MIN_VALUE]
+                              dims)]
+    (doseq [plt-axis (map first dims)]
+      (.setRange plt-axis axmin axmax))))
+
+(defn sync-xy 
+  "Syncs the x and y axes of our charts."
+  [charts]
+  (doto charts
+    (sync-scales :axis :y-axis)
+    (sync-scales :axis :x-axis)))
+
+(defn set-bounds 
+  "Takes a chart and sets the lower and/or upper bounds for an x or y axis. Use :y-axis or :x-axis for axis I think."
+  [chart axis & {:keys [lower upper]}]
+  (let [s (state chart)
+        setaxis (fn [ax] (.setRange (axis s) (if lower lower (.getLowerBound (axis s)))
+                                               
+                                               (if upper upper (.getUpperBound (axis s)))))]
+        (setaxis axis)))
+
+
+;didn't finish after a while... Not sure if this works. Do i still need this?
+(defn fills->records [fillp]
+  (with-open [rdr (clojure.java.io/reader fillp)]
+          (tbl/table-records 
+            (tbl/lines->table  (line-seq rdr) :parsemode :noscience :schema schemas/fillrecord))))
+ 
+                                   
+(defn delta-t-sum 
+    "An attempt at using iota to quickly sum up :deltat for a 2GB txt file. Might not be taking the iota route with new Spork, so
+ probably delete soon."
+  [fill]
+  (let [fillseq (iota/seq fill)
+        headers (map keyword (-> (first fillseq)
+                               (clojure.string/replace #":|\r" "")
+                               (clojure.string/split  #"\t")))
+        
+        linef (fn [l] 
+                (let [parsef (parse/parsing-scheme schemas/fillrecord :default-parser 
+                                                   parse/parse-string-nonscientific)
+                      parse-vec (parse/vec-parser headers parsef)
+                      strings (clojure.string/split (clojure.string/replace l #"\r" "") #"\t")]
+                  (zipmap headers (parse-vec strings))))]
+    (time (r/fold + (time (r/map (comp :deltat linef) (rest fillseq)))))))
+
+(defn filter-map 
+  "Filters a map by calling valf on the values."
+  [valf m]
+  (->> (filter (fn [[k v]] (valf v)) m)
+    (reduce concat)
+    (apply hash-map)))
+
+(defn files-in 
+  "useful for pulling out all of the root directories for a set of marathon runs in a folder located at path"
+  [path]
+  (let [paths (map (fn [p] (.getPath p)) (vec (.listFiles (clojure.java.io/file path))))]
+    (do (spit (str path "filenames.txt") (clojure.string/join "\r\n" paths))
+      paths)))
+
+
+;We're not able to shared records efficiently.
+;;It'd be nice if we had a column-backed record sequence, where 
+;;any updates to the record create a hashmap, but the underlying 
+;;values for the record are read from a vector.
+;;That way, we're not having to 
+
+(defn row-col [row col ^clojure.lang.PersistentVector cols]
+   (.nth ^clojure.lang.PersistentVector (.nth cols col) row))
+(defn index-of [itm xs]
+  (reduce-kv (fn [acc idx x]
+               (if (= x itm)
+                 (reduced idx)
+                 acc)) nil xs))
+
+;;flyrecords now live in spork.data.sparse, and are accessed
+;;easily via spork.util.table for our needs.
+;;This is just a convenenience wrapper for the moment.
+(defn table->flyrecords [t] (tbl/table->flyrecords t))
+
+(defn up-one 
+  "takes filepath and returns the directory name containing the folder"
+  [filepath]
+  (str (->> (clojure.string/split filepath #"/")
+         (butlast)
+         (clojure.string/join "/"))
+       "/"))
+      
+
+(def fillr (into {} (for [[k v] schemas/fillrecord] [ (str k ) v])))
+
+(defn fill-records 
+  "Given a path to a fills file, returns the records for that file"
+  [path] 
+  (let [t  (tbl/tabdelimited->table 
+            (slurp path) 
+            :keywordize-fields? false 
+            :schema fillr)            
+        flds (mapv (fn [kw] (keyword (subs kw 1))) (tbl/table-fields t))]
+  (-> t                  
+    (assoc :fields flds)
+    (tbl/table-records))))
+ 
+(defn filter-by-vals [column oper values xs]
+  "(filter column oper values xs)
+   Takes a sequence of records, xs, and returns a subset of those records where header is the field name.
+   If oper is =, returns the records where the header value is equal to at least one value in values.
+   If oper is not=, returns the records where the header is not= to all values in values."
+  (if (= oper =)
+    (filter (fn [rec] (contains? (set values) (column rec))) xs)
+    (reduce (fn [recs val] (filter (fn [rec] (oper (column rec) val)) recs)) xs values)))
+              
+                  
+;;craig utilities originally in proc.tests
+
+;_____________________________________________
+
+(defn check-row-val-count 
+  "does every row have the same number of values in it?"
+  [path]
+  (with-open [rdr (clojure.java.io/reader path)] 
+    (every? (fn [[count1 count2]] (= count1 count2))
+            (partition 2 1 (map (comp count tbl/split-by-tab) (line-seq rdr))))))
+
+(defn files=
+  "Are these two files the same?  Compares the two files line-by-line."
+  [file1 file2]
+  (with-open [rdr1 (clojure.java.io/reader file1)
+              rdr2 (clojure.java.io/reader file2)]
+    (every? (fn [[line1 line2]] (= line1 line2))
+            (map vector (rest (line-seq rdr1)) (rest (line-seq rdr2))))))
+
+(defn vis-files=? [file1 file2]
+  (with-open [rdr1 (clojure.java.io/reader file1)
+              rdr2 (clojure.java.io/reader file2)]
+    (first (remove (fn [[line1 line2]] (= line1 line2))
+                   (map vector (rest (line-seq rdr1)) (rest (line-seq rdr2)))))))
+
+(defn line-count [path]
+  (with-open [rdr (clojure.java.io/reader path)] 
+    (count (line-seq rdr))))
+
+(defn bad-rows 
+  "returns the rows that don't have the same number of values in them"
+  [path]
+  (with-open [rdr (clojure.java.io/reader path)] 
+    (filter (fn [[row1 row2]] (= (count row1) (count row2)))
+            (partition 2 1  (map tbl/split-by-tab (line-seq rdr))))))
+
+;;moved to util.
+(defn hash-file 
+  "takes the path to a txt file filepath and spits out a text file containing the hashcodes for each line"
+  [filepath]
+  (let [infilename (last (clojure.string/split filepath #"/"))
+        outfile (str (up-one filepath) "hashes-" infilename) ]
+    (with-open [w (clojure.java.io/writer outfile)
+                rdr (clojure.java.io/reader filepath)]
+      (doseq [l (line-seq rdr)]
+        (writeln! w (str (hash l)))))))
+
+;;compute the areas in each sequence where the hashes do not align.
+;;We probably need to avoid using map here because it may well be that
+;;one of our sequences is longer.  map will impliclty truncate the sequence.
+(defn hash-misses [hashed xs]
+  (->> (map (fn [l r] (= l (hash r))) hashed xs)
+       (map-indexed vector)
+       (filter (fn [[idx x]]
+                 (when (not x) idx)))))
+
+(defn string->int [^String x]  (Integer/parseInt x))
+                             
+(defmacro with-rdrs [rdr-paths & body]
+  `(with-open ~(reduce (fn [acc [l r]] (conj acc l r)) '[]
+                         (for [[rdr path] (partition 2 rdr-paths)]
+                           [rdr `(clojure.java.io/reader ~path)]))
+     ~@body))
+                               
+(defn filter-by-vals [column oper values xs]
+  "(Filter header oper values xs)
+   Takes a sequence of records, xs, and returns a subset of those records where header is the field name.
+   If oper is =, returns the records where the header value is equal to at least one value in values.
+   If oper is not=, returns the records where the header is not= to all values in values."
+  (if (= oper =)
+    (filter (fn [rec] (contains? (set values) (column rec))) xs)
+    (reduce (fn [recs val] (filter (fn [rec] (oper (column rec) val)) recs)) xs values)))
+
+;;pulled from commented-out spork.util.table
+(definline zip-record! [xs ys]
+  (let [ks  (with-meta (gensym "ks") {:tag 'objects})
+        vs  (with-meta (gensym "vs") {:tag 'objects})
+        arr (with-meta (gensym "arr") {:tag 'objects})]
+    `(let [~ks ~xs
+           ~vs ~ys
+           ~arr (object-array (unchecked-multiply 2 (alength ~ks)))
+           bound#  (alength ~ks)]
+       (loop [idx# 0
+              inner# 0]
+         (if (== idx# bound#) (clojure.lang.PersistentArrayMap/createAsIfByAssoc ~arr)
+             (do (aset ~arr inner# (aget ~ks idx#))
+                 (aset ~arr (unchecked-inc inner#) (aget ~vs idx#))
+                 (recur (unchecked-inc idx#)
+                        (unchecked-add inner# 2))))))))
+
+;;__Compression utilities__
+;;#todo
+;;  Add easy functions for writing to zipstreams (already in spork.util.zipfile)
+;;  Extend general/line-reducer to account for zipped files.
+;;  So far: 
+(defn compress-file!
+  [from & {:keys [type] :or {type :gzip}}]
+  (let [writer-fn (case type
+                    :gzip z/zip-writer
+                    :lz4 z/lz4-writer
+                    (throw (Exception. (str "unknown compressor! " type))))]
+    (with-open [w (writer-fn
+                   (str from
+                        (case type
+                          :gzip ".gz"
+                          :lz4 ".lz4"
+                          (throw (Exception. (str "unknown compressor! " type))))))]
+      (reduce (fn [_ ^String l] (writeln! w l)) nil (general/line-reducer from)))))
+
+;;overloaded to allow compressed streams.
+(defn line-reducer
+  "Small wrapper around the original line-reducer.
+   Now we can automatically grab lines from compressed files too."
+  [path-or-string]
+  (if (general/path? path-or-string)
+    (case  (re-find  #".gz|.lz4" path-or-string)
+      ".gz"  (general/line-reducer path-or-string :reader-fn z/zip-reader)
+      ".lz4" (general/line-reducer path-or-string :reader-fn z/lz4-reader)
+      (general/line-reducer path-or-string))
+    (general/line-reducer path-or-string)))
+
+;;__Notes on compression__
+;;Gzip is smaller (typically 3x less than lz4), but lz4 is typically much
+;;faster (~3-5x), and still produces nice compression results.  70 mb vs
+;;745...It also takes about 2.5 seconds to traverse the lines of either
+;;compressed archive, and 22 seconds to read the allfillsfast.txt , so
+;;IO is killing us.  Oh yeah, as a bonus, we can read all of the bytes
+;;for the compressed archive into memory, buying us even more performance.
+
+;;R and friends should be able to read from .gz natively (from what I've seen),
+;;while .lz4 may require a separate lib (dunno).
+;;Going forward, we may just ditch the fills folder and rip out what we need
+;;from a compressed allfills.txt.gz|lz4 file.  Not sure yet.
+  
+(defn last-day 
+  "Returns the last-day of the simulations as an integer."
+  [root]
+  (with-rdrs [rdr (str root "AUDIT_Parameters.txt")]
+    (-> (nth (line-seq rdr) 2)
+      (tbl/split-by-tab)
+      (second)
+      (Integer/parseInt))))
+ 

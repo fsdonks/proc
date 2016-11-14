@@ -1,12 +1,10 @@
 (ns proc.schemas)
 
-(def inscope-schema
-  {:TimeStamp :text
-   :SRC       :text
-   :Reason    :text})
-
-(def deprecordschema {"ID"	        :int
-                      "DeploymentID"	:int
+(def inscope-schema {:TimeStamp :text
+                     :SRC :text
+                     :Reason :text})
+  
+(def deprecordschema {"DeploymentID"	:int
                       "Location"	:text
                       "Demand"	        :text
                       "DwellBeforeDeploy" :int
@@ -39,6 +37,7 @@
                 :EventName :text
                 :Msg :text})
 
+;Title 10_32 shows up weird as a keyword.  can use (keyword "Title 10_32") to pull values
 (def drecordschema {"Type" :text
                     "Enabled"  :boolean
                     "Priority"	:int
@@ -55,6 +54,7 @@
                     "Category"	 :text
                     "Title 10_32" :text	
                     "OITitle" :text})
+;Strength
 
 (def dschema {:t  	        :int
               :Quarter	        :int
@@ -84,7 +84,33 @@
    "BDR 1:X"	      :float
    "BOGExpected"      :int
    "DwellExpected"    :int 
-   "DurationExpected" :int})
+   "DurationExpected" :int
+   "UIC" :text})
+
+;full cycleschema:
+(comment ["RecordSource"
+ "UIC"
+ "SRC"
+ "Component"
+ "Policy"
+ "tstart"
+ "tfinal"
+ "Deployments"
+ "BOG"
+ "MOB"
+ "Dwell"
+ "Duration"
+ "BDR" 
+ "BDR 1:X" 
+ "BOGExpected"
+ "DwellExpected"
+ "DurationExpected"
+ "Period"])
+
+(def parameters {:ParameterName :text
+                 :Value :text
+                 }
+  )
 
 ;Tom gave craig this schema on 7/8/15:
  (def fillrecord {:Unit      :text
@@ -128,3 +154,70 @@
                   :Policy :text
                   :sampled :boolean
                   })
+
+(def periodrecs {:Type 	:text
+                 :Name	:text
+                 :FromDay	:int
+                 :ToDay	:int
+                 :PeriodCategory	:text
+                 :Notes :text})
+
+(def subcycles {"RecordSource" :text
+ "UIC" :text
+ "SRC" :text
+ "OITitle" :text
+ "Component" :text
+ "Policy" :text
+ "AtomicPolicy" :text
+ "tstart" :int
+ "t" :int
+ "Deployments" :int
+ "BOG" :int
+ "MOB" :int
+ "Dwell" :int
+ "Duration" :int
+ "BDR" :float
+ "BDR 1:X" :float
+ "BOGExpected" :int
+ "DwellExpected" :int
+ "DurationExpected" :int
+ "Period" :text
+ "Location" :text
+ "Position" :text
+ "DwellYears" :float
+ "SampleCount" :int})
+
+(def eventlog 
+  {"Time" :int
+   "EventType" :text
+   "EntityFrom" :text
+   "EntityTo" :text
+   "Message" :text})
+
+(def supply-recs
+  {"Type" :text
+ "Enabled":boolean
+ "Quantity" :int
+ "SRC" :text
+ "Component" :text
+ "OITitle" :text
+ "Name" :text 
+ "Behavior" :text
+ "CycleTime" :int
+ "Policy" :text
+ "Tags" :text
+ "SpawnTime" :int
+ "Location" :text
+ "Position" :text
+ "Original" :boolean})
+ 
+ 
+ ;"Strength" :int
+ ;"Remarks" :text
+ ;"CAT" :text}
+   
+
+ 
+
+
+

@@ -7,7 +7,9 @@
              [clojure.core.reducers :as r]
              [spork.util.table :as tbl]
              [spork.util.general :as gen]
-             [spork.events.observe :as obs])
+             [spork.events.observe :as obs]
+             [spork.util.temporal :as temp]
+             [clojure.string :as str])
    (:import  [org.jfree.data.xy DefaultTableXYDataset 
                                 XYSeries XYSeriesCollection 
               XYDataItem]
@@ -42,10 +44,9 @@
 (def data-as-list #'incanter.charts/data-as-list)
 (comment 
 
-(def depsfa   "C:/Users/thomas.spoon/Documents/SRMPreGame/runs/fa/AUDIT_Deployments.txt")
-(def depsfa3  "C:/Users/thomas.spoon/Documents/SRMPreGame/runs/fa_surge3/AUDIT_Deployments.txt")
 
-(def sand      "C:/Users/thomas.spoon/Documents/MarathonHacks/sand/01226R100.txt")
+
+(def sand      "rootpath")
 (def sand-ds   (util/read-keyed sand))
 )
 
@@ -67,6 +68,17 @@
                    (= cat "Rotational")  "MissionUnmet"
                    :else (clojure.string/replace cat "Filled" ""))
         cat))
+
+(defn parse-arfor-fill [^String cat ^String fill]   
+  (case fill  
+    "Filled" (cond (= cat "Rotational") "Deployed" ;better word than rotational?
+                   (= cat "Prepare") "Demobilization" ;Is this always true? Could use :location field to capture this
+               ;and use cat for Rotational only.
+               :else cat)
+    "Unmet"  fill
+        cat))
+
+
   
 ;;This should take a fill-record and break it out into 
 ;; [:category :SRC :name :operation :start :duration :fill-type :unitid :quantity :end :location :compo 
@@ -83,17 +95,28 @@
 ;;  }
 
 
-;;;;____Craig used:
-
 ;;unmet demands are missed demands..
 (defn sufficiency-cat-fill 
   [acthresh rcthresh fill-type DwellBeforeDeploy Component DwellYearsBeforeDeploy]
   (cond (=  fill-type "Unmet")   "Unmet Demand"
-        (< DwellBeforeDeploy acthresh) "Extended Force" 
+        (< DwellBeforeDeploy acthresh) "Extended Force" ;This should probably fall under cases below now. Also,
+       ;DwellBeforeDeploy is in days and acthresh is in years so this doesn't really make sense. well, maybe
+        ;it does.  we are keeping it now. acthresh is probably .99something
   :else 
   (case Component
-    "AC" (if (>= DwellYearsBeforeDeploy acthresh) "Met Demand" "Not Fully Trained")
-    (if (>= DwellYearsBeforeDeploy rcthresh) "Met Demand" "Not Fully Trained"))))
+    "AC" (if (>= DwellYearsBeforeDeploy acthresh) "Met Demand" "Dwell: AC<1yr RC<4yr")
+    (if (>= DwellYearsBeforeDeploy rcthresh) "Met Demand" "Dwell: AC<1yr RC<4yr"))))
+
+(defn cat-by-demandgroup
+  [acthresh rcthresh fill-type DwellBeforeDeploy Component DwellYearsBeforeDeploy DemandGroup]
+  (cond (=  fill-type "Unmet")   (str DemandGroup "-Unmet Demand")
+        (< DwellBeforeDeploy acthresh) (str DemandGroup "-Extended Force") ;This should probably fall under cases below now. Also,
+       ;DwellBeforeDeploy is in days and acthresh is in years so this doesn't really make sense. well, maybe
+        ;it does.  we are keeping it now. acthresh is probably .99something
+  :else 
+  (case Component
+    "AC" (if (>= DwellYearsBeforeDeploy acthresh) (str DemandGroup "-Met Demand") (str DemandGroup "-Dwell: AC<1yr RC<4yr"))
+    (if (>= DwellYearsBeforeDeploy rcthresh) (str DemandGroup "-Met Demand") (str DemandGroup "-Dwell: AC<1yr RC<4yr")))))
 
 (defn suff-cat-fill-subs
   [FillType DemandType]
@@ -106,16 +129,25 @@
                 "87312R000" "ABCT sub")
     "Primary" "Primary Fill"))
 
+;:dense meaning we have samples for every t as in sandtrends.  For sparse samping, use :sparse
+;if we have sparse sampling, we'll use :duration and :sampled fields found in the fills data.  We'll remove records with :sampled true
+;from the fills before generating the data for our sand chart.
+(def ^:dynamic *sample-freq* :dense) 
+
 (defn roll-sand [ds & {:keys [cols cat-function phase] 
                        :or   {cols [:category :fill-type] 
                               cat-function parse-cat-fill}}]
-  (let [pred ($fn [DemandGroup Period] (and (not= DemandGroup "NotUtilized") (if phase (= Period phase) true)))] 
+  (let [sparse? (= *sample-freq* :sparse)
+        pred ($fn [DemandGroup Period sampled] (and (not= DemandGroup "NotUtilized") 
+                                            (if sparse? (= sampled "false") true)
+                                            (if phase (= Period phase) true)))] 
     
     ;;get categories first
     (->> ds 
       ($where pred) ;filtered out non-utilizers
       (add-derived-column :Category cols cat-function)
-      ($rollup :sum :quantity [:Category :start])
+      ($rollup :sum :quantity (if sparse? [:Category :start :duration]
+                                [:Category :start]))
       ($order :start :asc))))
 
 
@@ -126,32 +158,61 @@
 ;;alternative categorization
 ;;We want to convert the fills into a different set of criteria
 (defn roll-fills [ds phase & {:keys [acthresh rcthresh]
-                        :or   {acthresh +normal-year+
-                               rcthresh (* 4 +normal-year+)}}]
+                              :or   {acthresh +normal-year+
+                                     rcthresh (* 4 +normal-year+)}}]
   (roll-sand ds :phase phase :cols [:fill-type :DwellBeforeDeploy :Component :DwellYearsBeforeDeploy]
-                :cat-function (partial sufficiency-cat-fill acthresh rcthresh)))
+                                              :cat-function (partial sufficiency-cat-fill acthresh rcthresh)))
+
+(defn fills-by-demandgroup [ds phase & {:keys [acthresh rcthresh]
+                              :or   {acthresh +normal-year+
+                                     rcthresh (* 4 +normal-year+)}}]
+  (roll-sand ds :phase phase :cols [:fill-type :DwellBeforeDeploy :Component :DwellYearsBeforeDeploy :DemandGroup]
+                                              :cat-function (partial cat-by-demandgroup acthresh rcthresh)))
 ;;;;__________                
 
-(defn daily-samples [xs]
-  (let [end (atom nil)]
-    (as->  (->> (gen/clumps :start xs)
-                 (partition 2 1)
-                 (reduce (fn [acc [[tl xs] [tr ys]]]
-                           (do (reset! end ys)
-                               (loop [n (unchecked-inc tl)
-                                      inner (reduce conj! acc xs)]
-                                 (if (== n tr) inner
-                                     (recur (unchecked-inc n)
-                                            (reduce conj! inner 
-                                                    (r/map (fn [r] (assoc r :start n)) xs)))))))
-                         (transient [])))
-           v
-          (persistent!   (reduce conj! v @end)))))
-               
-    
-              
-              
+(defn sparse-samples [xs]
+  (for [[t temp-map] (temp/activity-profile xs :start-func :start :duration-func :duration)
+        [c recs] (let [groups (group-by :Category (:actives temp-map))]
+                   (if (empty? groups)
+                     [["no activities"]]
+                     groups)) ] ; this is going to skip over the empty categories
+    {:Category c :start t :quantity (if recs
+                                      (reduce + (map :quantity recs))
+                                      0)}))
 
+;since fill data has sparse samples AND we are showing fill and unmet only, we can't assume fills are active until the next time sample,
+;we can use an activity profile to find out when 
+;changes happen.  To make sure our fills charts has nearly
+;vertical lines for changes in quantity, we need to replicate some of the data a very small distance before any changes.
+(defn daily-samples [xs] ;xs includes :duration this time
+  (let [sparse? (= *sample-freq* :sparse)
+        end (atom nil)
+        xs (if sparse? (sparse-samples xs) xs)
+        bounds (partition 2 1 (gen/clumps :start xs))
+        ;dont need these samples
+        clean-bounds (if sparse? (filter (fn [[[tl xs] [tr ys]]] (not= (:Category (first xs)) "no activities")) bounds) bounds) ]     
+    (as->   
+             (reduce (fn [acc [[tl xs] [tr ys]]]   
+                       (do (when (and sparse? (= (:Category (first @end)) "no activities")) 
+                             ;we know we just came from 0 and want to smooth things out before xs start
+                             (reduce conj! acc (r/map (fn [r] (assoc r :start (- tl 0.001) :quantity 0)) xs))) 
+                         ;we only have to do this at the end I think-not for each partition (but we don't know when we're at end)
+                         (reset! end ys) 
+                         (loop [n (unchecked-inc tl)
+                                inner (reduce conj! acc xs)]
+                           (if (== n tr) ;inner
+                             (do (when (and sparse? (= (:Category (first ys)) "no activities"))
+                                 (reduce conj! inner 
+                                         (r/map (fn [r] (assoc r :start n :quantity 0)) xs))) ;first sample of no activities
+                               (reduce conj! inner 
+                                       (r/map (fn [r] (assoc r :start (- n 0.001))) xs))) ;smoothing sample before next xs
+                             (recur (unchecked-inc n)
+                                    (reduce conj! inner 
+                                            (r/map (fn [r] (assoc r :start n)) xs)))))))
+                     (transient []) clean-bounds)
+           v
+           (persistent! (if sparse? v (reduce conj! v @end)) ;If sparse?, the end will always be "no activities" now
+                        ))))
   
 ;; (def xytbl (DefaultTableXYDataset.))
 
@@ -353,6 +414,7 @@
                     "ABCT sub"
                     "Met Demand"
                     "Not Fully Trained"
+                    "Dwell: AC<1yr RC<4yr"
                     "ARNG on EPP from TR1 / TR2"
                     "Extended Force"
                     "Unmet Demand"])
@@ -385,9 +447,30 @@
                 "Primary Fill" :green
                 "Met Demand"         :green
                 "Not Fully Trained"  :amber 
+                "Dwell: AC<1yr RC<4yr" :amber
                 "ARNG on EPP from TR1 / TR2" :pink
                 "Extended Force"     :red
                 "Unmet Demand"       :black})
+
+(def arforgen-color-2 {"Demobilization" :maroon
+                       "Reset"       :red
+                       "Reset_Deployable" :light-red
+                       "Train"       :orange                     
+                       "Ready"       :yellow
+                       "Available"   :light-green
+                       "Available_Deployable" :green
+                       "Deployed"    :olive-drab
+                       "Unmet" :black})
+
+(def arforgen-order-2 ["Demobilization"
+                       "Reset"       
+                       "Reset_Deployable" 
+                       "Train"                            
+                       "Ready"       
+                       "Available"   
+                       "Available_Deployable" 
+                       "Deployed"    
+                       "Unmet"])
 
 (def arforgen-color {"Reset"       :red 
                      "Train"       :red
@@ -396,6 +479,8 @@
                      "Recovery"    :light-green
                      "Available"   :green 
                      "Deployed"    :blue})
+
+
 
 (def deployment-colors {"AC"     :blue 
                         "NG"     :red 
@@ -546,7 +631,10 @@
 ;;we add all the points, we trigger a DataSetChanged event.
 ;;Really, all the dataset does is serve as an interface to 
 ;;jfree...
-(defrecord xydataset [^DefaultTableXYDataset table seriesmap order]
+(defrecord xydataset [^DefaultTableXYDataset table seriesmap order] ;this is like a java class
+  ;this implements these protocols. A record is just a hash-map record with some fancy java stuff....
+  ;Deftype if you don't care if it's a hashmap.
+  ;reify and produce a bunch of protocols-Anoymous object that implements a bunch of protocols.
   IOrderedSeries
   (order-series-by [obj f]
     (let [tab  (order-series-by! table f)]
@@ -567,6 +655,7 @@
 
 
 (defn clear-series [xyd] 
+  
   (do (doseq [[nm ^XYSeries ser] (series-seq xyd)]
         (do! (.clear ser)))
       (fire-dataset-changed! (:table xyd))
@@ -582,7 +671,7 @@
           (java.awt.Color. (int (first c)) (int (second c)) (int (nth c 2)))
           (throw (Exception. (str "unknown color " c)))))))        
 
-(extend-type org.jfree.chart.JFreeChart 
+(extend-type org.jfree.chart.JFreeChart  ;extend-protocol opposite. or extend-type
   IColorable 
   (set-colors [obj colors]
     (let [^org.jfree.chart.plot.XYPlot plot (.getXYPlot ^org.jfree.chart.JFreeChart obj)]      
@@ -598,6 +687,10 @@
   (series-seq [obj]     (series-seq (.getDataset (.getXYPlot obj))))
   (get-bounds [obj]   (let [^XYSeries s (second (first (series-seq obj)))]
                            [(.getMinX s) (.getMaxX s)])))
+;add new protocol called IChart new get-bounds (call it something else),
+;set bounds, set range, and set domain, and extend this protocol here.
+
+
 (defn xycoords [^XYSeries ser]
   (map (fn [^XYDataItem xy]
          [(.getX xy) (.getY xy)])
@@ -605,9 +698,9 @@
   
 
 (defn set-domain! [^org.jfree.chart.JFreeChart obj min max]
-  (let [^org.jfree.chart.plot.XYPlot plot (.getXYPlot ^org.jfree.chart.JFreeChart obj)
+  (let [^org.jfree.chart.plot.XYPlot plot (.getXYPlot ^org.jfree.chart.JFreeChart obj) ;xyplot is main plot obj
         ax (.getDomainAxis plot)]
-    (do (.setRange ax min max))))
+    (do (.setRange ax min max)))) ;return obj at the end. same with range
 
 (defn set-range! [^org.jfree.chart.JFreeChart obj min max]
   (let [^org.jfree.chart.plot.XYPlot plot (.getXYPlot ^org.jfree.chart.JFreeChart obj)
@@ -695,7 +788,7 @@
         (set-theme     chart theme)
         (.setAntiAlias chart false)
         chart)))
-  
+
 (defn sand-chart [ds & {:as opts}]
   (->> ds 
        (roll-sand)
@@ -717,11 +810,11 @@
                          (get *trend-info* :color))
         ;;group-by is now the series....
         x-label      (or (:x-label opts) "time (days)")
-        y-label      (or (:y-label opts) "quantity (units)")
+        y-label      (or (:y-label opts) "quantity required (units)")
         series-label (:series-label opts)
         vertical?    (if (false? (:vertical opts)) false true)
         legend?      (true? (:legend opts))
-        _order-by    (or (:order-by opts) default-order)
+        _order-by    (or (:order-by opts) (get *trend-info* :order))
         tickwidth    (when  (:tickwidth opts) (:tickwidth opts))
         ^xydataset 
         xytable      (order-series-by xytable _order-by)
@@ -748,9 +841,9 @@
 
 (def ^:dynamic *sampling* :daily)
 
-(defn expand-samples [ds]
+(defn expand-samples [ds & {:keys [samplefn] :or {samplefn daily-samples}}]
   (if (= *sampling* :daily) 
-    (assoc ds :rows (daily-samples (:rows ds)))
+    (assoc ds :rows (samplefn (:rows ds)))
     ds))
   
 
@@ -760,21 +853,38 @@
         (expand-samples)
         (xy-table :start :quantity :group-by 
                   :Category :data)))
-;;;;_______Craig Used:
 
+(def ^:dynamic *by-demandgroup?* false)
+
+(defn trend-info-by-dmdgroup [rolled-fills]
+  (let [group-stack-height (fn [dgroup] (let [caps (str/upper-case dgroup)]
+                                          (case caps "UNGROUPED" 0 "HLD" 1 (abs (hash caps)))))
+        cat-stack-height (fn [cat] (case cat "Met Demand" 0 "Dwell: AC<1yr RC<4yr" 1 "Extended Force" 2 "Unmet Demand" 3))   
+        cats (->> (:rows rolled-fills)
+               (map :Category)
+               (set)
+               (map (fn [s] (let [[dgroup cat]  (str/split s #"-")]
+                              {:CompositeCat s
+                               :DemandGroup dgroup 
+                               :Category cat 
+                               :GroupLevel (group-stack-height dgroup) 
+                               :CatLevel (cat-stack-height cat)})))  
+               (sort-by (juxt :GroupLevel :CatLevel)))
+        order (map :CompositeCat cats)
+        colors (into {} (map (fn [r] [(:CompositeCat r) (get srm-color (:Category r))]) cats))]
+    {:color colors :order (vec order)}))
+  
 (defn fill-data [ds phase subs]
-  (->>  (if subs
-          (roll-sand (util/as-dataset ds) :phase phase :cols [:FillType :DemandType] :cat-function suff-cat-fill-subs)
-          (roll-fills (util/as-dataset ds) phase))
-    (expand-samples)
-    (xy-table :start :quantity :group-by :Category :data)))
-;;;;______
-
-(defn sand-chart2 [ds & options]  
-  (-> (->> (util/as-dataset ds)
-           (roll-sand)
-           (xy-table :start :quantity :group-by :Category :data))
-       (stacked-areaxy-chart2* :legend true)))
+  (binding [*sample-freq* :sparse] 
+    (let [rolled-fills (if subs
+                         (roll-sand (util/as-dataset ds) :phase phase :cols [:FillType :DemandType] :cat-function suff-cat-fill-subs)
+                         (if *by-demandgroup?* 
+                           (fills-by-demandgroup (util/as-dataset ds) phase)
+                           (roll-fills (util/as-dataset ds) phase)))
+          expanded (expand-samples rolled-fills :samplefn daily-samples)]
+        [(xy-table :start :quantity :group-by :Category :data expanded) (if *by-demandgroup?*
+                                                                          (trend-info-by-dmdgroup rolled-fills)
+                                                                          *trend-info*)])))
 
 (defmethod view proc.stacked.xydataset [xyt & options]
   (view (as-chart  xyt  options)))  

@@ -1,226 +1,115 @@
 ;;This is a sample of stuff we can do using the post processor.
 (ns proc.example
   (:require [proc.stacked :as stacked]
-            [spork.util.table :as tbl]
-            [spork.util.excel.core :as xl]
-            [clojure.core.reducers :as r]
-            [proc.schemas :as schemas]
-            [proc.sporkpatches]
-            [clojure.pprint :as ppr])
+            [proc.util :as util]
+            [proc.interests :as ints])
   (:use [proc.core]
+        [incanter.charts]
         [incanter.core]
-        [incanter.io]
-        [incanter.charts]))
-
-;;(def test-path "C:/Users/heather.a.jackson/Desktop/SRM/SRM SSW Policy/")
-;; (def test-deployments 
-;;   "C:/Users/heather.a.jackson/Desktop/SRM/SRM SSW Policy/AUDIT_Deployments.txt")
-
-(def test-path "C:/Users/thomas.spoon/Documents/SRM Comparison/FORSCOM/")
-(def test-deployments   (str test-path "AUDIT_Deployments.txt"))
+        [proc.supply])) 
 
 ;;This dumps out our fills and sandtrends for the interesting srcs.
-(defn run-sample! 
-  ([path]
-     (only-by-interest [:TRUCK :ENG :CSSB :DIV :GSAB :SAPPER :MP :CAB :ATTACK :BCT :CA :All] 
-        (sandtrends-from path)))
-  ([] (run-sample! test-path)))
+(defn run-sample!   "Call with eachsrc true if you want the fills for each SRC individually, or if you want to group the fills by interest,
+call with ints set to a symbol from proc.interests.
+call with :byDemandType? true if you want fills files by demandtype instead of the default by SRC. NotUtilized and Unmet records 
+will always be found in a fills file associated with the respective SRC or interest.  If you don't see a fills file for an SRC, is it
+in your interests?"
+  [path & {:keys [interests subints eachsrc byDemandType?] :or {interests ints/defaults byDemandType? true}}]
+  (let [subs (if subints subints (keys interests))]
+    (binding [proc.core/*byDemandType?* byDemandType?
+              proc.core/*run-path* path] 
+      (if eachsrc
+      (binding [*last-split-key* (if byDemandType? :DemandType :SRC)] (sandtrends-from path))
+      (only-by-interest subs interests (sandtrends-from path))))))
 
+;Can do trac-like charts by demand group by doing (binding [proc.stacked/*by-demandgroup?* true] 
+;                                                        (do-charts-from root :interests blah))
+
+;Do-charts-from creates stacked dwell and fill charts for each interest using AUDIT_deployments.txt and
+;the fills files produced from proc.fillsfils/run-sample!.
+;You need to call run-sample! in order to make a folder for fills files within the Marathon run folder before calling do-charts-from
+(defn do-charts-from ;do we have too many arguments here?
+  "Pass in your own interests if you'd like.  See examples of interests in proc.interests
+:group-key defaults to :DemandType for dwell-before-deployment plot.  Can set :group-key to :UnitType as well.
+Call with :sync false in order to not sync the x and y axis across these charts.  :sync defaults to true.
+Call with :phases set to a sequence of phases defined in the run in order to see separate charts for each phase.  Will throw
+a null pointer exception if one of your phases doesn't exist in the run.
+Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
+:dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
+  [root & {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds] :or {subs false phases [nil] syncys false
+                                                                interests ints/defaults group-key :DemandType
+                                                                phase-lines true
+                                                                fillbnds {:fxlow 0 :fylow 0}
+                                                                dwellbnds {:dxlow 0}}}]
+  (let [ints (if subints subints (keys interests))
+        charts (only-by-interest  ints interests
+                       (remove nil? (for [int ints ;remove nil printlns
+                                                              phase phases]
+                                                          (binding [dep-group-key group-key] 
+                                                            (dwell-over-fill root (get interests int) subs phase)))))
+        dwells (->> (map (fn [[pane dwell fill]] dwell) charts)
+                 (remove (fn [chart] (nil? (.getDataset (.getPlot chart)))))) ;had to remove no deployment data charts
+        fills (map (fn [[pane dwell fill]] fill) charts)
+        {:keys [fxlow fxhigh fylow fyhigh]} fillbnds
+        {:keys [dxlow dxhigh dylow dyhigh]} dwellbnds
+        _ (doseq [chart dwells] (do (proc.util/set-bounds chart :x-axis :lower dxlow :upper dxhigh)
+                                  (proc.util/set-bounds chart :y-axis :lower dylow :upper dyhigh)))
+        _ (doseq [chart fills] (do (proc.util/set-bounds chart :x-axis :lower fxlow :upper fxhigh)
+                                  (proc.util/set-bounds chart :y-axis :lower fylow :upper fyhigh)))
+        _ (proc.util/sync-scales (concat dwells fills) :axis :x-axis)   ;added for taa. want all charts same x
+        _ (when syncys (do  ;it might be useful if our y-axes all match, too
+                       (proc.util/sync-scales dwells :axis :y-axis)
+                       (proc.util/sync-scales fills :axis :y-axis)))
+        _  (doseq [dwell dwells] (add-trend-lines! dwell :bnds (:x (xy-bounds dwell)))) ;need to add trend lines after syncing charts
+        phstarts (phase-starts root)
+        _ (when phase-lines (doseq [fill fills] (add-phase-lines phstarts 
+                                                                 (.getLowerBound (:y-axis (util/state fill))) 
+                                                                 (.getUpperBound (:y-axis (util/state fill))) 
+                                                               fill)))]
+    (doseq [chart charts] (show-stack chart))))
+       
 ;;One function to make the files for the charts and display the charts at the same time
 (defn charts-from-unproc-run
   ([path]
     (do (run-sample! path)
-        (do-charts-from path)))
-  ([] (charts-from-unproc-run test-path)))
-  
-(defn deployments 
-  ([int]
-    (view (deployment-plot test-deployments (get interests int))))
-  ([] (view-deployments :BCT)))
+        (do-charts-from path))))
 
-(defn deployment-chart
-  ([int]
-     (deployment-plot test-deployments (get interests int)))
-  ([] (deployment-chart  :BCT)))
+(defn view-deployments 
+  ([int interests deploymentspath]
+    (let [dwell-plot (deployment-plot deploymentspath (get interests int) nil)
+          _ (add-trend-lines! dwell-plot :bnds (:x (xy-bounds dwell-plot)))]
+      (view dwell-plot)))
+  ([deploymentspath] (view-deployments :BCTS ints/cints19-23 deploymentspath)))    
 
-(defn txt? [^String nm] (.contains nm ".txt"))
-
-(def fillr (into {} (for [[k v] schemas/fillrecord] [ (str k ) v])))
-
-(def fill-names {:BCT "/BCT.txt"})
-
-;;Compute aggregate fills 
-;;Given a path to different project folders, 
-;;build a dataset of each file in fills, 
-;;naming the case as the path, and the interest as 
-;;the filename.
-;interests are optional keyword arguments like :BCT :DIV
-(defn build-fill-tables [name-paths & interests]
-    (->>  (for [[nm root] name-paths
-                [fill-file tr] (if (empty? interests)
-                                 (map (juxt spork.util.io/fpath spork.util.io/fname) (spork.util.io/list-files root))
-                                 (map (fn [interest] [(str root (interest fill-names)) interest]) interests))
-                :when (txt? fill-file)]
-          (let [hdrs (clojure.string/join \tab (map (fn [x] (subs x 1)) (proc.util/raw-headers fill-file)))
-                fd (with-open [rdr (clojure.java.io/reader fill-file)]
-                     (spork.util.table/lines->table (cons hdrs (rest (line-seq rdr))) :schema fillr))
-                trend (clojure.string/replace tr ".txt" "")
-                _ (println trend)]
-            (->>  (spork.util.table/table-records fd)
-                  (map (fn [r] (assoc r :name nm :trend trend))))))
-       (reduce concat)
-       (spork.util.table/records->table)
-        ))
-
-  
-(def runs {"FORSCOM" "C:/Users/thomas.spoon/Documents/SRM Comparison/FORSCOM/fills"
-           "SSW"     "C:/Users/thomas.spoon/Documents/SRM Comparison/SSW/fills"})
-
-(def doneruns "V:/Branch - Institutional Processes/SE7/SS Analysis V2/Myles Run V2/Done Runs/")
-
-(def behruns {"Adapt 7+3.1" (str doneruns "Adapt ARFORGEN SC 7 & 3.1/fills")
-              "Adapt 3.1"   (str doneruns "Adapt ARFORGEN_SC31/fills")})     
-
-(defn spit-fill-stats [t root]
-  (with-open [out (clojure.java.io/writer (str root "fillstats.txt"))]
-    (doseq [ln (proc.util/table->lines t)]
-      (proc.util/writeln! out ln))))
-  
-(defn fill-stats [xs]
-  (let [missed   (reduce + (map (fn [x] (* (inc (:duration x)) (:quantity x))) 
-                                (filter (fn [x] (= (:compo x) "Ghost")) xs)))
-        total   (reduce + (map (fn [x] (* (inc (:duration x)) (:quantity x))) 
-                                xs))]
-    {:missed  missed
-     :total    total
-     :proportion (float (/ missed total))}))
-
-;;What?  Why named filter...  
-(defn Filter [header oper values xs]
-  "(Filter header oper values xs)
-   Takes a sequence of records, xs, and returns a subset of those records where header is the field name.
-   If oper is =, returns the records where the header value is equal to at least one value in values.
-   If oper is not=, returns the records where the header is not= to all values in values."
-  (if (= oper =)
-    (filter (fn [rec] (contains? (set values) (header rec))) xs)
-    (reduce (fn [recs val] (filter (fn [rec] (oper (header rec) val)) recs)) xs values)))
-
-(defn weighted-sample-by 
-  "(weighted-sample-by xs valfd weightfd)
-   Takes a sequence of records and computes the value in the valfd field multiplied by the value in the weightfd
-   field for each record.  Returns the sum of these computations."
-   [xs valfd weightfd]
-  (reduce + (map (fn [x] (* (valfd x) (weightfd x))) xs)))
-
-(defn average-by [valkey xs]
-  "(average-by valkey xs)
-   Takes a sequence of records and computes the average of the values in the valkey column. If xs is empty, returns
-   nil."
-  (if (not (empty? xs)) (double (/ (reduce + (map (fn [x] (valkey x)) xs)) 
-            (count xs)))))
-
-(defn get-gen-fills [recs]
-  (->> (Filter :DemandGroup not= ["NotUtilized"] recs)
-    (Filter :FollowOn = [false "false"])))
-  
-(defn dwell-stats
-    "This stats function is intended for records pulled from post processor 'fills' folder.
-     (dwell-stats recs compos)
-     Returns a map where the keys are :compo+avgdwell and the values are the average dwells for each
-     compo."
-  [recs & {:keys [compos] :or {compos ["AC" "NG"]}}]
-  (let [compfs (group-by :compo (get-gen-fills recs))]      
-    (zipmap (map #(keyword (str % "avgdwell")) compos) (->> (map #(get compfs %) compos)
-                                                         (map #(Filter :dwell-plot? = [true "true"] %))
-                                                         (map #(average-by :DwellYearsBeforeDeploy %))))))
-
-(def bcts {"SBCTs" ["47112R000"] "IBCTs" ["77302R500" "77302R600"] "ABCTs" ["87312R000"]})
-
-(defn sub-stats 
-  "This stats function is intended for records pulled from post processor 'fills' folder.
-  (sub-stats dmdsbysrc subtypes subd)
-  Returns a map with vals as the percent of substitutions accounted for by each SRC demandtype grouping in subtypes."
-  [dmdsbysrc subtypes subd]
-  (if (not (zero? subd))
-    (let [subdays (->>(map #(reduce concat (map dmdsbysrc %)) (vals subtypes))
-                    (map #(weighted-sample-by % :deltat :quantity)))]
-      (merge (zipmap (map #(keyword (str % "ubdays")) (keys subtypes)) subdays)
-             (zipmap (map #(keyword (str "perc" % "ubs")) (keys subtypes))
-                     (map #(double (/ % subd)) subdays))))))
-
-(defn more-stats 
-  "This stats function is intended for records pulled from post processor 'fills' folder.
-   (more-stats recs subtypes)
-   Returns a map with values of average dwell stats for each compo, percent substitutions, percent demand
-   satisfied, and the percent of substitutions accounted for by each SRC demandtype grouping in subtypes."
-  [recs & {:keys [subtypes] :or {subtypes bcts}}]
-  (let [genuinefills (get-gen-fills recs)  
-        realfills (reduce concat (map (group-by :compo genuinefills) ["AC" "NG"]))
-        subs (Filter :FillType = ["Substitute"] realfills)
-        dmdtypes (group-by :DemandType subs)
-        [rf sub gf] (map #(weighted-sample-by % :deltat :quantity) [realfills subs genuinefills])]
-    (merge (dwell-stats recs) (sub-stats dmdtypes subtypes sub) 
-           {:percsubs  (if (not (zero? rf)) (double (/ sub rf))) :subdays sub :filldays rf  :demandays gf
-            :percsat   (if (not (zero? gf)) (double (/ rf gf)) 0)})))
-
-
-(defn fill-table
-  ([t statsf grpkey & subtypes]
-    (->>  (for [[tr xs] (group-by grpkey (tbl/table-records t))]
-            (assoc (if (empty? subtypes) (statsf xs) (statsf xs (first subtypes))) grpkey tr))
-      (tbl/records->table)))
-  ([t] (fill-table t fill-stats :trend bcts)))
-
-(defn read-records [path] 
-  (let [t  (tbl/tabdelimited->table 
-            (slurp path) 
-            :keywordize-fields? false 
-            :schema fillr)            
-        flds (mapv (fn [kw] (keyword (subs kw 1))) (tbl/table-fields t))]
-  (-> t                  
-    (assoc :fields flds)
-    (tbl/table-records))))
-
-(def more-stats-order [:name :demandays :filldays :subdays :percsat :percsubs	
-                       :IBCTsubdays :percIBCTsubs :SBCTsubdays :percSBCTsubs 
-                       :ABCTsubdays :percABCTsubs	:ACavgdwell	:NGavgdwell])
-
-(defn get-stats-from [name-paths destpath]
-  (let [stable (-> (build-fill-tables name-paths :BCT)  ;;if take out BCTs, get an out of memory error with all interests
-                 (fill-table more-stats :name))]
-    (spit-fill-stats (tbl/order-fields-by more-stats-order stable) destpath)))
-    
-        
-(defn map-on-map 
-  "Didn't need this.  Will it ever be useful?
-   (map-on map & {:keys [fkeys fvals]})
-   Takes a map as an argument and returns a map where fkeys was applied to the keys and fvals was applied to 
-   the values."
-  [map & {:keys [fkeys fvals] :or {fkeys #(identity %) fvals #(identity %)}}]
-  (zipmap (for [k (keys map)] (fkeys k)) (for [v (vals map)] (fvals v))))
-
-(def fpath "V:/Branch - Institutional Processes/SE7/SS Analysis V2/Myles Run V2/Done Runs/Adapt ARFORGEN SC 7 & 3.1/fills/BCT.txt")
-(def fdir "V:/Branch - Institutional Processes/SE7/SS Analysis V2/Myles Run V2/Done Runs/Adapt ARFORGEN SC 7 & 3.1/")
+; pipeline copied from sand-chart2
+(defn unit-sand-from [path interest] ;oops.  Need to do daily samples here
+  (let [ds (util/as-dataset (str path "sand/" interest ".txt"))]
+    (-> (->> (-> (util/as-dataset ds)
+           (stacked/roll-sand :cat-function stacked/parse-arfor-fill)
+           (stacked/expand-samples)) ; this smooths out the picture but what is it doing?
+      (stacked/xy-table :start :quantity :group-by :Category :data))
+      (stacked/stacked-areaxy-chart2* :legend true :color-by stacked/arforgen-color-2 :order-by stacked/arforgen-order-2)
+      (view))))
 
 (defn lines-demo 
-  "We can make line graphs instead of stacked area charts, but need to uncompress x labels, and use fewer groups..."
+  "We can make lines instead of stacked area charts, but need to uncompress x labels, and use fewer groups..."
   [fpath]
-  (let [dset (proc.stacked/roll-sand (proc.util/as-dataset fpath) 
-                                   :cols [:FillType :DemandType] :cat-function proc.stacked/suff-cat-fill-subs )]
+  (let [dset (stacked/roll-sand (util/as-dataset fpath) 
+                                   :cols [:FillType :DemandType] :cat-function stacked/suff-cat-fill-subs )]
     (view (line-chart :start :quantity :group-by :Category :legend true :data dset))))
-    
-                              
-                              
 
 
-             
-
-
-
-    
+;given a parent directory, return us all paths of the run folders.... identify
+;a run folder by some marathon file
+(defn run-names-from [rootsloc]) 
 
 
   
 
-        
+ 
+
+
+
+
+
 

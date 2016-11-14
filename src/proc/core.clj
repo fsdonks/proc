@@ -1,3 +1,4 @@
+
 ;;This is a quick example in clojure of how we can convert marathon 
 ;;location information into generalized location trends, and then 
 ;;extract location information over time.  Note, we also derive
@@ -38,6 +39,7 @@
   (:require [spork.util.excel [core :as xl]]
             [spork.util.table :as tbl]
             [spork.util.io    :as io]
+            [spork.util.general :as general]
             [spork.util.reducers]
             [spork.util.parsing :as parse]
             [spork.cljgui.components.swing :as swing]
@@ -52,15 +54,17 @@
             [proc.stacked :as stacked]
             [spork.util.temporal :as temp]
             [spork.sketch :as sketch]
-            [iota :as iota])
-  (:import [org.jfree.chart ChartPanel]))
+            [iota :as iota]
+            [clojure.pprint :as ppr]
+            [proc.interests :as ints]
+            [proc.util :as util])
+  (:import [org.jfree.chart JFreeChart ChartPanel]
+           (org.jfree.chart.plot CategoryPlot)
+           (java.awt.Font)
+           (javax.swing JTextPane)
+           (java.awt Toolkit)))
 
-
-(def locs     "C:/Users/thomas.spoon/Documents/MarathonHacks/locations.txt")
-(def dtrends  "C:/Users/thomas.spoon/Documents/MarathonHacks/DemandTrends.txt")
-(def deps     "C:/Users/thomas.spoon/Documents/MarathonHacks/AUDIT_Deployments.txt")
-(def strends  "C:/Users/thomas.spoon/Documents/MarathonHacks/SandTrends.txt")
-
+(def maxt (atom nil))
 
 ;;Allows us to define filters to avoid doing work.
 (def ^:dynamic *srcs* #{})
@@ -80,6 +84,9 @@
 ;;A working set of demand information, maps location->demand-data 
 ;;if the location exists in the demand-data
 (def ^:dynamic *demand-map* nil)
+
+(def ^:dynamic dep-group-key :DemandType)
+
 ;;demand names have [start...duration] in them, for now. this is a
 ;;little brittle but it works for us.
 (defn get-demanddata! [v]  (get *demand-map* v))
@@ -98,25 +105,46 @@
 (def ^:dynamic *deployment-name* (juxt :Unit :DeployInterval))
 
 (def depfields (into #{} (map keyword (keys schemas/deprecordschema))))
+;;Using transients now to build up the deployments map quickly
 (defn load-deployments [path]
-  (->> (tbl/tabdelimited->table (slurp path) :schema schemas/deprecordschema)
-       (tbl/table-records)
-       (filter (fn [r] (*deployment-record-filter* r)))
+  (->> (tbl/tabdelimited->records path :schema schemas/deprecordschema)
+       (r/filter (fn [r] (*deployment-record-filter* r)))
        (reduce (fn [acc r]
-                 (assoc acc (*deployment-name* r) r)) {} )))
+                 (assoc! acc (*deployment-name* r) r)) (transient {}))
+       (persistent!)))
 
 ;;function for determining how to split our trends if we decompose a 
 ;;sandtrends file.
 (def ^:dynamic *split-key* :SRC)
+(def ^:dynamic *last-split-key* *split-key*)
+
 (defn where-key [k f] (fn [r] (f (get r k))))  
+
+(def ^:dynamic *byDemandType?* false)
+(def ^:dynamic *run-path* nil)
+
+
+;after testing, it looks like transitive substitutions won't occur, so this is okay.
+(defn srcs+ [demand-types & {:keys [additions] :or {additions :Donor}}]    
+  (->> (tbl/tabdelimited->records (str *run-path* "AUDIT_RelationRecords.txt"))
+    (r/filter (fn [r] (contains? demand-types ((if (= additions :Donor) :Recepient :Donor) r))))
+    (r/map (if (= additions :Donor) :Donor :Recepient))
+    (reduce conj demand-types)
+    ))
 
 (defmacro only-srcs [xs & expr]
   `(let [srcs# (set ~xs)
-         filterf# (fn [v#] (contains? srcs# v#))]
-     (binding [~'proc.core/*demand-trend-pre-filter*  filterf#
-               ~'proc.core/*demand-trend-filter*      (where-key :SRC filterf#)
-               ~'proc.core/*location-record-filter*   (where-key :SRC filterf#)
-               ~'proc.core/*deployment-record-filter* (where-key :DemandType filterf#)]
+         filterf# (fn [v#] (contains? srcs# v#))
+         loc-filterf# (fn [s#] (contains? (srcs+ srcs# :additions :Donor) s#))
+         demand-filterf#  (fn [t#] (contains? (srcs+ srcs# :additions :Recepient) t#))       ]
+     (binding [;if looking at src performance only, need anything that can receive our interests as well
+               ~'proc.core/*demand-trend-pre-filter*  (if *byDemandType?* filterf# demand-filterf#) 
+               ~'proc.core/*demand-trend-filter* (where-key :SRC (if *byDemandType?* filterf# demand-filterf#)) 
+               ;If we're showing demand satisfaction, we need location on the SRCs that can donate to our interest
+               ~'proc.core/*location-record-filter* (where-key :SRC (if *byDemandType?* loc-filterf# filterf#))
+               ~'proc.core/*deployment-record-filter* (where-key (if *byDemandType?* :DemandType :UnitType) 
+                                                                 filterf#)
+               ] 
        ~@expr)))
 
 ;;this is a hack for now...
@@ -157,10 +185,11 @@
      :SRC  src
      :compo compo}))
 
-(defn rconj [x coll] (conj coll x))
+(defn rconj [x coll] (conj coll x)); cute.  Just so we can use our pipeline
 
+(comment 
 (defn locs->events [xs]
-  (let [le (last xs)]
+  (let [le (last xs)] ;last event
     (->> xs
          (partition 2 1)
          (mapv (fn [[l r]]
@@ -168,22 +197,36 @@
                     end   (:T r)
                     duration (- end start)]
                 (assoc l :start start :duration duration))))
-         (rconj (assoc le :start (:T le) :duration 1)))))
+         (rconj (assoc le :start (:T le) :duration 1)))))) ;oops. :duration should be up to tfinal
+
+;this will include all locations at the moment.  we will only select deployments from this table later
+(defn locs->events2 [xs]
+  (let [le (last xs)] ;last event
+    (->> xs
+         (partition 2 1)
+         (mapv (fn [[l r]]
+              (let [start (:T l)
+                    end   (:T r)
+                    duration (- end start)]
+                (assoc l :start start :duration duration))))
+         (rconj (assoc le :start (:T le) :duration (+ 1 (- @maxt (:T le)))))))) ;+1 since we'll consider last day processed
+
 
 (defn unit-locs [recs]
-  (->>(group-by :EntityFrom recs)
-      (map (fn [[u xs]]
+    (->> (group-by :EntityFrom recs)
+         (map (fn [[u xs]]
                 (let [t-entries (group-by :T (sort-by :idx 
                                                       (map #(select-keys % [:idx :T :EntityTo]) xs)))
                       es (->> (seq     t-entries)
-                              (sort-by first)
-                              (map     second)
+                              (sort-by first) ;keep time for sorting
+                              (map     second) ; get rid of time, now have a seq of seq of recs
                               (map (fn [es] (if (== (count es) 1)  (first es) ;no
                                         ;single change at that point
                                         ;in time.
-                                                (last es))))
-                              (locs->events))] 
-                  [(name->unit u) es])))))
+                                                (last es)))) ; but if (= (count es) 1), doesn't (= (first es) (last es))?
+                                        ;now have a sequence of last events for each day
+                              (locs->events2))] 
+                  [(name->unit u) es]))))) ;es are events with start and duration now
 
 ;;this is a hack...we need a way to be more data driven in the future.
 (defn quick-category [loc]
@@ -199,9 +242,10 @@
      ~else))
 
 ;;produce a seq of {name unitid src compo start duration location}
+;why are we keeping track of init? isnit init always start?
 (defn loc-records [ulocs]  
   (let [inits (atom (transient {}))
-        get-init (fn get-init [name start]
+        get-init (fn get-init [name start] ;why do we need a map of [name start] to start? seems redundant
                     (if-let [res (get @inits [name start])]
                       res
                       (do (swap! inits assoc! [name start] start)
@@ -218,15 +262,13 @@
                         :category  (get-else ddata :Category (quick-category EntityTo))
                         :fill-type "Filled"})) es))  ulocs)))
 
-
-
+;;Eliminated intermediate table and usage of slurp.
 ;;This ties it all together and lets us build a location table from
 ;;the records.
 (defn location-table [path]
-  (->> (tbl/tabdelimited->table (slurp path) :schema schemas/locschema)
-       (tbl/table-records)
-       (map-indexed (fn [idx r] (assoc r :idx idx)))
-       (unit-locs)
+  (->> (tbl/tabdelimited->records  path :schema schemas/locschema)
+       (r/map-indexed (fn [idx r] (assoc r :idx idx)))
+       (unit-locs) ;calls reduce, we're okay, returns a seq.
        (loc-records)
        (filter *location-record-filter*)
        (tbl/records->table)))
@@ -243,36 +285,26 @@
 
 (defn demand-name [d]
   (clojure.string/join "_" [(:Priority d) (:Vignette d) (:SRC d) (str "[" (:StartDay d) "..." 
-                                                                      (+ (:StartDay d) (:Duration d)) "]")]))
-
-(def lastmap (atom nil))
-
-;;this is a hack to ensure we are generating demand names just like marathon.
+                                                                       (+ (:StartDay d) (:Duration d)) "]")]))
+;;Changed 
+;this is a hack to ensure we are generating demand names just like Marathon (without Out-ofscope)
 (defn inscope-srcs [path]
- (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/inscope-schema path))
-      (tbl/table-records)
-      (map :SRC)
-      (set)))  
-
-(defn load-demand-map [path]
-  (let [scope-path  (clojure.string/replace path "AUDIT_DemandRecords" "AUDIT_InScope")
-        inscope     (inscope-srcs scope-path)
-        unique-name (fn [m r] (let [nm (demand-name r)] (if (contains? m nm)
-                                                          (str nm "_" (inc (count m)))
-                                                           nm)))
-        ]
+   (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/inscope-schema path))
+       (tbl/table-records)
+       (map :SRC)
+       (set)))
+  
+;what if I changed the sourcing rules back to normal?
+(defn load-demand-map [path] ;load up out of scope (set of those that are out of scope
+  (let [scope-path (clojure.string/replace path "AUDIT_DemandRecords" "AUDIT_InScope")
+        inscope (inscope-srcs scope-path)
+        unique-name (fn [m r] (let [nm (demand-name r)] (if (contains? m nm) (str nm "_" (inc (count m))) nm))) ]          
     (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/drecordschema path))
-         (tbl/table-records)
-         (filter (fn [r]
-                   (and (:Enabled r)
-                        (inscope (:SRC r))
-                                        ;(*demand-trend-filter* r)
-                        )))
+         (tbl/table-records)       
+         (filter (fn [r] (and (:Enabled r) (inscope (:SRC r));(*demand-trend-filter* r) ;look at this how does it work?
+                              )))
          (reduce (fn [acc r]
-                   (assoc acc (let [uname (unique-name acc r)]
-                                (println uname)
-                                 uname)  r)) {} )
-         (reset! lastmap))))
+                   (assoc acc (unique-name acc r) r)) {} ))))
   
 ;;once we have the demandrecords, we'd "like" to slurp in the records
 ;;that are of interest, to augment our demand meta data.
@@ -381,10 +413,20 @@
 (defn sample-cycle-trends [xs] 
   (sample-trends xs #(get % :UIC) #(get % :tstart) identity))
 
+;;this is a bottleneck due to the volume of data in demandtrends.
+;; (defn dtrend-parser  [fields]
+;;   (let [parsef  (parse/parsing-scheme schemas/dschema :default-parser  identity)
+;;         rec     (fn [xs] (reduce-kv (fn [acc idx v] (assoc acc (nth fields idx) v)) {} xs))]
+;;     (comp rec (parse/vec-parser fields parsef))))
+
+;;a bit faster.
 (defn dtrend-parser  [fields]
-  (let [parsef  (parse/parsing-scheme schemas/dschema :default-parser  identity)
-        rec     (fn [xs] (reduce-kv (fn [acc idx v] (assoc acc (nth fields idx) v)) {} xs))]
-    (comp rec (parse/vec-parser fields parsef)))) 
+  (let [flds    (object-array fields)        
+        parsef  (->> (parse/parsing-scheme schemas/dschema :default-parser  identity)
+                     (parse/vec-parser fields))]
+    (assert (<= (count fields) 32) "Expected field-width of <=32")
+    (fn [xs]
+      (util/zip-record! flds (.arrayFor ^clojure.lang.PersistentVector (parsef xs) 0)))))
   
 (defn fill [r] (- (:TotalRequired r)  (:Deployed r)))
 (defn unfilled? [r]  (pos? (fill r)))
@@ -393,7 +435,15 @@
   (for   [s samplers
           [trend ts] s]
     (keys ts)))
-   
+
+(defn get-st-end-samps [samplers] ;ts are the start times.  we also need the end times
+  (for   [s samplers
+          [trend ts] s]
+    (->> (map (fn [[t r]] [t (:end r)]) ts)
+      (reduce concat) 
+      (set)
+      (seq))))
+                  
 
 ;;loke some, but returns the nth position of the element found, or nil
 ;;if no pred yields true.
@@ -406,7 +456,8 @@
                          (inc acc)))
                      0 xs)
             @found)))
-        
+
+;;__Using reducers now, exploting transients too__
 ;;This probably won't work so hot on the real file....
 ;;note, we only "really" care about unfilled demandtrends....
 ;;and when that happens, we want to create n records for each 
@@ -415,66 +466,104 @@
   (let [fields       (util/get-headers path)
         src-field    (some-n #{:SRC} fields) ;this is baked in, may
                                         ;need more generality...
-        parse-fields (dtrend-parser fields)
+        parse-fields (dtrend-parser fields) ;could inline this.
         tlast        (atom 0)
         unfilled     (atom (transient #{}))
-        demandmeta   (atom {})]
-    (with-open [rdr (clojure.java.io/reader path)]
-      [(->> (line-seq rdr)
-            (rest)
-            (map    tbl/split-by-tab)
-            (filter (fn [xs] (*demand-trend-pre-filter* (nth xs src-field))))
-            (map     parse-fields)
-            (filter  *demand-trend-filter*) ; moved up....
-            (map    (fn [r] (if (> (:t r) @tlast) (do (reset! tlast (:t r)) r) r)))
-            (map    (fn [r] (if (contains? @demandmeta (:DemandName r)) r
-                                (do (swap! demandmeta 
-                                           assoc  
-                                           (:DemandName r) 
-                                           {:DemandGroup (:DemandGroup r)
-                                            :Vignette    (:Vignette r)
-                                            :Required    (:TotalRequired r)
-                                            :Operation   (:Operation r)
-                                            :SRC         (:SRC r)}) 
-                                    r))))
-            (map-indexed (fn [idx r] 
-                           (let [fl (fill r)
-                                 _  (when (pos?  fl)
-                                      (swap! unfilled conj! idx))]
-                             (assoc r :Unfilled fl))))
-            (tbl/records->table))
-       @tlast  @demandmeta (persistent! @unfilled)])))
+        demandmeta   (atom (transient {}))] ;using transient now. 
+    [(->> (general/line-reducer  path)
+          (r/drop 1)
+          (r/map    tbl/split-by-tab) ;slows us down with creation of vector.
+          (r/filter (fn [xs] (*demand-trend-pre-filter* (nth xs src-field))))
+          (r/map     parse-fields)
+          (r/filter  *demand-trend-filter*) ; moved up....
+          (r/map    (fn [r] (if (> (:t r) @tlast) (do (reset! tlast (:t r)) r) r)))
+          (r/map    (fn [r] (if (get @demandmeta (:DemandName r)) r
+                              (do (swap! demandmeta 
+                                         assoc!  
+                                         (:DemandName r) 
+                                         {:DemandGroup (:DemandGroup r)
+                                          :Vignette    (:Vignette r)
+                                          :Required    (:TotalRequired r)
+                                          :Operation   (:Operation r)
+                                          :SRC         (:SRC r)}) 
+                                  r))))
+          (r/map-indexed
+           (fn [idx r] 
+             (let [fl (fill r)  ;please note, this is unmet and not "fill"
+                   _  (when (pos?  fl)  ;not always positive if we have overlaps
+                         ;unfilled are idxs of the records where we have unfilled stuff
+                        (swap! unfilled conj! idx))] 
+               (assoc r :Unfilled fl))))
+          (tbl/records->table))
+       @tlast  (persistent! @demandmeta) (persistent! @unfilled)]))
   
 (defn unfilled-demands [dtrends]
   (tbl/select :from dtrends :where (fn [r] (pos? (:Unfilled r))))) 
   
-
 (defn fill-profile [xs] 
   (spork.util.general/clumps (fn [r] (if (pos? (:Unfilled r)) (:Unfilled r) :filled)) xs))
 
+(defn overlap-profile [xs]
+  (spork.util.general/clumps (fn [r] (if (pos? (:Overlapping r)) (:Overlapping r) :filled)) xs))
+  
+
+(comment
+;even though a :DemandName has multiple records with the same
+;:Unfilled quantity, we might have multiple samples of this quantity at different
+;times, so this just keeps the first one and adds a duration.
+
+;We'll also get a demandtrend record on the last day of the simulation for each active demandname
 (defn fill-seq [xs]
   (->> xs
        (map (fn [[s recs]]
-              (let [ts (:t (first recs))
-                    tf (:t (last  recs))]
-                (assoc (first recs) :duration (- tf ts) :end tf))))))
+              (let [ts (:t (first recs)) 
+                    tf (+ 1 (:t (last  recs)))] ; tf needs a +1 since :t is the day the demand is active. Takes care of single demandtrend for a demandname, too
+                                                ;this is okay for lastday, too if we consider last day to be processed in Marathon
+                (assoc (first recs) :duration (- tf ts) :end tf)))))))
+
+;Oops. if we just use the first and last times available as in fill-seq
+;for one period of unfilledness from demandtrends,
+;we aren't including the unfilledness from the last time through to the next time (if this isn't the last demandtrend record for that demand)
+
+;if the last clump is an unmet. I think conjing a nil will always give us what we want.
+(defn fill-seq2 [xs]
+  (->>  (partition 2 1 nil xs);nil so that we know we made it to the end of the demandname and hence, our last unfilled record only has duration one day
+    (filter (fn [[[s _] [s2 _]]] (not (identical? s :filled)))) ;so, s2 could be :filled..... 
+    (map (fn [[[s recs] [s2 recs2]]]
+           (let [ts (:t (first recs)) 
+                 tf (if recs2 
+                      (:t (first  recs2))
+                      (+ (:t (last  recs)) 1))]  ;if this is the last record for this demandname, we need to use this
+             (assoc (into {} (first recs)) :duration (- tf ts) :end tf))))))
+
+
+;;Tom change.
+;;This aux function allows us to view vectors or sequences of flyrecords 
+;;as valid table records.
+(defn as-records [xs]
+  (if (vector? xs) xs
+      (tbl/table-records xs)))
 
 ;;given a table of demandtrends that contains unfilled records, 
 ;;we can determine periods of unfilled-ness, assuming we have 
 ;;the entire history of the deltas in the demandtrends.  We 
 ;;want derive a table of [demandname start stop qty] 
 ;;that contains distinct unfilled periods.
+;;We need to make a change here to allow us to use flyrecords instead of 
+;;the entire demandtrends table.
 (defn unfilled-periods [dtrends] 
-  (->> (for [[nm recs] (group-by :DemandName (tbl/table-records dtrends))]                
+  (->> (for [[nm recs] (group-by #(get % :DemandName) (as-records dtrends))]                
          (->> recs
               (fill-profile)
-              (filter (fn [[s _]] (not (identical? s :filled))))
-              (fill-seq)))
-       (filter seq)
-       (reduce concat)))
+              ;(filter (fn [[s _]] (not (identical? s :filled)))) ;only keeps the unmet records. take this out with fill-seq2
+              (fill-seq2)))
+       (filter seq) ;this would get rid of nils, but will we ever have nils?
+       (apply concat))) ;concat the results of the for loop
 
 (defn fold-count [coll]     (r/fold + (fn ([acc n] (unchecked-inc acc)) ([] 0)) coll))
 (defn fold-into-vector [r]  (r/fold (r/monoid into vector) conj r))
+
+
 
 ;;we want to combine samples from one or more samplers.
 ;;In this case, we're adding a new set of samples, derived from the
@@ -493,7 +582,7 @@
 ;;So one idea is to sample from t = 1...some tmax for every member 
 ;;of the population in the locations.
 ;;Do the same for the demand trends.
-
+  
 (defn samples-at 
   ([m t intersectf]
      (reduce-kv (fn [acc u samples]
@@ -512,6 +601,7 @@
 ;;THis only returns missed demand, we end up filtering out everything
 ;;else.  We could go a LOT faster if we simply excluded region where
 ;;there are no misses, although, ostensibly, we're fast enough....still.
+
 (defn expand-unfilled [r t]
   (let [n     (:Unfilled r)
         qty   (if (pos? n) 1 0)
@@ -552,7 +642,7 @@
         qty   (if (pos? n) n 0)
         loc   (:DemandName r)
         ddata (get-demanddata! loc) 
-        operation  (get-else ddata :Operation (throw (Exception. (str [:no-ddata loc])))) ;ugh, do we have this information elsewhere?
+        operation  (get-else ddata :Operation (throw (Exception. (str [:no-ddata loc :r r])))) ;ugh, do we have this information elsewhere?
         category   (get-else ddata :Category)  ;ugh, do we have this elsewhere?
         ]
     {:location  loc, 
@@ -574,7 +664,7 @@
 (defn demand-fill-samples-at [m t]
   (->> (samples-at m t)
        (r/filter identity) ;ensure we have samples...
-       (r/map second)
+       (r/map second) ;this will give us a sequence of the active records
        (r/mapcat #(expand-unfilled % t))))
 
 ;;expanding misses is simpler
@@ -584,14 +674,33 @@
        (r/map-indexed 
         (fn [idx r]
           (expand-misses (second r) t idx)))))
-
-(defn sample-sand-trends [samples locsampler demsampler]
+         
+(defn end-at-zero 
+  "If demsampler is sampling demandtrends, we need to account for the fact that the a DemandName becomes inactive 
+(all quantities go back to 0) after the last record."
+  [demsampler]
+  (reduce-kv (fn [acc k v]
+               (let [[t r] (last v)]
+                 (assoc acc k (assoc v (+ t 1) (merge r {:t 0 
+                                                         :TotalRequired 0
+                                                         :TotalFilled 0
+                                                         :Overlapping 0 
+                                                         :Deployed 0
+                                                         :ACFilled 0 
+                                                         :RCFilled 0
+                                                         :NGFilled  0
+                                                         :GhostFilled 0	
+                                                         :OtherFilled 0
+                                                         :Unfilled 0})))))
+             {} demsampler))
+  
+  
+(defn sample-sand-trends [samples locsampler demsampler]  ;returns all loc and dmdtrend samples for every t in samples concatenated into one seq
   (->> samples 
-       (r/mapcat (fn [t]
-                   (r/mapcat (fn [f] (f t))
-                             [#(supply-samples-at locsampler %)
-                              #(demand-fill-samples-at demsampler %)
-                              ])))))
+    (r/mapcat (fn [t]
+                (r/mapcat (fn [f] (f t))
+                          [#(supply-samples-at locsampler %)
+                           #(demand-fill-samples-at (end-at-zero demsampler) %)])))))
 
 (defn missed? [r]  (= (:compo r) "Ghost"))
 
@@ -611,7 +720,7 @@
                           (-> acc
                               (conj! x)
                               (conj! (+ x pad))
-                              (conj! (- x pad)))))
+                              (conj! (- x pad))))) ;why the pad?
                     (transient #{}))
             (persistent!)          
             (filter (fn [x]
@@ -681,15 +790,16 @@
 ;;each of those records, convert them to unfilled units, then to
 ;;deployments.
 ;;These records should be identical to our deployment records above, 
-;;since they are merely a join between a location record and at
+;;since they are merely a join between a location record and a
 ;;deployment (in this case, a fake deployment).  We should be able 
 ;;to simply append these records to the merged deployment records and
 ;;have the fill sampler like as normal.
+
 (defn derive-missed-deployments [dtrends demand-map] 
   (binding [*demand-map* demand-map]
-    (->> (unfilled-periods dtrends) 
+    (->> (unfilled-periods dtrends)
          (map-indexed (fn [idx r]
-                        (expand-misses r (:t r) idx)))
+                        (expand-misses r (:t r) idx))) ;t will be the start day of the unfilled quantity
          (map missed-deployment-record)
          (vec))))
 
@@ -717,17 +827,18 @@
         ;;                                            (times (:start r)))))                           
            deployers (tbl/select  :from loctable  ;only select filling records.
                                   :where (fn [r] (contains? depmap [(:name r)
-                                                                    (:start r)])))                           
-           excluded-keys #{} ;#{:DemandGroup :Unit}
-           new-keys     (vec (filter (complement excluded-keys)
-                                     (keys (second (first depmap)))))
+                                                                    (:start r)])))
+           excluded-keys #{} ;#{:DemandGroup :Unit}  These look like they're excluded keys for depmap
+           new-keys     (vec (filter (complement excluded-keys) ;deploymap keys
+                                     (keys (second (first depmap))))) ;filters out keys in exlcuded keys
            key->idx   (reduce-kv (fn [acc idx k] (assoc acc k idx)) {} new-keys)
            new-fields (atom  (transient (mapv (fn [_] (transient [])) new-keys)))
            empty-rec  (zipmap new-keys (repeat nil))]
-       (->>    (tbl/conj-fields 
-                (->> (tbl/select :fields [:name :start] :from deployers)
+       (when (not (empty? (:columns deployers))) ;in case a unit doesn't have any deployments...
+         (->>    (tbl/conj-fields 
+                (->> (tbl/select :fields [:name :start] :from deployers) ;This looks like only necessary if excluded-keys.
                      (reduce (fn [flds {:keys [name start]}]
-                               (let [deprec (get depmap [name start] empty-rec)]
+                               (let [deprec (get depmap [name start] empty-rec)] ;getting the deployment data for each record from loctable
                                  (reduce (fn [acc k] 
                                            (let [idx  (get key->idx k)
                                                  v    (nth @acc idx)]
@@ -740,7 +851,7 @@
                      (mapv persistent!)         
                      (map-indexed (fn [idx xs] [(nth new-keys idx) xs])))
                 deployers)
-               (tbl/rename-fields {:UnitType :SRC})))))
+               (tbl/rename-fields {:UnitType :SRC}))))))
 
 (defn append-sampling-info [deployment-data]
   (let [n (tbl/record-count deployment-data)]
@@ -786,19 +897,22 @@
   (->> (samples-at tmap t)
        (r/filter (fn [tr-sample]
                    (when-let [x (second tr-sample)]
-                     (and (<= (start x) t) (>= (stop x) t)))))))
+                     (and (not= (start x) (stop x)) (<= (start x) t) (>= (stop x) t)))))))
 
 (defn fill-samples-at [m t] 
-  (r/map (fn [{:keys [DeployInterval FollowOn DemandGroup] :as r}] 
+  
+  (r/filter (fn [{:keys [start end]}] (not= start end))
+            
+            (r/map (fn [{:keys [DeployInterval FollowOn DemandGroup] :as r}] 
            (let [sampled (not (== DeployInterval t))]
              (assoc r 
                :start t 
                :sampled sampled
-               :dwell-plot? (and (not sampled)
+               :dwell-plot? (and (not sampled) ;samples are the subsequent sampling of one demand
                                  (not FollowOn)
                                  (not (= DemandGroup "NotUtilized"))))))
          (r/filter identity
-                   (r/map  second (start-stop-sample :start :end m  t)))))
+                   (r/map  second (start-stop-sample :start :end m  t))))))
 
 (defn sample-fill-trends [samples fillsampler]
   (->> samples 
@@ -809,128 +923,165 @@
   (for [[g xs] (group-by keyf (tbl/table-records tab))]
     [g (tbl/records->table xs)]))
 
-(def rs (atom nil))
+;;If we ever change the data protocol for fillrecords, we have
+;;to update these fields.  They determine the ordering of the
+;;output, for consistency sake and regression testing.
+(def fill-field-order
+  [:compo	:location	:end	:quantity	:unitid
+   :fill-type	:duration	:start	:operation	:name	:SRC
+   :category	:Unit	:DemandGroup	:FillType	:FollowOn
+   :Component	:DeploymentID	:DwellYearsBeforeDeploy	:DeployDate
+   :FollowOnCount	:AtomicPolicy	:Category	:DeployInterval
+   :FillPath	:Period	:Demand	:PathLength	:OITitle
+   :BogBudget	:CycleTime	:DeploymentCount	:DemandType
+   :FillCount	:Location	:DwellBeforeDeploy	:Policy
+   :sampled	:dwell-plot?])
 
 ;;Assuming we have demand records, we know which records are unfilled.
-(defn dump-fills-with-ghosts
+; loctable looks like the stuff in loc-records
+;deploymap has keys like (juxt :Unit :DeployInterval) from deployment records with vals as the deployment rec
+(defn dump-fills-with-ghosts ;overlap table. then do 7 arguments
   [rootpath outname splitkey loctable deploymap demandtrends demandmap]
-     (let [outpath      (str rootpath outname)
+     (let [outpath    (str rootpath outname)
            lazy-headers (atom nil) 
-           ms           (util/mstream rootpath outname lazy-headers)
-           _            (io/hock outpath "") ;creates folder structure and
+           ms         (util/mstream rootpath outname lazy-headers)
+           _          (io/hock outpath "") ;creates folder structure and
                                         ;whatnot
-           _            (println [:emitting :fills outpath])    
-           _            (println [:preparing :samples])
-           _            (println [:computing :missed-deployments])
-           missed-map   (into {} (group-by splitkey (derive-missed-deployments 
-                                                    demandtrends demandmap)))
-           ]
-       
+           _          (println [:emitting :fills outpath])    
+           _          (println [:preparing :samples])
+           _          (println [:computing :missed-deployments])
+           ;this takes up some memory. would it require less memory
+           ;to derive-missed-deployments within the multistream instead of building a giant map?
+           ;missed-map (into {} (group-by splitkey (derive-missed-deployments 
+           ;                                        demandtrends demandmap)))
+           demands-by-split (group-by splitkey ;always SRC or SRC interest here
+                                      (seq (util/table->flyrecords demandtrends)))
+           locations-by-split (group-by splitkey (tbl/table-records loctable))
+           ;oops.  we might have unmet demand SRCs that have no matching SRC in locations, but they are not out of scope since 
+           ;substitutions could fill these unmet demands.  In this case, we'll go through normal doseq but with an empty sequence of loc records
+           ;for these unmet srcs
+           demands-without-units (clojure.set/difference (set (keys demands-by-split)) (set (keys locations-by-split)))
+           ;for demands without locations, just give them an empty vector and we'll doseq through these soon
+           locations-by-split (reduce (fn [location-map unmet-demand-src] 
+                                        (assoc location-map unmet-demand-src [])) locations-by-split demands-without-units)]
        (with-open [stream ms]
-         (doseq [[k recs]    (group-by splitkey (tbl/table-records loctable))]
-           (let [                 _ (do (println k) (reset! rs recs))
-                                   
-                 filltable   (merge-deployment-data deploymap (tbl/records->table recs))
+         (doseq [[k recs]    locations-by-split]
+           (let [;will now return nil with no deployments
+                 filltable (merge-deployment-data deploymap (tbl/records->table recs)) 
+                 ;but this is slow.  What about keeping demandtrends as records? ;however, I got a stream closed error.
+                 misses (derive-missed-deployments (get demands-by-split k) demandmap)]
+             (if (and (nil? filltable) (empty? misses)) 
+               ;might want not_utilized records...
+               (ppr/pprint (str "No deployments for unit type " k " or missed demands for demand type " k)) 
+                 (let [filltable  (if (nil? filltable) (tbl/records->table misses) (concat-records filltable misses))
+                       filltable   (->> filltable
+                                     (append-sampling-info)
+                                     (tbl/order-fields-by fill-field-order))
+                       ;  (append-overlapping filltable overlapsampler)
+                       latest-deployment-sample (reduce max 0 (r/map :end  filltable))
+                       fillsampler (sample-fills filltable deploymap) ;don't use deploymap. fillsampler has units as keys. then vals are another map with keys as time and 1 rec as vals.
+                       ;(get-samples ) will return all a sequence of sequences of ts
+                       ts          (minimum-samples  (conj (get-st-end-samps [fillsampler]) [latest-deployment-sample])) ;points in time with discrete samples
+                       _ (println [:ld latest-deployment-sample
+                                   :latest (last ts) 
+                                   :sampled (reduce max (mapcat vec  (get-samples [fillsampler])))])
+                       headers     (tbl/table-fields filltable)
+                       all-headers (conj headers :deltat)              
+                       _           (reset! lazy-headers  (str (clojure.string/join \tab all-headers)))
+                       t          (atom (first ts))]          
+                   (reduce (fn [acc r] 
+                             (let [w     (util/get-writer! ms (*last-split-key* r))
+                                   _ (when (nil? (splitkey r))
+                                       ;(throw (Exception. (str r)))
+                                       
+                                       )
+                                   tnow  (get r :start)
+                                   delta (if (== tnow @t) acc 
+                                           (let [res (- tnow @t)
+                                                 _   (reset! t tnow)]
+                                             res))]
+                               (do (doseq [h headers]
+                                     (util/write! w (str (get r h) \tab)))                          
+                                 (util/write! w (str delta))
+                                 (util/new-line! w)
+                                 delta)))
+;this 1 is the deltat for our first sample.  deltat is time since last sample.  This accounts for no deltat on the last sample
+                           1 
+                           (sample-fill-trends ts fillsampler)))))))))
 
-                 filltable   (if-let [misses (get missed-map k)]
-                               (concat-records filltable misses)
-                               filltable)
-                 filltable   (append-sampling-info filltable) 
-                 latest-deployment-sample (reduce max 0 (r/map :end  filltable))
-                 fillsampler (sample-fills filltable deploymap)
-                 ts          (minimum-samples  (conj (get-samples [fillsampler]) [latest-deployment-sample]))
-                 _ (println [:ld latest-deployment-sample
-                             :latest (last ts) 
-                             :sampled (reduce max (mapcat vec  (get-samples [fillsampler])))])
-                 headers     (tbl/table-fields filltable)
-                 all-headers (conj headers :deltat)              
-                 _           (reset! lazy-headers  (str (clojure.string/join \tab all-headers)))
-                 t          (atom (first ts))]          
-             (reduce (fn [acc r] 
-                       (let [w     (util/get-writer! ms (splitkey r))
-                             _ (when (nil? (splitkey r))
-                                        ;(throw (Exception. (str r)))
-                              
-                                 )
-                             tnow  (get r :start)
-                          delta (if (== tnow @t) acc 
-                                    (let [res (- tnow @t)
-                                          _   (reset! t tnow)]
-                                      res))]
-                         (do (doseq [h headers]
-                               (util/write! w (str (get r h) \tab)))                          
-                             (util/write! w (str delta))
-                          (util/new-line! w)
-                          delta)))
-                     0
-                     (sample-fill-trends ts fillsampler)))))))
+(def ^:dynamic *sandtrends* false)
 
 ;;revised version of dump-sandtrends, using multstreams to 
 ;;create multiple files simultaneously, save processing time.
-(defn dump-sandtrends 
+(defn dump-sandtrends ;we dump fills here, too!
   [& {:keys [rootpath locpath dpath outname splitkey samples drecpath deploypath fillpath]
-      :or {locpath locs 
-           dpath dtrends
-           outname "sandtrends.ms.edn"
+      :or {outname "sandtrends.ms.edn"
            splitkey :SRC}}]
   (let [_ (println [:reading :demandrecords drecpath])
         fillpath (or (when fillpath fillpath) (str rootpath "/fills/"))
-        dmap (when drecpath (load-demand-map drecpath))
+        ;fails here when no fills
+        dmap (when drecpath (load-demand-map drecpath)) ;map of unique demand name (like marathon with an _ if duplicate demand) to the demand record"
         deploymap (when deploypath (load-deployments deploypath))]
     (binding [*demand-map* dmap]
-      (let [_          (println [:reading :locationtable locpath])
-            loctable   (location-table locpath) 
-            _          (println [:reading :demandtrends dpath])
-            res        (get-unfilled-demandtrends dpath) ;appends unfilled field to trends.
+      (let [ _          (println [:reading :demandtrends dpath])
+            res        (get-unfilled-demandtrends dpath) ;appends unfilled field to trends.            
             [dtrends tmax demandmeta] res
+            _ (reset! maxt tmax)
+            _          (println [:reading :locationtable locpath])
+            loctable   (location-table locpath) 
             _          (println [:sampling :locations])
-            locsamples (sample-location-trends (tbl/table-records loctable))            
+            locsamples (sample-location-trends (tbl/table-records loctable))
             _          (when deploymap 
                          (do (println [:dumping :fills])
-;                             (dump-fills fillpath "fills.ms.edn" splitkey loctable deploymap))
-                             (dump-fills-with-ghosts
-                              fillpath "fills.ms.edn" splitkey loctable deploymap dtrends dmap))
-                         )
-            _           (println [:sampling :demandtrends])
-            dsamples    (sample-demand-trends (tbl/table-records dtrends))
-            headers     (into (tbl/table-fields loctable) [:DemandGroup :Vignette])
-            all-headers (conj headers :deltat)
-            get-group   (memoize (fn [^String nm] 
-                                  (if-let [res  (get demandmeta nm)]
-                                    (get res :DemandGroup)
-                                    (first (clojure.string/split nm #"_")))))
-            try-get    (fn [r  k] 
-                         (case k 
-                           :DemandGroup  (get-group (:location r))
-                           :Vignette     (get (get demandmeta (:location r)) k nil)
-                           (if-let  [res (get r k)] res 
-                             (when  (and (not (contains? r k)) 
-                                         (not (depfields k)))
-                               (throw (Exception. (str "can't find" [k :in r])))))))
-            ms      (util/mstream rootpath outname (str (clojure.string/join \tab all-headers)))
-            outpath (str rootpath outname)
-            _       (io/hock outpath "") ;creates folder structure and whatnot
-            _       (println [:emitting :sandtrends outpath])            
-            samples (cond   (identical? samples :min) 
-                                (minimum-samples (get-samples [locsamples dsamples]))
-                            (not (nil? samples))   samples
-                            :else (r/range 1 (inc tmax)))
-            t       (atom (first samples))]
-        (with-open [stream ms]
-          (reduce (fn [acc r] 
-                    (let [w     (util/get-writer! ms (splitkey r))
-                          tnow  (get r :start)
-                          delta (if (== tnow @t) acc 
-                                    (let [res (- tnow @t)
-                                          _   (reset! t tnow)]
-                                      res))]
-                      (do (doseq [h headers]
-                            (util/write! w (str (try-get r h) \tab)))
-                          (util/write! w (str delta))
-                          (util/new-line! w)
-                          delta)))
-                  1
-                  (sample-sand-trends samples locsamples dsamples)))))))
+                           ;                             (dump-fills fillpath "fills.ms.edn" splitkey loctable deploymap))
+                           (dump-fills-with-ghosts
+                             fillpath "fills.ms.edn" splitkey loctable deploymap dtrends dmap))
+                         )]
+        (if *sandtrends*
+          (let [
+                _           (println [:sampling :demandtrends])
+                dsamples    (sample-demand-trends (tbl/table-records dtrends)) ;dsamples is a map of demand name to a map of time to a record
+                                                                                ;from demandtrends
+                headers     (into (tbl/table-fields loctable) [:DemandGroup :Vignette])
+                all-headers (conj headers :deltat)
+                get-group   (memoize (fn [^String nm] 
+                                       (if-let [res  (get demandmeta nm)] ;demandmeta is a map of demand name to condensed dtrend info.
+                                                                           ;pulled from dtrends
+                                         (get res :DemandGroup)
+                                         (first (clojure.string/split nm #"_")))))
+                try-get    (fn [r  k] 
+                             (case k 
+                               :DemandGroup  (get-group (:location r))
+                               :Vignette     (get (get demandmeta (:location r)) k nil)
+                               (if-let  [res (get r k)] res 
+                                 (when  (and (not (contains? r k)) 
+                                             (not (depfields k)))
+                                   (throw (Exception. (str "can't find" [k :in r])))))))
+                ms      (util/mstream rootpath outname (str (clojure.string/join \tab all-headers)))
+                outpath (str rootpath outname)
+                _       (io/hock outpath "") ;creates folder structure and whatnot
+                _       (println [:emitting :sandtrends outpath])            
+                samples (cond   (identical? samples :min) 
+                          (minimum-samples (get-samples [locsamples dsamples]))
+                          (not (nil? samples))   samples
+                          :else (r/range 1 (inc tmax)))
+                t       (atom (first samples))]
+            (with-open [stream ms]
+              (reduce (fn [acc r] 
+                        (let [w     (util/get-writer! ms (splitkey r))
+                              tnow  (get r :start)
+                              delta (if (== tnow @t) acc 
+                                      (let [res (- tnow @t)
+                                            _   (reset! t tnow)]
+                                        res))]
+                          (do (doseq [h headers]
+                                (util/write! w (str (try-get r h) \tab)))
+                            (util/write! w (str delta))
+                            (util/new-line! w)
+                            delta)))
+                      1
+                      (sample-sand-trends samples locsamples dsamples))))
+          (println "Skipping sandtrends for " rootpath))))))
 
 (defn xs->src [^String ln]  (nth (tbl/split-by-tab ln) 8))
 
@@ -939,7 +1090,8 @@
 ;;aggregate.  Dwell stats and misses tell us most of what we need to 
 ;;know.
 (defn sandtrends-from [root & {:keys [splitkey samples] :or {splitkey *split-key*}}]                                                             
-  (let [sandroot (str root "/sand/")]
+  (let [sandroot (str root "/sand/")
+        _ (println splitkey)]
     (dump-sandtrends :locpath (str root "/locations.txt")
                      :dpath   (str root "/DemandTrends.txt")
                      :deploypath (str root "/AUDIT_Deployments.txt")
@@ -989,8 +1141,7 @@
   (sample-trends (demand-samples drecs) (fn [[t xs]] (:SRC (first (:actives xs)))) first 
                  (fn [[t xs]] (reduce + (map :Quantity (:actives xs))))))
 ;testing mstream
-(comment        
-  (def root "C:/Users/thomas.spoon/Documents/MarathonHacks/"))           
+
 ;;given a sandtrends file, we can munge a bunch of different metrics
 ;;from it.
 
@@ -1028,73 +1179,47 @@
                   nil
                   (r/mapcat (fn [t] (cycle-samples-at sampler t))  (r/map #(* % 30) (r/range 0 (/ (inc tmax) 30)))))))))
 
-(def interests {:BCT    ["BCT"  ["47112R000"   "77302R500"   "77302R600" "87312R000"]]
-                :DIV    ["DIV"  ["87000R000"   "87000R100"]]
-                :CAB    ["CAB"  ["01302R200"]] 
-                :GSAB   ["GSAB" ["01226R100"]]
-                :CSSB   ["CSSB" ["63426R000"]]
-                :ATTACK ["ATTACK BN" ["01285R100"]]
-                :ENG    ["Engineers" ["05418R000" "05417R000"]]
-                :SAPPER ["SAPPER" ["05330R100"]]
-                :MP     ["MP" ["19477R000"]]
-                :TRUCK  ["TRUCKS" ["55727R100"
-                                   "55727R100"
-                                   "55727R200"
-                                   "55727R300"
-                                   "55728R100"
-                                   "55728R200"
-                                   "55728R300"
-                                   "55779R000"]]
-                :CA    ["Civil Affairs" ["41750G000" "41750G100"]]
-                :All ["All SRCs" ["55727R300" "01226R100" "63426R000" "05418R000" "41750G100" "55728R100" 
-                                  "01302R200" "01285R100" "19477R000" "47112R000" "55779R000" "55728R300" 
-                                  "55727R100" "87000R000" "55728R200" "05330R100" "05417R000" "77302R500" 
-                                  "55727R200" "87000R100" "77302R600" "87312R000" "41750G000"]]})
+
+;moved these to proc.interests
+;(def interests proc.example/definterests)
 
 (def surges {:PreS ["Pre-Surge" ["PreSurge"]]
              :Surge ["Surge" ["Surge1"]]})
 
-(defn interest->srcs [int]  (second (get interests int)))
-(defn by-interest [ints]
+
+
+(defn interest->srcs [int interests]  (second (get interests int)))
+
+(defn by-interest [ints interests & {:keys [last-key?] :or {last-key? false}}]
   (let [pairs (map #(get interests %) ints)
         memb->int    (reduce (fn [acc [k members]]
                                (reduce (fn [inner m]
-                                         (assoc inner m k)) acc members))
-                             {} pairs)]
-    (fn [r] (get memb->int (:SRC r) (:SRC r)))))
+                                         (assoc inner m k)) acc members)) ;associates each src to its title
+                             {} pairs)
+        key-type (if (and last-key? *byDemandType?*) :DemandType :SRC) ]
+    (fn [r] (get memb->int (key-type r) (key-type r)))))
 
-(defmacro only-by-interest [ints & expr] 
-  `(let [srcs# (set (mapcat (fn [[k# [inter# srcs#]]]  srcs#) (select-keys interests ~ints)))]
+(defmacro only-by-interest
+  [ints interests & expr] 
+  `(let [srcs# (set (mapcat (fn [[k# [inter# srcs#]]]  srcs#) (select-keys ~interests ~ints)))] ;srcs is a sequence of all srcs
     (only-srcs srcs#
-               (binding [*split-key* (by-interest ~ints)]
+               (binding [*split-key* (by-interest ~ints ~interests)
+                         *last-split-key* (by-interest ~ints ~interests :last-key? true)
+                         ]
                  ~@expr))))
 
 (defn group-deployments [ds src phase]
   (let [srcs (if (vector? src) 
                            (set (second src))
                            #{src})
-        pred (fn [r] (and (srcs (:DemandType r))
+        pred (fn [r] (and (srcs (dep-group-key r))
                           (zero? (:FollowOnCount r))
                           (not= (:Demand r) "NotUtilized")
                           (if phase
                             (= (:Period r) phase)
                             true)))]
     ($group-by [:Component] ($where pred ds))))
-;;Note: we need to standardize the plotting colors for these guys,
-;;maybe define a custom theme for the series?
-;;plotting
-(defn view-deployments [ds src]  
-  (let [ds     (util/as-dataset ds)
-        title  (if (vector? src) (first src) src)
-        groups (group-deployments ds src)
-        [series d] (first groups)
-        plt (scatter-plot :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d 
-                          :title (str title " Dwell Before Deployment")
-                          :x-label "Time (days)"
-                          :y-label "Dwell (years)")]
-    (doseq [[series d] (rest groups)]
-      (add-points plt :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d))
-    (view plt)))
+
 
 (defn set-xticks [plot tick] 
   (.setTickUnit (.getDomainAxis (.getPlot plot)) 
@@ -1108,32 +1233,18 @@
         bound  (.getDatasetCount plt)
         xmin (atom 0)
         xmax (atom 0)]
-  (doseq [ds (map #(.getDataset plt %) (range bound))]
+  (doseq [ds (map #(.getDataset plt %) (range bound))] ;a sequence of datasets from the polot
     (reduce (fn [_ [nm s]]
               (do (swap! xmin min (.getMinX s))
                   (swap! xmax max (.getMaxX s))))
             nil
-             (stacked/series-seq ds)))
+             (stacked/series-seq ds))) ;ds is one dataset, s is one point?
   [@xmin @xmax]))
 
-;;If we have an xyplot, it's stored in multiple datasets vs. 
-;;a single datatable.
-(defn add-trend-lines! 
-  ([chrt aggfn]  
-     (let [bnds (all-bounds chrt) ;(stacked/get-bounds chrt)
-           plt  (.getXYPlot chrt)
-           bound    (.getDatasetCount plt)]
-       (doseq [ds (map #(.getDataset plt %) (range bound))
-               [idx [nm ^XYSeries ser]] (map-indexed vector  (stacked/series-seq ds))]
-          (let [xys  (stacked/xycoords ser)
-                y    (aggfn xys)
-                xmax (reduce max (xs xys))]
-            (do (add-lines chrt bnds [y y] :series-label (str nm "Avg"))
-                ;not currently working....
-                ;(set-stroke chrt :data ds :series (inc idx) :width 4 :dash 10) 
-            ))))
-     chrt)
-  ([chrt] (add-trend-lines! chrt (comp incanter.stats/mean ys))))
+(defn xy-bounds [chart]
+  (let [s (util/state chart)]
+    {:x [(.getLowerBound (:x-axis s)) (.getUpperBound (:x-axis s))]
+     :y [(.getLowerBound (:y-axis s)) (.getUpperBound (:y-axis s))]}))
 
 (def default-deploy-colors 
   {"AC"    (stacked/faded :blue 50)
@@ -1146,22 +1257,58 @@
    "USAR"  (stacked/faded :green 50)
    "Ghost" (stacked/faded :grey 50)})
 
+
+
+
+(defn no-d-plot 
+  "Returns a jfreechart with NoDataMessage as message and a title"
+  [message title]
+  (let [catplot (doto (new org.jfree.chart.plot.CategoryPlot)
+                  (.setNoDataMessage message))
+        chart (new org.jfree.chart.JFreeChart catplot)]
+    (.setTitle chart title)
+    chart))
+  
+;;If we have an xyplot, it's stored in multiple datasets vs. 
+;;a single datatable.
+(defn add-trend-lines! ;let's base this on the chart instead
+  ([chrt & {:keys [aggfn bnds] :or {bnds (all-bounds chrt) aggfn (comp incanter.stats/mean ys)}}]  
+     (let [;bnds ;(all-bounds chrt) ;(stacked/get-bounds chrt)
+           
+           plt  (.getXYPlot chrt)
+           bound    (.getDatasetCount plt)]
+       (doseq [ds (map #(.getDataset plt %) (range bound))
+               [idx [nm ^XYSeries ser]] (map-indexed vector  (stacked/series-seq ds))]
+          (let [xys  (stacked/xycoords ser)
+                y    (aggfn xys)
+                xmax (reduce max (xs xys))]
+            (do (add-lines chrt bnds [y y] :series-label (str nm "Avg"))
+              (stacked/set-colors  chrt default-deploy-colors)
+                ;not currently working....
+                ;(set-stroke chrt :data ds :series (inc idx) :width 4 :dash 10) 
+            ))))
+     chrt))
+
 (defn deployment-plot [ds src phase & {:keys [colors tickwidth] :or {colors  default-deploy-colors tickwidth 365} :as opts}]
   (let [ds     (util/as-dataset ds)
-        title  (if (vector? src) (first src) src)
+        ;title  (if (vector? src) (first src) src)
+        fulltitle (str ;title " "
+                       phase (when phase " ") "Dwell Before Deployment")
         groups (group-deployments ds src phase)
         [series d] (first groups)
-        plt        (scatter-plot :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d 
-                                 :title (str title " " phase " Dwell Before Deployment")
-                                 :x-label "Time (days)"
-                                 :y-label "Dwell (years)")]
-    (doseq [[series d] (rest groups)]
-      (add-points plt :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d))
-    (set-xticks plt tickwidth)  
-    (add-trend-lines! plt)
-    (stacked/set-colors  plt colors)
+        plt        (if d ;need to check for any deployments or this will throw error when d is nil (no dwell deployments)
+                     (scatter-plot :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d 
+                                   :title fulltitle
+                                   :x-label "Time (days)"
+                                   :y-label "Dwell (years)")
+                     (no-d-plot "No deployments to plot" fulltitle)) ]
+    (when d (doseq [[series d] (rest groups)]
+              (add-points plt :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d))
+      (set-xticks plt tickwidth)  
+      ;(add-trend-lines! plt :bnds (:x (xy-bounds plt))) this was moved to do-charts-from in case we lengthen the chart axis later, then the trend line won't go all the way across the chart
+      (stacked/set-colors  plt colors)
+      )
     plt))
-
 
 (def category-colors 
   {"Mission"              java.awt.Color/blue 
@@ -1284,10 +1431,6 @@
               height (:height (.shape-bounds hist))]
           (sketch/beside (sketch/->labeled-box (str [SRC compo]) :black :light-gray 0 0 114 height)
                          hist)))))))
-(comment 
-  (def bcttrends "C:/Users/thomas.spoon/Documents/SRMPreGame/runs/revisedfa_surge3/sand/BCT.txt")
-  (def bct-ds    (util/as-dataset bcttrends))
-)
 
 ;;the problem now is this...
 ;;when we have something, committed, committed, committed, prepare, prepare, 
@@ -1304,33 +1447,209 @@
                          (swing/shelf (chart! l )  (chart! r))
                          (swing/shelf (chart! bl) (chart! br)))))
 
+  
 (defn paired-chart [& [top bottom & rest]]  
   (swing/display (swing/empty-frame)
                         (swing/stack
                            (chart! top) 
                            (chart! bottom))))
-;;;;________Craig used:
+    
+;In order to have font size match between java and css, there is some conversion.  This formula was pulled from online
+;and assumes Java used 120dpi.  This conversion looks close but is it right?
+(defn java->css [fontsize] ;fontsize as int. 
+  (let [screenres (.getScreenResolution (Toolkit/getDefaultToolkit))]
+  (Math/round (/ (* fontsize screenres) 72.))))
+
+(defn do-chart-label 
+  "Returns a JLabel for use above dwell-over-fill plot"
+  [line1 line2]
+  (let [label (swing/label (str "<html>Run: " line1 "<br>Interest: " line2 "<html>"))
+        font (new java.awt.Font "Tahoma" java.awt.Font/BOLD 20)]
+    (.setFont label font) 
+    label))
+
+(defn do-chart-pane 
+  "Returns a JTextPane for use above dwell-over-fill plot"
+  [string] ;pane instead of label will make the text copyable
+  (let [pane (new JTextPane)
+        px (str (java->css 20))] ;=16 with 96 dpi screen res
+    ;font (new java.awt.Font "Tahoma" java.awt.Font/BOLD 20)
+    ;this is the font for the dwell-before-deployment and fill chart titles
+    (.setContentType pane "text/html")
+    (.setEditable pane false)
+    (.setBackground pane nil)
+    (.setBorder pane nil)
+    (.setText pane (str "<html><CENTER><p style=font-family:Tahoma;font-size:16px><b>"
+                         string "<html>"))
+    ;(.setFont pane font) ;unfortunately, this is not that simple for JTextPanes, and this will do nothing so used html instead
+    pane))
+
+;after set domain and set range-might have different visuals. 
+;To set up markers on the plots (like vertical lines), look at incanter-see how they're doing it
+;then implement it (copy) to operate on jfree chart if can't use their stuff directly.
+
+(defn get-run-name [root]
+  (last (clojure.string/split root #"/")))
+
+(defn phase-starts 
+  "Will return a map of phase name to phase start"
+  [root]
+  (let [phaserecs (->> 
+                (tbl/tabdelimited->table (slurp (str root "AUDIT_PeriodRecords.txt")) :parsemode :noscience 
+                                         ;:schema schemas/periodrecs
+                                         )
+                (tbl/table-records)
+                (filter (fn [r] (not (or (= (:Name r) "Initialization") (= (:Name r) "PreSurge"))))) ;probably don't need lines for these
+                (map (juxt :Name :FromDay)))]
+    phaserecs))
+
+(defn add-phase-lines 
+  "Take a chart and adds vertical lines indicating the start of each phase"
+  [ph-starts lbound ubound chart]
+    (reduce (fn [cht [title ph-start]] (add-polygon cht [[ph-start lbound] [ph-start ubound]])) chart ph-starts))
+ 
+(defn show-stack [[pane dwell fill]]
+  (let [_ (println (type (chart! fill)))
+        _ (println (type fill))
+        _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))]
+  (swing/display (swing/empty-frame) (swing/stack pane (chart! dwell) (chart! fill)))))
 
 (defn dwell-over-fill [root src subs phase]
   (let [path (str root "fills/" (first src) ".txt")]
     (if (spork.util.io/fexists? path)
-      (paired-chart (deployment-plot  (str root "AUDIT_Deployments.txt") src phase) 
-                    (stacked/as-chart (stacked/fill-data (util/as-dataset path) phase subs)
-                                      {:title "Fill"
-                                       :tickwidth 365}))
+      (let [[fill-data trend-info] (stacked/fill-data (util/as-dataset path) phase subs)]
+      [(proc.core/do-chart-pane (str "Run: " (get-run-name root) "<br>Interest: " (first src) )) ;"<br>" for a newline
+       (deployment-plot  (str root "AUDIT_Deployments.txt") src phase); avg line should continue
+       (binding [proc.stacked/*trend-info* trend-info] ;Meh.  if we don't have new trend-info, this is a circular binding
+         ;fill-data is XYdataset ;as-chart returns a jfree chart object?
+         (stacked/as-chart fill-data {:title "Fill" :tickwidth 365}))])
       (println [:path path "Does Not Exist!" :ignoring src]))))
 
 (def somephases ["PreSurge" "Surge1" "Surge2" "BetweenSurge" "PostSurge"])
-  
-(defn do-charts-from 
-  ([root] (do-charts-from root [:TRUCK :ENG :CSSB :DIV :GSAB :SAPPER :MP :CAB :ATTACK :BCT :CA]))
-  ([root xs & {:keys [subs phases] :or {subs false phases [nil]}}]             
+
+(defn rem-head-colons [path] ;should probably roll this into tabdelimited->table
+  (with-open [rdr (clojure.java.io/reader path)]
+    (let [lines (doall (line-seq rdr))]
+      (reduce (fn [s newline] (str s "\r\n" newline)) ;to make the string look like it did before
+              ;it's probably faster to use rename-fields as in below.
+              (conj (rest lines) (clojure.string/replace (first lines) #":" "")))))) 
+
+;_____
+;;workflow is: read in a table and then convert that table to records for processing
+;;note: we could (maybe should) use reducers/transducers for this, for 
+;;for efficiency, but for now we stick with plan vanilla seq functions.
+
+;todo: look into: this is failing when called on "V:/dev/allsrcs.txt", but works when tabdelimited->table is called separately
+;;without a :schema.
+
+;;also, I think this function is only used for coaches cards right now.
+(defn files->records [paths & {:keys [computed-fields]}]
+  (let [;add our new computed fields to a sequence of records
+        add-fields! (if computed-fields 
+                      (fn [xs] 
+                        (r/map (fn [x]
+                               (reduce-kv (fn [acc fld f]
+                                            (assoc acc fld (f acc)))
+                                          x computed-fields)) xs))                                   
+                      identity)
+    bigrecs (->>  (for [path paths]
+            (->> (tbl/tabdelimited->records (slurp path) :parsemode :noscience 
+                                   :schema schemas/fillrecord :keywordize-fields? true)
+              ;(tbl/table-records)
+              ;(filter :dwell-plot?)
+              (add-fields!)
+              (into [])
+              ))
+          (reduce concat))]
+    bigrecs))
+
+
+    ;(if computed-fields (tbl/order-fields-by
+;[:DemandType :SRC :compo :OITitle :DemandGroup :operation :start :end :duration :quantity :fill-type :Unit 
+ ;:DaysAfterPHII :DwellBeforeDeploy :TrainLevel :FollowOn :sampled :dwell-plot? :deltat :location :Location
+ ;:Category :FollowOnCount 
+ ;:category 
+; :FillType 
+ ;:name 
+ ;:Component 
+ ;:DeploymentID 
+ ;:DwellYearsBeforeDeploy 
+ ;:DeployDate 
+ ;:AtomicPolicy 
+ ;:DeployInterval 
+ ;:FillPath 
+ ;:Period 
+ ;:unitid 
+ ;:Demand 
+ ;:PathLength 
+ ;:BogBudget 
+ ;:CycleTime 
+ ;:DeploymentCount 
+ ;:FillCount 
+ ;:Policy
+ ;:run 
+; ] bigtable)
+          ; bigtable
+         ; )
     
-    (only-by-interest xs
-                      
-                      (do (doseq [int xs
-                                  phase phases]
-                            (dwell-over-fill root (get interests int) subs phase))))))
+    
+
+;use compressed
+;faster but can't remove fields
+(defn files->file-complete [paths outfile]
+  (let [header (util/first-line (first paths))]
+    (with-open [w (clojure.java.io/writer outfile)]
+      (let [_ (util/writeln! w header)]
+        (doseq [p paths]
+          (with-open [rdr (clojure.java.io/reader p)]
+            (doseq [l (rest (line-seq rdr))]
+              (util/writeln! w l))))))))
+
+(defn coll->str
+  "takes a collection, keeps only the vals in indices, and returns one str joined by \t. indices is a collection"
+  ([coll indices] (coll->str "\t" coll indices))
+  
+  ([separator ^clojure.lang.PersistentVector coll ^clojure.lang.PersistentVector indices]
+    (let [bound (count indices)
+          sep   (str separator)]      
+      (loop [idx 1
+             ^java.lang.StringBuilder acc 
+             (java.lang.StringBuilder. (str (.nth coll (.nth indices 0))))]
+        (if (== idx bound)   (str acc)
+          (recur (unchecked-inc idx)
+                 (-> acc (.append sep) (.append (.nth coll (.nth indices idx))))
+                 ))))))
+
+;& {:keys [computed-fields] :or {computed-fields {:incdt (fn [coll] 
+
+
+(defn files->file [paths outfile & {:keys [keptfields]}]
+  (if keptfields
+    (let [allfields (proc.util/raw-headers (first paths))
+          fieldidxs (->> (map-indexed vector allfields)
+                      (reduce concat)
+                      (apply hash-map))
+          keptfields (set keptfields)
+          keepidxs (reduce-kv (fn [acc k v] (if (contains? keptfields v) 
+                                              (conj acc k) acc)) [] fieldidxs)
+          fewerflds (coll->str allfields keepidxs) 
+          notutidx (first (keep-indexed (fn [idx v] (if (= v ":DemandGroup") idx)) allfields))] ;find the index of NotUtilized
+      (with-open [w (clojure.java.io/writer outfile)]
+        (let [_ (util/writeln! w fewerflds)]
+          (doseq [p paths]
+            (with-open [rdr (clojure.java.io/reader p)]
+              (doseq [l (rest (line-seq rdr))]
+                (let [rowvals (tbl/split-by-tab l)
+                      smaller-l (coll->str rowvals keepidxs)]
+                  (when (not= (nth rowvals notutidx) "NotUtilized")
+                    (util/writeln! w smaller-l)))))))))
+    (files->file-complete paths outfile)))
+
+
+;;usage=>
+;;(fields->table (get-some-paths "c:/the/project/path") 
+;;               :computed-fields {:name (fn [r] :Flewelling)})
+
 
 ;;;;_____________
 
@@ -1348,13 +1667,42 @@
 ;testing 
 (comment 
 
-(def case34 "C:/Users/thomas.spoon/Documents/TAA 18-22/derived data/runs/19 Mar/980/Case31_4/")
+(def caseA "Runpath")
 (only-by-interest [:BCT] 
-                  (def locs   (location-table   (str case34 "Locations.txt")))
-                  (def deps   (load-deployments (str case34 "AUDIT_Deployments.txt")))
+                  (def locs   (location-table   (str caseA "Locations.txt")))
+                  (def deps   (load-deployments (str caseA "AUDIT_Deployments.txt")))
                   (def md     (merge-deployment-data deps locs))                  
-                  (def bctds  (first (get-unfilled-demandtrends (str case34 "DemandTrends.txt"))))
-                  (def dm     (load-demand-map (str case34 "AUDIT_DemandRecords.txt")))
+                  (def bctds  (first (get-unfilled-demandtrends (str caseA "DemandTrends.txt"))))
+                  (def dm     (load-demand-map (str caseA "AUDIT_DemandRecords.txt")))
                   (def missed (derive-missed-deployments bctds dm)))
 
 )
+
+(defn upd-files? 
+  "Given a sequence of file paths as strings, checks to see whether the date last modified of the files
+is monotonically increasing from left to right."
+  [roots]
+  (let [files (map clojure.java.io/file roots)]
+    (apply < (map #(.lastModified %) files))))
+
+(defn new-proc?
+  "returns true if allfiles required for and produced by type all have a date last modified which is monotonically 
+increasing. This is useful to make sure that all post-processing steps for type have been re-freshed after a new 
+Marathon run.  Might want to specify a sequence of interest names from the interests you are running."
+  [root type & {:keys [interests] :or {interests ["fills.ms.edn"]}} ]
+  (let [strfn (fn [fnames] (map (fn [piece] (str root piece)) fnames))
+        checkfn (comp upd-files? strfn)
+        audit ["locations.txt" "AUDIT_Deployments.txt"]
+        do-charts (vec (concat audit (map (fn [interest] (str "fills/" interest)) interests)))]
+  (case type
+    :audit (checkfn audit)
+    :sample! (checkfn do-charts)
+    :allfills (checkfn (conj do-charts "allfills+fields.txt")) 
+    :ccard (throw (Exception. "Filenames change.")) ;not real useful if ccard isn't input though
+    (throw (Exception. "type does not match a case.  Please use :audit, :sample!, or :allfills")))))
+
+(defn dtrend-sampler [root]
+  (let [drecs (tbl/table-records (tbl/tabdelimited->table (slurp (str root "DemandTrends.txt"))
+                                   :schema schemas/dschema :parsemode :noscience))]
+        (proc.core/sample-demand-trends drecs)))
+
