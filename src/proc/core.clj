@@ -1134,11 +1134,10 @@
 (defn where-src [src tab] (tbl/select :from tab :where (fn [r] (= (:SRC r) src))))
 (defn demand-samples [xs] (sample-trends (tbl/table-records xs) :SRC :StartDay :Quantity))
 
-
-
 ;;not working...
 (defn demand-profile [drecs]
-  (sample-trends (demand-samples drecs) (fn [[t xs]] (:SRC (first (:actives xs)))) first 
+  (sample-trends (demand-samples drecs)
+                 (fn [[t xs]] (:SRC (first (:actives xs)))) first 
                  (fn [[t xs]] (reduce + (map :Quantity (:actives xs))))))
 ;testing mstream
 

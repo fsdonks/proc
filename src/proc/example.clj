@@ -10,11 +10,14 @@
         )) 
 
 ;;This dumps out our fills and sandtrends for the interesting srcs.
-(defn run-sample!   "Call with eachsrc true if you want the fills for each SRC individually, or if you want to group the fills by interest,
-call with ints set to a symbol from proc.interests.
-call with :byDemandType? true if you want fills files by demandtype instead of the default by SRC. NotUtilized and Unmet records 
-will always be found in a fills file associated with the respective SRC or interest.  If you don't see a fills file for an SRC, is it
-in your interests?"
+(defn run-sample!
+  "Call with eachsrc true if you want the fills for each SRC individually, 
+   or if you want to group the fills by interest, call with ints set to a
+   symbol from proc.interests.
+   call with :byDemandType? true if you want fills files by demandtype
+   instead of the default by SRC. NotUtilized and Unmet records will always
+   be found in a fills file associated with the respective SRC or interest. 
+   If you don't see a fills file for an SRC, is it in your interests?"
   [path & {:keys [interests subints eachsrc byDemandType?] :or {interests ints/defaults byDemandType? true}}]
   (let [subs (if subints subints (keys interests))]
     (binding [proc.core/*byDemandType?* byDemandType?
@@ -31,12 +34,12 @@ in your interests?"
 ;You need to call run-sample! in order to make a folder for fills files within the Marathon run folder before calling do-charts-from
 (defn do-charts-from ;do we have too many arguments here?
   "Pass in your own interests if you'd like.  See examples of interests in proc.interests
-:group-key defaults to :DemandType for dwell-before-deployment plot.  Can set :group-key to :UnitType as well.
-Call with :sync false in order to not sync the x and y axis across these charts.  :sync defaults to true.
-Call with :phases set to a sequence of phases defined in the run in order to see separate charts for each phase.  Will throw
-a null pointer exception if one of your phases doesn't exist in the run.
-Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
-:dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
+  :group-key defaults to :DemandType for dwell-before-deployment plot.  Can set :group-key to :UnitType as well.
+  Call with :sync false in order to not sync the x and y axis across these charts.  :sync defaults to true.
+  Call with :phases set to a sequence of phases defined in the run in order to see separate charts for each phase.  
+  Will throw  a null pointer exception if one of your phases doesn't exist in the run.
+  Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
+  :dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
   [root & {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds] :or {subs false phases [nil] syncys false
                                                                 interests ints/defaults group-key :DemandType
                                                                 phase-lines true
@@ -98,7 +101,6 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
   (let [dset (stacked/roll-sand (util/as-dataset fpath) 
                                    :cols [:FillType :DemandType] :cat-function stacked/suff-cat-fill-subs )]
     (view (line-chart :start :quantity :group-by :Category :legend true :data dset))))
-
 
 ;given a parent directory, return us all paths of the run folders.... identify
 ;a run folder by some marathon file
