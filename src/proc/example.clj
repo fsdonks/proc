@@ -6,7 +6,8 @@
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
-        [proc.supply])) 
+        ;[proc.supply]
+        )) 
 
 ;;This dumps out our fills and sandtrends for the interesting srcs.
 (defn run-sample!   "Call with eachsrc true if you want the fills for each SRC individually, or if you want to group the fills by interest,
@@ -19,8 +20,8 @@ in your interests?"
     (binding [proc.core/*byDemandType?* byDemandType?
               proc.core/*run-path* path] 
       (if eachsrc
-      (binding [*last-split-key* (if byDemandType? :DemandType :SRC)] (sandtrends-from path))
-      (only-by-interest subs interests (sandtrends-from path))))))
+        (binding [*last-split-key* (if byDemandType? :DemandType :SRC)] (sandtrends-from path))
+        (only-by-interest subs interests (sandtrends-from path))))))
 
 ;Can do trac-like charts by demand group by doing (binding [proc.stacked/*by-demandgroup?* true] 
 ;                                                        (do-charts-from root :interests blah))
@@ -103,7 +104,10 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
 ;a run folder by some marathon file
 (defn run-names-from [rootsloc]) 
 
-
+(comment ;testing
+(def tp 
+  "C:/Users/tspoon/Documents/srm/tst/notionalv2/maxbase")
+  )
   
 
  
