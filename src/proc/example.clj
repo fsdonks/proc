@@ -19,8 +19,9 @@ in your interests?"
     (binding [proc.core/*byDemandType?* byDemandType?
               proc.core/*run-path* path] 
       (if eachsrc
-      (binding [*last-split-key* (if byDemandType? :DemandType :SRC)] (sandtrends-from path))
-      (only-by-interest subs interests (sandtrends-from path))))))
+        (binding [*last-split-key* (if byDemandType? :DemandType :SRC)]
+          (sandtrends-from path))
+        (only-by-interest subs interests (sandtrends-from path))))))
 
 ;Can do trac-like charts by demand group by doing (binding [proc.stacked/*by-demandgroup?* true] 
 ;                                                        (do-charts-from root :interests blah))
@@ -65,7 +66,9 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
         _ (when phase-lines (doseq [fill fills] (add-phase-lines phstarts 
                                                                  (.getLowerBound (:y-axis (util/state fill))) 
                                                                  (.getUpperBound (:y-axis (util/state fill))) 
-                                                               fill)))]
+                                                               fill)))
+       ; _ (doseq [fill fills] (Image.IO/write fill "jpg" "v:/"))
+        ]
     (doseq [chart charts] (show-stack chart))))
        
 ;;One function to make the files for the charts and display the charts at the same time

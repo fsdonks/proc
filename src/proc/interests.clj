@@ -106,6 +106,26 @@ a string and the root directory for the Marathon run"
     (reduce-kv (fn [acc k v] (assoc acc (keyword k) [k (vec v)])) {})))
   
 
+(defn groupSupportedBranches 
+  "roots is the path to a capability map table with fields of SRC, SupportedBranch, Capability group.  We'd
+like to create charts by SupportedBranch I believe"
+  [root]
+  (let [recs (spork.util.table/tabdelimited->records (slurp root) :parsemode :noscience 
+                                   :schema {"Capability Groupings" :text
+                                            "Branch" :text
+                                            "SRC" :text 
+                                            "OI Title" :text
+                                            "SupportedBranch" :text}
+                                            :keywordize-fields? true)]
+    (reduce (fn [acc {:keys [SupportedBranch SRC]}]
+              (if (= SupportedBranch "") acc
+                (if-let [[suppstr srcs]  (get acc (keyword SupportedBranch))]
+                  (assoc acc (keyword SupportedBranch) [SupportedBranch (vec (set (conj srcs SRC)))])
+                  (assoc acc (keyword SupportedBranch) [SupportedBranch [SRC]]))))
+            {} recs)))
+                  
+  
+  
 ;note that all SRCS listed here must be unique.
 (def definterests {:BCT    ["BCT"  ["47112R000"   "77302R500"   "77302R600" "87312R000"]]
                    :DIV    ["DIV"  ["87000R000"   "87000R100"]]
@@ -182,7 +202,9 @@ a string and the root directory for the Marathon run"
 
 (def taa2024deny 
 
-  {:14 ["14" ["14537R000" "14423R000" "14527RB00" "14537K000"]],
+  {
+   :BCT ["BCT" ["47112K000" "77202K000" "77202K100" "87312K000"]]
+   :14 ["14" ["14537R000" "14423R000" "14527RB00" "14537K000"]],
  :01
  ["01"
   ["01623K000"
@@ -476,7 +498,9 @@ a string and the root directory for the Marathon run"
    "08420R000"
    "08640R000"]]})
 
-(def taa2024defeat {:14 ["14" ["14537R000" "14423R000" "14527RB00" "14537K000"]],
+(def taa2024defeat {
+ :BCT ["BCT" ["47112K000" "77202K000" "77202K100" "87312K000"]]
+ :14 ["14" ["14537R000" "14423R000" "14527RB00" "14537K000"]],
  :01
  ["01"
   ["01623K000"
@@ -770,3 +794,78 @@ a string and the root directory for the Marathon run"
    "08420R000"
    "08640R000"]]})
 
+(def taa2024regrouped 
+  {:01 ["01" ["63375K000"]],
+ :42 ["42" ["42529RE00" "42529RA00"]],
+ :45 ["45" ["45413L000" "45423L000" "45500GB00"]],
+ :77
+ ["77"
+  ["63035K000"
+   "05315K800"
+   "63045K000"
+   "05315K600"
+   "06235K300"
+   "06235K100"]],
+ :05
+ ["05"
+  ["05473R000"
+   "05520RD00"
+   "05617R000"
+   "05402K000"
+   "05603KT00"
+   "05428R000"
+   "05520RE00"
+   "05520RB00"
+   "05437R200"
+   "05567RB00"
+   "05530RI00"
+   "05435K000"
+   "05530RH00"
+   "05439R000"
+   "05510RB00"
+   "05427R000"
+   "05543RH10"
+   "05429R000"]],
+ :06
+ ["06"
+  ["06602R000"
+   "63347R000"
+   "06465K000"
+   "06604A000"
+   "63346R200"
+   "06425R000"
+   "06433K000"
+   "06475K000"
+   "06333K000"]],
+ :44 ["44" ["44601R600" "44602K000" "44693R000" "44635K000"]],
+ :87 ["87" ["05315K500" "06385K000" "63025K000"]],
+ :55
+ ["55"
+  ["55727R300"
+   "55588RA00"
+   "55789R000"
+   "55779R000"
+   "55819R000"
+   "55560RE00"
+   "55829K000"
+   "55728R300"
+   "55506RA00"
+   "55727R100"
+   "55728R200"
+   "55716R000"
+   "55719R000"
+   "55606R000"]],
+ :47 ["47" ["06325K000" "05315K700" "63055K000"]],
+ :90 ["90" ["90472K000" "90873R000" "90588RA00" "90376K000"]],
+ :63
+ ["63"
+  ["63426K000"
+   "63475K000"
+   "63302K000"
+   "63702K000"
+   "63702K100"
+   "63475K100"]],
+ :09 ["09" ["09513KB00" "09513KA00" "09537RB00" "09537RA00"]]
+ :03 ["03" ["03420R300"]]})
+
+(def taa2024top10 [:63 :55 :05 :06 :44 :09 :42 :45 :90 :03])

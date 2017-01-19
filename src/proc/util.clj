@@ -11,148 +11,40 @@
             [iota :as iota]
             [spork.util.parsing :as parse]
             [spork.util.zipfile :as z]
-            [spork.util.general :as general]))
-
-(ns spork.util.table)
-
-;patched this for 2 reasons.  
-;1) If the last field has no value, we need to patch in an empty string for it.  Else, we try to aget an array                               
-;index which isn't present.                               
-;2) We can now bind *split-by* to #"," for csv files                           
-(def ^:dynamic *split-by* #"\t")
-(defn lines->records
-  "Produces a reducible stream of 
-   records that conforms to the specifications of the 
-   schema.  Unlike typed-lines->table, it does not store
-   data as primitives.  Records are potentially ephemeral 
-   and will be garbage collected unless retained.  If no 
-   schema is provided, one will be derived."
-  [ls schema & {:keys [parsemode keywordize-fields?] 
-                :or   {parsemode :scientific
-                       keywordize-fields? true}}]
-  (let [raw-headers   (mapv clojure.string/trim (clojure.string/split  (general/first-any ls) *split-by*))
-        fields        (mapv (fn [h]
-                              (let [root  (if (= (first h) \:) (subs h  1) h)]
-                                (if keywordize-fields?
-                                  (keyword root)
-                                  root)))
-                            raw-headers)
-        schema    (if (empty? schema)
-                    (let [types (derive-schema (general/first-any (r/drop 1 ls)) :parsemode parsemode)]
-                      (into {} (map vector fields types)))
-                    schema)
-        s         (unify-schema schema fields)
-        parser    (spork.util.parsing/parsing-scheme s)
-        idx       (atom 0)
-        idx->fld  (reduce (fn [acc h]
-                            (if (get s h)
-                              (let [nxt (assoc acc @idx h)
-                                    _   (swap! idx unchecked-inc)]
-                                nxt)
-                              (do (swap! idx unchecked-inc) acc))) {} fields)
-        ;;throw an error if the fld is not in the schema.
-        _ (let [known   (set (map name (vals idx->fld)))
-                missing (filter (complement known) (map name (keys s)))]
-            (assert (empty? missing) (str [:missing-fields missing])))]                                          
-    (->> ls
-         (r/drop 1)
-         (r/map  (fn [^String ln] (.split ln (if (= (.pattern *split-by*) "\\t") "\t" ","))))
-         (r/map  (fn [^objects xs]
-                   ;if the final field is empty, we won't get an extra empty string when splitting by tab.  If other fields are empty, we'll get an extra string.
-                  (let [last-fld-idx (apply max (keys idx->fld))
-                        last-fld-empty? (= (alength xs) last-fld-idx)]
-                   (reduce-kv (fn [acc idx fld]
-                                (let [new-val (if (and (= idx last-fld-idx) last-fld-empty?) "" (aget xs idx))]
-                                  (assoc acc fld (parser fld new-val)
-                                         
-                                         )))
-                              {} idx->fld))))
-         )))
-
-;wanted to patch this in case there is no value for the last field but didn't do anything yet (see comment)
-(defn typed-lines->table
-  "A variant of lines->table that a) uses primitives to build
-   up our table columns, if applicable, using rrb-trees.
-   b) enforces the schema, ignoring fields that aren't specified.
-   c) throws an exception on missing fields."
-  [ls schema & {:keys [parsemode keywordize-fields?] 
-                :or   {parsemode :scientific
-                       keywordize-fields? true}}]
-  (let [raw-headers   (mapv clojure.string/trim (clojure.string/split  (general/first-any ls) #"\t" ))
-        fields        (mapv (fn [h]
-                              (let [root  (if (= (first h) \:) (subs h  1) h)]
-                                (if keywordize-fields?
-                                  (keyword root)
-                                  root)))
-                            raw-headers)
-        s         (unify-schema schema fields)
-        parser    (spork.util.parsing/parsing-scheme s)
-        idx       (atom 0)
-        idx->fld  (reduce (fn [acc h]
-                            (if (get s h)
-                              (let [nxt (assoc acc @idx h)
-                                    _   (swap! idx unchecked-inc)]
-                                nxt)
-                              (do (swap! idx unchecked-inc) acc))) {} fields)
-        ;;throw an error if the fld is not in the schema.
-        _ (let [known   (set (map name (vals idx->fld)))
-                missing (filter (complement known) (map name (keys s)))]
-            (assert (empty? missing) (str [:missing-fields missing :names (vals idx->fld)])))
-        cols    (volatile-hashmap! (into {} (for [[k v] s]
-                                              [k (typed-col v)])))]                                          
-    (->> ls
-       
-         (r/drop 1)
-         (r/map  (fn [^String ln] (.split ln "\t")))
-         (reduce (fn [acc  ^objects xs] ;xs are a tab-split line)
-                   (let [last-fld-idx (apply max (keys idx->fld))
-                        last-fld-empty? (= (alength xs) last-fld-idx)]
-                   (reduce-kv (fn [acc idx fld]
-                                (let [c (get cols fld)]
-                                  (do (vswap! c conj! 
-                                              ;(if (and (= idx last-fld-idx) last-fld-empty?)
-                                                ;"" This doesn't work.  Besides, we'd have strings mixed with other types now.
-                                                (parser fld  (aget xs idx))) 
-                                                
-                                      acc))) acc idx->fld))) cols)
-    
- 
-         
-         (unvolatile-hashmap!)
-         (make-table)
-         )))
+            [spork.util.general :as general]
+            [proc.sporkpatches])
+  (:import [java.util.concurrent ConcurrentHashMap]))
 
 
-;patched because craig wanted to specify an order of the fields and wanted to write to the same file multiple times in separate calls.
-;;this is a pretty useful util function.  could go in table.
-(defn records->file [xs dest & {:keys [flds append? headers?] :or {flds (vec (keys (first xs))) append? false headers? true}}]
-  (let [hd   (first xs)
-        sep  (str \tab)
-        header-record (reduce-kv (fn [acc k v]
-                                   (assoc acc k
-                                          (name k)))
-                                 hd
-                                 hd)
-        
-        write-record! (fn [^java.io.BufferedWriter w r]
-                        (doto ^java.io.BufferedWriter
-                          (reduce (fn [^java.io.BufferedWriter w fld]
-                                    (let [x (get r fld)]
-                                      (doto w
-                                        (.write (str x))
-                                        (.write sep))))
-                                  w
-                                  flds)
-                            (.newLine)))]
-    (with-open [out (clojure.java.io/writer dest :append append?)]
-      (do (when headers? (write-record! out header-record))
-      (reduce (fn [o r]                
-                (write-record! o r))
-               out
-              xs)))))
+(defn ->string-pool
+  "Creates a canonicalized string pool, starting with n, bounded up to 
+   size bound.  Can be used likea function to canonicalize strings. When
+   applied to a string, if the string exists in the known set of strings,
+   the sole known reference to the already-existing string is returned, 
+   rather than the 'new' string.  For datasets with a low cardinality, 
+   we get a lot of referential sharing using this strategy.  Typically 
+   only used during parsing."
+  [n bound]
+  (let [^ConcurrentHashMap cm (ConcurrentHashMap. (int n))]
+    (reify clojure.lang.IFn
+      (invoke [this  x]
+        (do (when  (> (.size cm) (int bound))
+              (.clear cm))
+            (if-let [canon (.putIfAbsent cm x x)]
+              canon
+              x)))
+      clojure.lang.IDeref
+      (deref [this] (map key (seq cm))))))
 
+;;produces 100000 entries but they are share the same string references....
+;;I think this will significantly reduce our string munging.
+#_(defn test []
+    (let [sp (->string-pool 100 1000)]
+      (vec 
+       (take 100000
+             (map (fn [n] {:lbl (sp (str n))})
+                  (cycle (range 1000)))))))
 
-(ns proc.util)
 ;;Utility to help grab resources, primarily test data.
 (defn get-res
   "Gets the resource provided by the path.  If we want a text file, we 

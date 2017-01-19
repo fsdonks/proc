@@ -419,15 +419,37 @@
 ;;         rec     (fn [xs] (reduce-kv (fn [acc idx v] (assoc acc (nth fields idx) v)) {} xs))]
 ;;     (comp rec (parse/vec-parser fields parsef))))
 
+;;Working on using a string pool to cache string references.  We have a ton of repeated
+;;string values, so we can canonicalize them using a concurrent hashmap...
+;;So, we can wrap the parsef so that if we encounter the string, we can intern it...
+;;Rather than creating millions of strings, we should get a pretty good reduction
+;;in references this way...
+
 ;;a bit faster.
-(defn dtrend-parser  [fields]
+#_(defn dtrend-parser  [fields]
   (let [flds    (object-array fields)        
         parsef  (->> (parse/parsing-scheme schemas/dschema :default-parser  identity)
                      (parse/vec-parser fields))]
     (assert (<= (count fields) 32) "Expected field-width of <=32")
     (fn [xs]
       (util/zip-record! flds (.arrayFor ^clojure.lang.PersistentVector (parsef xs) 0)))))
-  
+
+;;faster still?
+(defn dtrend-parser  [fields]
+  (let [flds    (object-array fields)        
+        parsef  (->> (parse/parsing-scheme schemas/dschema :default-parser  identity)
+                     (parse/vec-parser fields))
+        sp      (util/->string-pool 1000 10000)]
+    (assert (<= (count fields) 32) "Expected field-width of <=32")
+    (fn [xs]
+      (util/zip-record! flds
+        (.arrayFor ^clojure.lang.PersistentVector
+                   (mapv (fn [x]
+                           (if (string? x)
+                             (sp x)
+                             x ))
+                         (parsef xs)) 0)))))
+
 (defn fill [r] (- (:TotalRequired r)  (:Deployed r)))
 (defn unfilled? [r]  (pos? (fill r)))
 
