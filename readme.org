@@ -1,0 +1,42 @@
+* proc
+
+A clojure-based post processor for the MARATHON 4.x / 3.x series simulations.
+Computes detailed temporal datasets (histories) from canonical simulation output.
+Provides a point of departure for additional tooling/scripting to produce 
+boutique data and interactive analysis. 
+
+* Usage
+
+Check example.cljs for the "working" api.  Note: this is alpha 
+quality research software, and is subject to change on a whim.
+
+One or more namespaces, particularly utilities, may be migrated 
+to other libraries (like SPOrK) or forked off if they have enough 
+density.  Additionally, entire namespaces "may" be jettisoned in the 
+future. 
+
+* Developer notes 
+
+"proc" began life as a simple set of scripts to offload tedious 
+data processing for discrete event simulation output.  
+
+It gained utility and traction, serving as a hub for additional 
+"non-simulation" specific features [stuff we didn't want to jam into 
+the simulation infrastructure]. 
+
+Consequently, "proc" is due for serious revision and rewriting.  In particular, 
+some of the charting and analysis scripts are open for serious revision/elimination. 
+
+Still, proc contains examples of collecting, joining, visualizing, and producing 
+temporal datasets from variable-step discrete samples.  
+
+This is an open source mirror of the production version of proc, and is likely to 
+be several revisions "behind."  For testing, integration, and verification purposes, 
+it serves as useful proxy for MARATHON 4.x .
+
+* License
+
+Copyright © 2015 FIXME
+
+Distributed under the Eclipse Public License either version 1.0 or (at
+your option) any later version.
