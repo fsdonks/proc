@@ -174,9 +174,10 @@
         (spork.util.io/hock (str (.root ms) "/" (.filename ms)) (str manifest)))))
 
 (defn write-in! [^multistream ms k v]
-  (write! (get-writer! ms k) (str k)))
+  (write! (get-writer! ms k) (str v)))
+
 (defn writeln-in! [^multistream ms k v]
-  (writeln! (get-writer! ms k) (str k)))
+  (writeln! (get-writer! ms k) (str v)))
 
 (defmacro write! [w ln]
   (let [w (vary-meta w assoc :tag 'java.io.BufferedWriter)
