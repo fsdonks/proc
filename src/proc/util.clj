@@ -122,36 +122,6 @@
          (make-table)
          )))
 
-
-;patched because craig wanted to specify an order of the fields and wanted to write to the same file multiple times in separate calls.
-;;this is a pretty useful util function.  could go in table.
-(defn records->file [xs dest & {:keys [flds append? headers?] :or {flds (vec (keys (first xs))) append? false headers? true}}]
-  (let [hd   (first xs)
-        sep  (str \tab)
-        header-record (reduce-kv (fn [acc k v]
-                                   (assoc acc k
-                                          (name k)))
-                                 hd
-                                 hd)
-        
-        write-record! (fn [^java.io.BufferedWriter w r]
-                        (doto ^java.io.BufferedWriter
-                          (reduce (fn [^java.io.BufferedWriter w fld]
-                                    (let [x (get r fld)]
-                                      (doto w
-                                        (.write (str x))
-                                        (.write sep))))
-                                  w
-                                  flds)
-                            (.newLine)))]
-    (with-open [out (clojure.java.io/writer dest :append append?)]
-      (do (when headers? (write-record! out header-record))
-      (reduce (fn [o r]                
-                (write-record! o r))
-               out
-              xs)))))
-
-
 (ns proc.util)
 ;;Utility to help grab resources, primarily test data.
 (defn get-res
