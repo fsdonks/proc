@@ -106,7 +106,13 @@
 
 (defmacro new-line! [w]
   (let [w (vary-meta w assoc :tag 'java.io.BufferedWriter)]
-    `(doto ~w (.newLine ))))
+    `(doto ~w (.newLine))))
+
+(defmacro writeln! [w ln]
+  (let [w (vary-meta w assoc :tag 'java.io.BufferedWriter)
+        ln (vary-meta ln assoc :tag 'String)]
+    `(doto ~w (.write ~ln)
+              (.newLine))))
 
 (def re-csv #", |,")
 (defn csv->tab [^String s]
