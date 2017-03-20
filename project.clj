@@ -1,10 +1,10 @@
-(defproject proc "0.2.0-SNAPSHOT"
+(defproject proc "0.2.1-SNAPSHOT"
   :description "Embeddable post-processor."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [spork "0.1.9.8-SNAPSHOT"]
+                 [spork "0.1.9.9-SNAPSHOT"]
                  [incanter "1.5.6"]
                  [iota "1.1.2"]]
   :repl-options {:init (do (println "Loading post processor")

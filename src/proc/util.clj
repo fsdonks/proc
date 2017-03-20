@@ -1,187 +1,74 @@
 ;;temporary storage until we get into spork.
 (ns proc.util
-  (:require [spork.util.io    :as io]
-            [spork.util.table :as tbl]
-            [clojure.edn]
-            [incanter.core :refer :all]
-            [incanter.io :refer :all]
-            [spork.util.temporal :as temp]
-            [proc.schemas :as schemas]
+  (:require [clojure.edn]
+            [incanter.core :refer  :all]
+            [incanter.io   :refer  :all]
+            [proc.schemas          :as schemas]
             [clojure.core.reducers :as r]            
             [iota :as iota]
-            [spork.util.parsing :as parse]
-            [spork.util.zipfile :as z]
-            [spork.util.general :as general]))
+            [spork.util [temporal :as temp]
+                        [io       :as io]
+                        [table    :as tbl]
+                        [parsing  :as parse]
+                        [zipfile  :as z]
+                        [general  :as general]
+                        [stream :as stream]]))
 
-(ns spork.util.table)
+;;deleted existing spork patches...
+;;Moved most functions over to spork, temporarily bridging via
 
-;patched this for 2 reasons.  
-;1) If the last field has no value, we need to patch in an empty string for it.  Else, we try to aget an array                               
-;index which isn't present.                               
-;2) We can now bind *split-by* to #"," for csv files                           
-(def ^:dynamic *split-by* #"\t")
-(defn lines->records
-  "Produces a reducible stream of 
-   records that conforms to the specifications of the 
-   schema.  Unlike typed-lines->table, it does not store
-   data as primitives.  Records are potentially ephemeral 
-   and will be garbage collected unless retained.  If no 
-   schema is provided, one will be derived."
-  [ls schema & {:keys [parsemode keywordize-fields?] 
-                :or   {parsemode :scientific
-                       keywordize-fields? true}}]
-  (let [raw-headers   (mapv clojure.string/trim (clojure.string/split  (general/first-any ls) *split-by*))
-        fields        (mapv (fn [h]
-                              (let [root  (if (= (first h) \:) (subs h  1) h)]
-                                (if keywordize-fields?
-                                  (keyword root)
-                                  root)))
-                            raw-headers)
-        schema    (if (empty? schema)
-                    (let [types (derive-schema (general/first-any (r/drop 1 ls)) :parsemode parsemode)]
-                      (into {} (map vector fields types)))
-                    schema)
-        s         (unify-schema schema fields)
-        parser    (spork.util.parsing/parsing-scheme s)
-        idx       (atom 0)
-        idx->fld  (reduce (fn [acc h]
-                            (if (get s h)
-                              (let [nxt (assoc acc @idx h)
-                                    _   (swap! idx unchecked-inc)]
-                                nxt)
-                              (do (swap! idx unchecked-inc) acc))) {} fields)
-        ;;throw an error if the fld is not in the schema.
-        _ (let [known   (set (map name (vals idx->fld)))
-                missing (filter (complement known) (map name (keys s)))]
-            (assert (empty? missing) (str [:missing-fields missing])))]                                          
-    (->> ls
-         (r/drop 1)
-         (r/map  (fn [^String ln] (.split ln (if (= (.pattern *split-by*) "\\t") "\t" ","))))
-         (r/map  (fn [^objects xs]
-                   ;if the final field is empty, we won't get an extra empty string when splitting by tab.  If other fields are empty, we'll get an extra string.
-                  (let [last-fld-idx (apply max (keys idx->fld))
-                        last-fld-empty? (= (alength xs) last-fld-idx)]
-                   (reduce-kv (fn [acc idx fld]
-                                (let [new-val (if (and (= idx last-fld-idx) last-fld-empty?) "" (aget xs idx))]
-                                  (assoc acc fld (parser fld new-val)
-                                         
-                                         )))
-                              {} idx->fld))))
-         )))
-
-;wanted to patch this in case there is no value for the last field but didn't do anything yet (see comment)
-(defn typed-lines->table
-  "A variant of lines->table that a) uses primitives to build
-   up our table columns, if applicable, using rrb-trees.
-   b) enforces the schema, ignoring fields that aren't specified.
-   c) throws an exception on missing fields."
-  [ls schema & {:keys [parsemode keywordize-fields?] 
-                :or   {parsemode :scientific
-                       keywordize-fields? true}}]
-  (let [raw-headers   (mapv clojure.string/trim (clojure.string/split  (general/first-any ls) #"\t" ))
-        fields        (mapv (fn [h]
-                              (let [root  (if (= (first h) \:) (subs h  1) h)]
-                                (if keywordize-fields?
-                                  (keyword root)
-                                  root)))
-                            raw-headers)
-        s         (unify-schema schema fields)
-        parser    (spork.util.parsing/parsing-scheme s)
-        idx       (atom 0)
-        idx->fld  (reduce (fn [acc h]
-                            (if (get s h)
-                              (let [nxt (assoc acc @idx h)
-                                    _   (swap! idx unchecked-inc)]
-                                nxt)
-                              (do (swap! idx unchecked-inc) acc))) {} fields)
-        ;;throw an error if the fld is not in the schema.
-        _ (let [known   (set (map name (vals idx->fld)))
-                missing (filter (complement known) (map name (keys s)))]
-            (assert (empty? missing) (str [:missing-fields missing :names (vals idx->fld)])))
-        cols    (volatile-hashmap! (into {} (for [[k v] s]
-                                              [k (typed-col v)])))]                                          
-    (->> ls
-       
-         (r/drop 1)
-         (r/map  (fn [^String ln] (.split ln "\t")))
-         (reduce (fn [acc  ^objects xs] ;xs are a tab-split line)
-                   (let [last-fld-idx (apply max (keys idx->fld))
-                        last-fld-empty? (= (alength xs) last-fld-idx)]
-                   (reduce-kv (fn [acc idx fld]
-                                (let [c (get cols fld)]
-                                  (do (vswap! c conj! 
-                                              ;(if (and (= idx last-fld-idx) last-fld-empty?)
-                                                ;"" This doesn't work.  Besides, we'd have strings mixed with other types now.
-                                                (parser fld  (aget xs idx))) 
-                                                
-                                      acc))) acc idx->fld))) cols)
-    
- 
-         
-         (unvolatile-hashmap!)
-         (make-table)
-         )))
-
-(ns proc.util)
 ;;Utility to help grab resources, primarily test data.
+;;DEPRECATED/MOVED to spork.io
 (defn get-res
   "Gets the resource provided by the path.  If we want a text file, we 
    call '(get-res \"blah.txt\")"
   [nm]
-  (clojure.java.io/input-stream (clojure.java.io/resource nm)))
+  (io/get-resource nm))
 
-(defn resource-lines [filename]
-  "Given a string literal that encodes a path to a resource, i.e. a file in the 
+;;DEPRECATED/MOVED to spork.io
+(defn resource-lines  "Given a string literal that encodes a path to a resource, i.e. a file in the 
    /resources folder, returns a reducible obj that iterates over each line (string) 
    delimited by \newline."
   [filename]
-  (let [reader-fn clojure.java.io/reader]
-    (reify clojure.core.protocols/CollReduce
-      (coll-reduce [o f init]
-        (with-open [^java.io.BufferedReader rdr (reader-fn (get-res filename))]
-          (loop [acc init]
-            (if (reduced? acc) @acc 
-                (if-let [ln (.readLine rdr)]
-                  (recur (f acc ln))
-                  acc)))))
-      (coll-reduce [o f]
-        (with-open [^java.io.BufferedReader rdr (reader-fn (get-res filename))]
-          (if-let [l1 (.readLine rdr)]
-            (loop [acc l1]
-              (if (reduced? acc) @acc 
-                  (if-let [ln (.readLine rdr)]
-                    (recur (f acc ln))
-                    acc)))
-            nil)))
-      )))
+  (io/resource-lines filename))
 
-;;to keep from having to reload datasets that may be expensive, we can
-;;keep a cache of recently loaded items.
-;(defn recently-loaded 
+;DEPRECATED  spork.util.general/distinct-zipped
+(defn distinct-zipped [n-colls]
+  (general/distinct-zipped n-colls))
 
-;;I'm using this instead of the java interfact in java.io   
-(defprotocol ICloseable 
-  (close [x]))
+;;DEPRECATED to spork.util.general/ref?
+(defn ref? [obj] (general/ref? obj))
 
+;;DEPRECATED to spork.util.stream/get-writer!
+(defn ^java.io.BufferedWriter get-writer! [ms nm]
+  (stream/get-writer! ms nm))
+
+;; on close, we want to record a manifest, in the root folder, of the 
+;;files in the multistream, so that we can read the manifest and get a 
+;;corresponding multireader of it
+
+;;DEPRECATED spork.util.stream
+(defn close-all! [ms]
+  (stream/close-all! ms))
+
+;;DEPRECATED spork.util.stream
+(defn write-in! [ms k v]
+  (stream/write-in! ms k v))
+
+;;DEPRECATED spork.util.stream
+(defn writeln-in! [ms k v]
+  (stream/writeln-in! ms k v))
+
+;;to keep from having to reload datasets that may be expensive, we
+;;can keep a cache of recently loaded items.
 (defn un-key [keywords]
   (mapv (fn [k] 
           (keyword (apply str (drop 2 (str k))))) keywords))
 
 (defn read-keyed [path] 
-  (let [d (read-dataset path :header true :delim \tab :keyword-headers false)
+  (let [d     (read-dataset path :header true :delim \tab :keyword-headers false)
         names (into {} (map (fn [k] [k (clojure.edn/read-string k)])  (:column-names d)))]
     (rename-cols  names d)))
-
-
-
-(defn writeln! [^java.io.BufferedWriter w ^String ln]
-  (do  (.write w ln)
-       (.newLine w)))
-
-(defn write! [^java.io.BufferedWriter w ^String ln]
-  (do  (.write w ln)))
-
-
 
 ;;This lets us extract unfilled-trends from demand-trends.
 (defn first-line [path]
@@ -194,7 +81,6 @@
 (defn get-headers [path] 
  (mapv keyword (tbl/split-by-tab (first-line path))))
 
-
 (defn keyed-headers? [path]
   (= (first (first (raw-headers path))) \:))
   
@@ -202,60 +88,9 @@
   (if (keyed-headers? path)
     (mapv (fn [x] (subs x 1)) (raw-headers path))))
 
-
-(defn distinct-zipped [n-colls]
-   (let [knowns   (atom (mapv (fn [i] (transient #{})) (range (count (first n-colls)))))
-         add-row (fn [xs] (reduce (fn [idx x]
-                                    (let [known (nth @knowns idx)]
-                                      (do (when (not (known x)) 
-                                            (swap! knowns assoc idx (conj! known x)))
-                                          (unchecked-inc idx))))
-                                  0
-                                  xs))]
-     (do (doseq [xs n-colls]  (add-row xs))
-         (mapv persistent! @knowns))))
-;;what we want is a multimap...
-;;a map of streams we can push to.
-;;that are keyed..
-
-(declare close-all!)
-(defrecord multistream [^String root filename  childname ^String headers ^clojure.lang.Atom writers]
-  ICloseable 
-  (close [x] (close-all! x)))
-
-(defn mstream [root name headers & {:keys [childname] :or {childname (fn [x] (str x ".txt"))}}]
-  (->multistream root name childname headers (atom {})))
-
-(defn ref? [obj] (instance? clojure.lang.IDeref obj))
-
-(defn ^java.io.BufferedWriter get-writer! [^multistream ms nm]
-  (if-let [w (get (deref (.writers ms)) nm)]
-    w
-    (let [newfile (str (.root ms) "/" ((.childname ms) nm))
-          _       (io/hock newfile "")
-          ^java.io.BufferedWriter w  (clojure.java.io/writer newfile)
-          _  (println [:writing-to newfile])
-          _  (swap! (.writers ms) assoc nm w)
-          _  (writeln! w (if (ref? (.headers ms)) (deref (.headers ms)) (.headers ms)))]
-      w)))
-
-;; on close, we want to record a manifest, in the root folder, of the 
-;;files in the multistream, so that we can read the manifest and get a 
-;;corresponding multireader of it.
-(defn close-all! [^multistream ms] 
-  (let [ws (deref (.writers ms))
-        root (.root ms)
-        manifest {root (vec (keys ws))}]
-    (do (doseq [[nm ^java.io.BufferedWriter w] ws]
-          (.close w))
-        (reset! (.writers ms) {}) ;closed writers.
-        (spork.util.io/hock (str (.root ms) "/" (.filename ms)) (str manifest)))))
-
-(defn write-in! [^multistream ms k v]
-  (write! (get-writer! ms k) (str k)))
-(defn writeln-in! [^multistream ms k v]
-  (writeln! (get-writer! ms k) (str k)))
-
+;
+;;These are questionable wrappers...I think we only did for
+;;for marginal performance gains...
 (defmacro write! [w ln]
   (let [w (vary-meta w assoc :tag 'java.io.BufferedWriter)
         ln (vary-meta ln assoc :tag 'String)]
@@ -300,7 +135,7 @@
 (defn spit-table [path t]
   (with-open [^java.io.BufferedWriter out (clojure.java.io/writer path)]
     (doseq [^String ln (table->lines t)]
-      (writeln! out ln))))
+      (io/writeln! out ln))))
 
 (defn fit-schema [s path]
   (let [hs (map (fn [kw] (subs (str kw) 1)) (get-headers path))]
@@ -311,12 +146,11 @@
                 (assoc acc fld :text)))
             s hs))) 
 
+;;DEPRECATED spork.util.genera/drop-nth now
 (defn drop-nth
   "Drops the n item in coll"
   [n coll]
-  (concat
-    (take n coll)
-    (drop (inc n) coll)))
+  (general/drop-nth n coll))
 
 ;;make it easy to get at the state in our charts..
 ;;note, this only really works well if we have ;;compatible charts, specifically if there's nothing weird in the ;;plot, like having multiple trends, or axes.  I'm assuming a simple ;;set of axes and coords here.
@@ -513,7 +347,7 @@
     (with-open [w (clojure.java.io/writer outfile)
                 rdr (clojure.java.io/reader filepath)]
       (doseq [l (line-seq rdr)]
-        (writeln! w (str (hash l)))))))
+        (io/writeln! w (str (hash l)))))))
 
 ;;compute the areas in each sequence where the hashes do not align.
 ;;We probably need to avoid using map here because it may well be that
@@ -562,32 +396,19 @@
 ;;#todo
 ;;  Add easy functions for writing to zipstreams (already in spork.util.zipfile)
 ;;  Extend general/line-reducer to account for zipped files.
-;;  So far: 
+;;  So far:
+;;DEPRECATED  spork.util.general/compress-file!
 (defn compress-file!
   [from & {:keys [type] :or {type :gzip}}]
-  (let [writer-fn (case type
-                    :gzip z/zip-writer
-                    :lz4 z/lz4-writer
-                    (throw (Exception. (str "unknown compressor! " type))))]
-    (with-open [w (writer-fn
-                   (str from
-                        (case type
-                          :gzip ".gz"
-                          :lz4 ".lz4"
-                          (throw (Exception. (str "unknown compressor! " type))))))]
-      (reduce (fn [_ ^String l] (writeln! w l)) nil (general/line-reducer from)))))
+  (general/compress-file! from :type type))
 
 ;;overloaded to allow compressed streams.
+;;DEPRECATED: Now in spork.util.general/line-reducer
 (defn line-reducer
   "Small wrapper around the original line-reducer.
    Now we can automatically grab lines from compressed files too."
   [path-or-string]
-  (if (general/path? path-or-string)
-    (case  (re-find  #".gz|.lz4" path-or-string)
-      ".gz"  (general/line-reducer path-or-string :reader-fn z/zip-reader)
-      ".lz4" (general/line-reducer path-or-string :reader-fn z/lz4-reader)
-      (general/line-reducer path-or-string))
-    (general/line-reducer path-or-string)))
+  (general/line-reducer path-or-string))
 
 ;;__Notes on compression__
 ;;Gzip is smaller (typically 3x less than lz4), but lz4 is typically much
