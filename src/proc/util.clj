@@ -20,15 +20,16 @@
 ;;Utility to help grab resources, primarily test data.
 ;;DEPRECATED/MOVED to spork.io
 (defn get-res
-  "Gets the resource provided by the path.  If we want a text file, we 
-   call '(get-res \"blah.txt\")"
+  "Gets the resource provided by the path.  If we want a text file, we
+  call '(get-res \"blah.txt\")"
   [nm]
   (io/get-resource nm))
 
 ;;DEPRECATED/MOVED to spork.io
-(defn resource-lines  "Given a string literal that encodes a path to a resource, i.e. a file in the 
-   /resources folder, returns a reducible obj that iterates over each line (string) 
-   delimited by \newline."
+(defn resource-lines
+  "Given a string literal that encodes a path to a resource, i.e. a
+  file in the /resources folder, returns a reducible obj that iterates
+  over each line (string) delimited by \newline."
   [filename]
   (io/resource-lines filename))
 
@@ -38,6 +39,13 @@
 
 ;;DEPRECATED to spork.util.general/ref?
 (defn ref? [obj] (general/ref? obj))
+
+;;DEPRECATED to spork.util.stream/mstream
+(defn mstream
+  "Creates a multi-file-stream abstraction.  Serves as a handle for
+  multiple writers, supporting functions write-in! and writeln-in!"
+  [root name headers & {:keys [childname] :or {childname (fn [x] (str x ".txt"))}}]
+  (stream/mstream root name headers :childname childname))
 
 ;;DEPRECATED to spork.util.stream/get-writer!
 (defn ^java.io.BufferedWriter get-writer! [ms nm]
