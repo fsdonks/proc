@@ -15,6 +15,16 @@
             [proc.sporkpatches])
   (:import [java.util.concurrent ConcurrentHashMap]))
 
+(defn path! [paths]
+  (->> paths
+       (filter (fn [^String p]
+                 (when (io/fexists?
+                        (if (.contains p " ")
+                          (java.io.File. p)
+                          (io/uri->file
+                           (io/path->uri p))))
+                   p)))
+       (first)))
 
 (defn ->string-pool
   "Creates a canonicalized string pool, starting with n, bounded up to 

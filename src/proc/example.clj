@@ -8,6 +8,10 @@
         [incanter.core]
         [proc.supply])) 
 
+(def constants-look ["K:/Divisions/FS/dev/constants.clj" "V:/dev/constants.clj"])
+
+(load-file (util/path! constants-look))
+
 ;;This dumps out our fills and sandtrends for the interesting srcs.
 (defn run-sample!   "Call with eachsrc true if you want the fills for each SRC individually, or if you want to group the fills by interest,
 call with ints set to a symbol from proc.interests.

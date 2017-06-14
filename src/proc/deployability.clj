@@ -71,7 +71,9 @@
 
 
 ;___________________________________________
-;final
+                                        ;final
+;;todo: Deploying Units demand is vignette and not demandgroup, so
+;;S3 is shown instead of S3.1
 (defn get-status [{:keys [EventType EntityTo Time Message]}]
   (let [[unit src compo] (str/split EntityTo #"_")
         newr {:Start Time :Unit EntityTo :SRC src :compo compo :Identifier unit}]

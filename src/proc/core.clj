@@ -1511,7 +1511,8 @@
 ;then implement it (copy) to operate on jfree chart if can't use their stuff directly.
 
 (defn get-run-name [root]
-  (last (clojure.string/split root #"/")))
+  ;split on forward slash or double backslash
+  (last (clojure.string/split root #"[/\\\\]"))) 
 
 (defn phase-starts 
   "Will return a map of phase name to phase start"
