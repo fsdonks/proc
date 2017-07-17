@@ -304,7 +304,7 @@
          (filter (fn [r] (and (:Enabled r) (inscope (:SRC r));(*demand-trend-filter* r) ;look at this how does it work?
                               )))
          (reduce (fn [acc r]
-                   (assoc acc (unique-name acc r) r)) {}))))
+                   (assoc acc (unique-name acc r) r)) {} ))))
   
 ;;once we have the demandrecords, we'd "like" to slurp in the records
 ;;that are of interest, to augment our demand meta data.
@@ -1091,7 +1091,7 @@
 ;;know.
 (defn sandtrends-from [root & {:keys [splitkey samples] :or {splitkey *split-key*}}]                                                             
   (let [sandroot (str root "/sand/")
-        _ (println splitkey)]
+        ]
     (dump-sandtrends :locpath (str root "/locations.txt")
                      :dpath   (str root "/DemandTrends.txt")
                      :deploypath (str root "/AUDIT_Deployments.txt")
@@ -1134,10 +1134,11 @@
 (defn where-src [src tab] (tbl/select :from tab :where (fn [r] (= (:SRC r) src))))
 (defn demand-samples [xs] (sample-trends (tbl/table-records xs) :SRC :StartDay :Quantity))
 
+
+
 ;;not working...
 (defn demand-profile [drecs]
-  (sample-trends (demand-samples drecs)
-                 (fn [[t xs]] (:SRC (first (:actives xs)))) first 
+  (sample-trends (demand-samples drecs) (fn [[t xs]] (:SRC (first (:actives xs)))) first 
                  (fn [[t xs]] (reduce + (map :Quantity (:actives xs))))))
 ;testing mstream
 
@@ -1510,12 +1511,8 @@
 (defn show-stack [[pane dwell fill]]
   (let [_ (println (type (chart! fill)))
         _ (println (type fill))
-        _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))
-        ]
-                                        ;    (swing/display (swing/empty-frame)
-    (swing/->scrollable-view 
-     (swing/stack pane (chart! dwell) (chart! fill))
-     :title "Dwell Over Fill")))
+        _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))]
+  (swing/display (swing/empty-frame) (swing/stack pane (chart! dwell) (chart! fill)))))
 
 (defn dwell-over-fill [root src subs phase]
   (let [path (str root "fills/" (first src) ".txt")]

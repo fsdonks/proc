@@ -101,7 +101,7 @@
 ;;Since the data is stored in a different format, 
 ;;let's keep things consistent.  We know that DemandType is really 
 ;;SRC, and we're using Compo as a shorthand for Component:
-(def dwell-samples 
+(defn dwell-samples []
   (->>  (default-dwell-samples)
         (tbl/rename-fields {:DemandType :SRC
                             :Component  :Compo})))
@@ -109,7 +109,7 @@
 ;;We also read in supply, which is a table with fields [:SRC :Compo :Qty].
 ;;These will be used to weight our supply during the cumulative 
 ;;density function computation.
-(def supply        (default-supply-data))
+(defn supply []        (default-supply-data))
 
 
 ;;Computing Average Dwell
@@ -315,7 +315,7 @@
 
 ;;It looks like the merge order is off here...
 (defn oi-records->table [oirecs]  
-  (let [rtable  (tbl/records->table (sort-by #(get % "SRC") (oi-records->full-records oi-recs)))
+  (let [rtable  (tbl/records->table (sort-by #(get % "SRC") (oi-records->full-records oirecs)))
         fields  (vec (cons "SRC" (sort (disj (set (tbl/table-fields rtable)) "SRC")))) ]
     (tbl/select-fields  fields rtable)))
 

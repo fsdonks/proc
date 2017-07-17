@@ -1,13 +1,27 @@
 (ns proc.ranking
   (:require [proc.sporkpatches]            
             [spork.util.table :as tbl]
-            [spork.util.excel.core :as xl]))
+            [spork.util.excel.core :as xl]
+            [clojure.core.reducers :as r]))
 
-
-;;composite definitions removed for unclass transfer.
+;notional
 (def composites 
   (->>
- 
+   [{:SRC "BCT-Composite", :Compo "AC", :Period "PreSurge", :Dwell 5}
+    {:SRC "BCT-Composite", :Compo "AC", :Period "Surge1", :Dwell 6}
+    {:SRC "BCT-Composite", :Compo "AC", :Period "BetweenSurge",  :Dwell 7}
+    {:SRC "BCT-Composite", :Compo "AC", :Period "Surge2", :Dwell 8}
+    {:SRC "BCT-Composite", :Compo "AC", :Period "PostSurge", :Dwell 9}
+    {:SRC "BCT-Composite", :Compo "ARNG", :Period "PreSurge", :Dwell 1}
+    {:SRC "BCT-Composite", :Compo "ARNG", :Period "Surge1", :Dwell 2}
+    {:SRC "BCT-Composite", :Compo "ARNG", :Period "BetweenSurge", :Dwell 3}
+    {:SRC "BCT-Composite", :Compo "ARNG", :Period "Surge2", :Dwell 4}
+    {:SRC "BCT-Composite", :Compo "ARNG", :Period "PostSurge", :Dwell 8}
+    {:SRC "BCT-Composite", :Compo "USAR", :Period "PreSurge", :Dwell 3.5}
+    {:SRC "BCT-Composite", :Compo "USAR", :Period "Surge1", :Dwell 4.2}
+    {:SRC "BCT-Composite", :Compo "USAR", :Period "BetweenSurge", :Dwell 8.1}
+    {:SRC "BCT-Composite", :Compo "USAR", :Period "Surge2", :Dwell 7.3}
+    {:SRC "BCT-Composite", :Compo "USAR", :Period "PostSurge", :Dwell 1.5}]
    (tbl/records->table)))
 
 (defn spit-ranks [t path]
@@ -21,7 +35,8 @@
                             (tbl/stringify-field-names))]))]
     (xl/tables->xlsx path tmap)))
 
-(def bct-composite [4.77 4.71 2.71 2.74 3.21 4.39 3.95 3.36 2.43 2.87 4.25	4.46	0.74	3.09	3.24])
+;notional
+(def bct-composite [1.01 1.42 3.55 0.61 2.05 1.65 3.12 0.79 4.48 3.56 2.48 4.94 4.42 0.31 1.52])
 
 
 (defn top-n [n t] (into [] (r/take n (r/map (fn [r] {:SRC (get r "SRC") :Compo (get r "Compo") :Period (get r "Period")}) t))))
