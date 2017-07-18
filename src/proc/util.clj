@@ -16,6 +16,15 @@
 
 ;;deleted existing spork patches...
 ;;Moved most functions over to spork, temporarily bridging via
+(defn path! [paths]
+  (->> paths
+       (filter (fn [^String p]
+                 (when (io/fexists?
+                        (if (.contains p " ")
+                          (java.io.File. p)
+                          (io/uri->file
+                           (io/path->uri p)))))))
+       (first)))
 
 ;;Utility to help grab resources, primarily test data.
 ;;DEPRECATED/MOVED to spork.io

@@ -43,7 +43,7 @@
 
 ;The following percent stats records have been verified in pivot tables.  I included the day caluclations after
 ;and just hand-checked a couple.  These were easy to break out from the percentage and should be hard to mess up:
-(def somestats consts/somestats)
+#_(def somestats consts/somestats)
 
 
 ;;Tom: What the hell is this?  Tests fail due to absence of sampledata, can only assume this is
