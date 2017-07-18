@@ -42,6 +42,7 @@
             [spork.util.general :as general]
             [spork.util.reducers]
             [spork.util.parsing :as parse]
+            [spork.util.string :as string]
             [spork.cljgui.components.swing :as swing]
             [clojure.core.reducers :as r]
             [proc.util :as util]
@@ -304,7 +305,7 @@
          (filter (fn [r] (and (:Enabled r) (inscope (:SRC r));(*demand-trend-filter* r) ;look at this how does it work?
                               )))
          (reduce (fn [acc r]
-                   (assoc acc (unique-name acc r) r)) {} ))))
+                   (assoc acc (unique-name acc r) r)) {}))))
   
 ;;once we have the demandrecords, we'd "like" to slurp in the records
 ;;that are of interest, to augment our demand meta data.
@@ -436,10 +437,10 @@
 
 ;;faster still?
 (defn dtrend-parser  [fields]
-  (let [flds    (object-array fields)        
+  (let [flds    (object-array fields)
         parsef  (->> (parse/parsing-scheme schemas/dschema :default-parser  identity)
                      (parse/vec-parser fields))
-        sp      (util/->string-pool 1000 10000)]
+        sp      (string/->string-pool 1000 10000)]
     (assert (<= (count fields) 32) "Expected field-width of <=32")
     (fn [xs]
       (util/zip-record! flds
@@ -1112,8 +1113,7 @@
 ;;aggregate.  Dwell stats and misses tell us most of what we need to 
 ;;know.
 (defn sandtrends-from [root & {:keys [splitkey samples] :or {splitkey *split-key*}}]                                                             
-  (let [sandroot (str root "/sand/")
-        ]
+  (let [sandroot (str root "/sand/")]
     (dump-sandtrends :locpath (str root "/locations.txt")
                      :dpath   (str root "/DemandTrends.txt")
                      :deploypath (str root "/AUDIT_Deployments.txt")
@@ -1156,11 +1156,10 @@
 (defn where-src [src tab] (tbl/select :from tab :where (fn [r] (= (:SRC r) src))))
 (defn demand-samples [xs] (sample-trends (tbl/table-records xs) :SRC :StartDay :Quantity))
 
-
-
 ;;not working...
 (defn demand-profile [drecs]
-  (sample-trends (demand-samples drecs) (fn [[t xs]] (:SRC (first (:actives xs)))) first 
+  (sample-trends (demand-samples drecs)
+                 (fn [[t xs]] (:SRC (first (:actives xs)))) first 
                  (fn [[t xs]] (reduce + (map :Quantity (:actives xs))))))
 ;testing mstream
 
@@ -1512,7 +1511,7 @@
 
 (defn get-run-name [root]
   ;split on forward slash or double backslash
-  (last (clojure.string/split root #"[/\\\\]"))) 
+  (last (clojure.string/split root #"[/\\\\]")))
 
 (defn phase-starts 
   "Will return a map of phase name to phase start"
@@ -1534,8 +1533,12 @@
 (defn show-stack [[pane dwell fill]]
   (let [_ (println (type (chart! fill)))
         _ (println (type fill))
-        _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))]
-  (swing/display (swing/empty-frame) (swing/stack pane (chart! dwell) (chart! fill)))))
+        _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))
+        ]
+                                        ;    (swing/display (swing/empty-frame)
+    (swing/->scrollable-view 
+     (swing/stack pane (chart! dwell) (chart! fill))
+     :title "Dwell Over Fill")))
 
 (defn dwell-over-fill [root src subs phase]
   (let [path (str root "fills/" (first src) ".txt")]
