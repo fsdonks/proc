@@ -37,12 +37,43 @@ in your interests?"
   (let [c (if col (first col) (vals @marathons))] ;;default collection in global history of marathon runs
     (map #(nth % (get chart-info key)) c)))
 
-(defn get-chart-title [chart] ;; returns the title of the chart in form [run]-[interest]
+(defn get-chart-title [chart]
   (let [htmlstr (.getText (first (all-chart-types :title [chart])))
         s clojure.string/split
-        ttl (fn [key] (cond (= :run key) (first (s (last (s htmlstr #"Run: ")) #"<br>"))
-                            (= :interest key) (first (s (last (s htmlstr #"Interest: ")) #"</b>"))))]
+        ttl (fn [key] (cond
+                        (= :run key) (first (s (last (s htmlstr #"Run: ")) #"<br>"))
+                        (= :interest key) (first (s (last (s htmlstr #"Interest: ")) #"<"))))]
     (str (ttl :run) "-" (ttl :interest))))
+
+(defn get-chart-interest [chart]
+  (let [htmlstr (.getText (first (all-chart-types :title [chart])))
+        s clojure.string/split]
+    (first (s (last (s htmlstr #"Interest: ")) #"</b>"))))
+
+(defn inv-to-nums [inv]
+  (for [i (filter #(not= "" %) (clojure.string/split inv #"[\\d]*/"))]
+    (read-string i)))
+
+(defn add-all-invs [invs]
+  (let [p (apply map + (for [i invs] (inv-to-nums i)))]
+    (str (first p) "/" (nth p 1) "/" (nth p 2) "//" (last p))))
+
+(defn get-total-inventory [chart interest root]
+  (let [chart-int (keyword (get-chart-interest chart))
+        srcs (last (get interest chart-int))
+        supply (proc.supply/supply-by-compo root)
+        inv (filter #(not (not %)) (map #(get supply %) srcs))]
+    (add-all-invs invs)))
+
+(defn add-inventory-to-chart [chart interest root]
+  (let [htmlstr (.getText (first (all-chart-types :title [chart])))
+        info (first (clojure.string/split (last (clojure.string/split htmlstr #"<b>")) #"</b>"))
+        inv (get-total-inventory chart interest root)
+        new-str (str "<html><center><b><font size=6>"
+                     info "<br>Inventory: " inv "</font></b></center></html>")]
+    (.setText (first (all-chart-types :title [chart])) new-str)))
+
+
 
 (defn sync-chart-scales [coll axis] ;;syncs the axies of the given collection of charts
   (if (= axis :all)
@@ -124,14 +155,22 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
       (doseq [fill (all-chart-types :fill)
               :let [b (:y-axis (util/state fill)) l (fn [] (.getLowerBound b)) u (fn [] (.getUpperBound b))]]
         (add-phase-lines phstarts (l) (u) fill)))
-
-    ;;makes charts visable, default true
-    (when vis (doseq [chart charts] (show-chart chart)))
-
+    
     (when (or save-dwell save-fill) ;;saves dwell/fill charts 
       (doseq [chart charts :let [title (get-chart-title chart)]]
+        (add-inventroy-to-chart chart interest root) 
         (when save-fill (save-jfree-chart chart (str root title "-fill.png") :fill))
-        (when save-dwell (save-jfree-chart chart (str root title "-dwell.png") :dwell))))))
+        (when save-dwell (save-jfree-chart chart (str root title "-dwell.png") :dwell))))
+
+    ;;makes charts visable, default true
+    (when vis (doseq [chart charts]
+                (add-inventory-to-chart chart interest root)
+                (show-chart chart)))))
+
+
+
+
+
 
 (defn do-multiple-charts-from ;; calls do-charts-from for each root in roots using the same options for each
  [roots &
