@@ -832,12 +832,17 @@
     ;;the difference between the regular area and this guy is that
     ;;we have a category, defined by group-by, and the xs and ys....
     ;;I'll rename _categories to xs at some point and values to ys......
-    (do
-      (set-theme     chart  theme)
-      (.setAntiAlias chart  (get opts :aa))
-      (set-colors    chart _color-by)
-      (when tickwidth (set-xticks chart tickwidth))
-      chart)))
+    (let [num-axis (.getRangeAxis (.getPlot chart))
+          num-form (java.text.NumberFormat/getNumberInstance)]
+      (do
+        (.setMaximumFractionDigits num-form 0)
+        (.setNumberFormatOverride num-axis num-form)
+                
+        (.setAntiAlias chart  (get opts :aa))
+        (set-colors    chart _color-by)
+        (when tickwidth (set-xticks chart tickwidth))
+        (set-theme     chart  theme)
+        chart)))
 
 (def ^:dynamic *sampling* :daily)
 
