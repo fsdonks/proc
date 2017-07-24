@@ -63,7 +63,7 @@ in your interests?"
         srcs (last (get interest chart-int))
         supply (proc.supply/supply-by-compo root)
         inv (filter #(not (not %)) (map #(get supply %) srcs))]
-    (add-all-invs invs)))
+    (add-all-invs inv)))
 
 (defn add-inventory-to-chart [chart interest root]
   (let [htmlstr (.getText (first (all-chart-types :title [chart])))
@@ -158,13 +158,14 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
     
     (when (or save-dwell save-fill) ;;saves dwell/fill charts 
       (doseq [chart charts :let [title (get-chart-title chart)]]
-        (add-inventroy-to-chart chart interest root) 
+        ;;(add-inventroy-to-chart chart interest root) 
+        (add-inventory-to-chart chart interests root)
         (when save-fill (save-jfree-chart chart (str root title "-fill.png") :fill))
         (when save-dwell (save-jfree-chart chart (str root title "-dwell.png") :dwell))))
 
     ;;makes charts visable, default true
     (when vis (doseq [chart charts]
-                (add-inventory-to-chart chart interest root)
+                (add-inventory-to-chart chart interests root)
                 (show-chart chart)))))
 
 

@@ -842,7 +842,7 @@
         (set-colors    chart _color-by)
         (when tickwidth (set-xticks chart tickwidth))
         (set-theme     chart  theme)
-        chart)))
+        chart))))
 
 (def ^:dynamic *sampling* :daily)
 
