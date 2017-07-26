@@ -3,8 +3,7 @@
   (:require [proc.stacked :as stacked]
             [proc.util :as util]
             [proc.interests :as ints]
-            [proc.charts :as c]
-            )
+            [proc.charts :as c])
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
@@ -32,8 +31,6 @@ in your interests?"
 ;Can do trac-like charts by demand group by doing (binding [proc.stacked/*by-demandgroup?* true] 
 ;                                                        (do-charts-from root :interests blah))
 
-(def marathons (atom {})) ;;Stores history of all marathon runs where key is title and val is the chart objs vector
-
 
 ;Do-charts-from creates stacked dwell and fill charts for each interest using AUDIT_deployments.txt and
 ;the fills files produced from proc.fillsfils/run-sample!.
@@ -47,8 +44,9 @@ a null pointer exception if one of your phases doesn't exist in the run.
 Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
 :dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
   [root &
-   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell]
-    :or {subs false phases [nil] syncys false interests ints/defaults group-key :DemandType phase-lines true vis true
+   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell return]
+    :or {return false subs false phases [nil] syncys false
+         interests ints/defaults group-key :DemandType phase-lines true vis true
          save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
   (let [charts (c/root->charts root interests phases group-key subs subints)
         dwells (c/charts->dwells charts)
@@ -60,32 +58,36 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
     (c/->sync charts syncys dxlow dxhigh dylow dyhigh)
     (c/->lines charts phase-lines phstarts)
     (c/->save-dwell-fill root charts save-dwell save-fill)
-    (c/->vis charts interests vis)
-    nil))
+    (c/->vis charts root interests vis)
+    (when return
+      charts)))
 
 
-;; Need to change to take a local scope map of charts 
-(defn do-multiple-charts-from ;; calls do-charts-from for each root in roots using the same options for each
- [roots &
-  {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell]
-   :or {subs false phases [nil] syncys false interests ints/defaults group-key :DemandType phase-lines true vis true
-        save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
-  (doseq [root roots]
-   (do-charts-from root
-                   :subs subs :phases phases :interests interests :subints subints :group-key group-key
-                   :syncys syncys :phase-lines phase-lines :fillbnds fillbnds :dwellbnds dwellbnds
-                   :vis vis :save-fill save-fill :save-dwell save-dwell)))
-
-(comment
-;; saves all marathons that are in the global history to the specified director with optional widths and heights
-(defn save-all-marathons [dir & {:keys [width height] :or {width 700 height 420}}]
-  (let [charts (vals @marathons)]
-   (doseq [chart charts :let [title (get-chart-title chart)]]
-     (doseq [k ["fill" "dwell"]] (save-jfree-chart chart (str dir title k ".png") (keyword k) :width width :height height)))))
+(defn do-multiple-charts-from
+  "Calls do-charts-from on each root in roots. Does formatting accross multiple runs. When return is true, returns a map where root is the key and a collection of charts is the value, otherwise, returns nil."
+  [roots &
+   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell return]
+   :or {return false subs false phases [nil] syncys false
+         interests ints/defaults group-key :DemandType phase-lines true vis true
+         save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
+  (let [charts (reduce into
+                      (for [root roots] {root (do-charts-from root  
+                                                              ;; don't do any formatting initially, wait for all charts to format
+                                                              ;; so don't have to reformat multiple times
+                                                              :subs subs :phases phases :interests interests :subints subints
+                                                              :group-key group-key :syncys false :phase-lines false
+                                                              :fillbnds fillbnds :dwellbnds dwellbnds :vis false
+                                                              :save-fill false :save-dwell false :return true)}))
+        phstarts (min (apply concat (for [root roots] (phase-starts root))))]
+    
+    (doseq [chart charts :let [root (first chart) val (last chart) all-charts (apply concat (vals charts))]]
+      (c/->sync all-charts syncys (:dxlow dwellbnds) (:dxhigh dwellbnds) (:dylow dwellbnds) (:dyhigh dwellbnds))
+      (c/->lines all-charts phase-lines phstarts)
+      (c/->save-dwell-fill root val save-dwell save-fill)
+      (c/->vis val root interests vis))
+    (when return ;; Returns map with roots as key and chart collection as vals 
+      charts)))
  
- )
-
-
 ;;One function to make the files for the charts and display the charts at the same time
 (defn charts-from-unproc-run
   ([path]
