@@ -62,7 +62,7 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
     (c/->lines charts phase-lines phstarts)
     (c/->save-dwell-fill root charts save-dwell save-fill)
     (c/->vis charts root interests vis)
-    (c/charts->ppt [root] (:filename ppt) (:template ppt) (:num-per-slide ppt))
+    (when ppt (c/charts->ppt [root] (:filename ppt) (:template ppt) (:num-per-slide ppt)))
     (when return
       charts)))
 
@@ -91,7 +91,7 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
       (c/->lines all-charts phase-lines phstarts)
       (c/->save-dwell-fill root val save-dwell save-fill)
       (c/->vis val root interests vis))
-    (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt))
+    (when ppt (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt)))
     (when return ;; Returns map with roots as key and chart collection as vals 
       charts)))
  

@@ -2,11 +2,13 @@
   (:require [proc.stacked :as stacked]
             [proc.util :as util]
             [proc.interests :as ints]
-            [proc.powerpoint :as ppt])
+            [proc.powerpoint :as ppt]
+            [proc.clipboard :as clip])
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
-        [proc.supply]))
+        [proc.supply])
+  (:import [javax.swing JFrame]))
 
 (def chart-info {:title 0 :dwell 1 :fill 2})
 
@@ -71,13 +73,6 @@
         (proc.util/sync-scales coll :axis :y-axis))
     (proc.util/sync-scales coll :axis axis)) nil)
 
-(defn show-chart
-  "Sets chart as visible"
-  [chart] ;;makes the chart visible given the collection on components
-  (let [frame (show-stack chart)
-        title (get-chart-title chart)]
-    (.setTitle frame title)))
-
 ;; saves the jfree chart given the chart vector of chart objs, the title of the chart, and key (:dwell or :fill)
 (defn save-jfree-chart
   "Saves chart as image"
@@ -91,6 +86,27 @@
      (java.io.File. title) (first (all-chart-types key [chart])) width height)
     (when (= key (keyword "fill")) (t "Fill")) ;; Change title of chart back to short title 
     (when (= key (keyword "dwell")) (t "Dwell"))))
+
+(defn listen-for-keys [root chart title frame] 
+  (.addKeyListener frame (proxy [java.awt.event.KeyListener] []
+                           (keyPressed [e]
+                             (when (and (.isControlDown e) (= java.awt.event.KeyEvent/VK_C (.getKeyCode e)))
+                               ;;(println "KEY PRESSED")
+                               ;;(println (str root title))
+                               (save-jfree-chart chart (str root title "-fill.png") :fill)
+                               (save-jfree-chart chart (str root title "-dwell.png") :dwell)
+                               (clip/copy-file-to-clip
+                                [(str root title "-fill.png") (str root title "-dwell.png")]))))))                             
+                               ;;(println "KEY PRESSED"))))))
+
+(defn show-chart
+  "Sets chart as visible"
+  [root chart] ;;makes the chart visible given the collection on components
+  (let [frame (show-stack chart)
+        title (get-chart-title chart)]
+    (listen-for-keys root chart title frame)
+    (listen-for-keys root chart title (first chart))
+    (.setTitle frame title)))
 
 (defn get-theme
   "Changes default ChartFactory theme to have larger font size and to use supplied font from font name"
@@ -164,7 +180,7 @@
   (when vis
     (doseq [chart charts]
       ;;(add-inventory-to-chart chart interests root)
-      (show-chart chart))))
+      (show-chart root chart))))
 
 (defn charts->ppt [roots filename template num-per-slide]
   (let [images (apply concat (for [root roots] (map #(str root %) (ppt/find-images root))))
