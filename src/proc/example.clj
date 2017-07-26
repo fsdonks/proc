@@ -3,7 +3,9 @@
   (:require [proc.stacked :as stacked]
             [proc.util :as util]
             [proc.interests :as ints]
-            [proc.charts :as c])
+            [proc.charts :as c]
+            [proc.powerpoint :as ppt]  ;; changes when move to new ns 
+            )
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
@@ -44,10 +46,11 @@ a null pointer exception if one of your phases doesn't exist in the run.
 Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
 :dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
   [root &
-   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell return]
+   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell ppt return]
     :or {return false subs false phases [nil] syncys false
          interests ints/defaults group-key :DemandType phase-lines true vis true
          save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
+    ;; assumes that ppt arg is a map with keys :filename :template :num-per-slide
   (let [charts (c/root->charts root interests phases group-key subs subints)
         dwells (c/charts->dwells charts)
         fill (c/charts->fills charts)
@@ -59,6 +62,7 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
     (c/->lines charts phase-lines phstarts)
     (c/->save-dwell-fill root charts save-dwell save-fill)
     (c/->vis charts root interests vis)
+    (c/charts->ppt [root] (:filename ppt) (:template ppt) (:num-per-slide ppt))
     (when return
       charts)))
 
@@ -66,10 +70,12 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
 (defn do-multiple-charts-from
   "Calls do-charts-from on each root in roots. Does formatting accross multiple runs. When return is true, returns a map where root is the key and a collection of charts is the value, otherwise, returns nil."
   [roots &
-   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell return]
+   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell ppt return]
    :or {return false subs false phases [nil] syncys false
          interests ints/defaults group-key :DemandType phase-lines true vis true
          save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
+  ;; assumes that ppt arg is a map with keys :filename :template :num-per-slide
+
   (let [charts (reduce into
                       (for [root roots] {root (do-charts-from root  
                                                               ;; don't do any formatting initially, wait for all charts to format
@@ -85,6 +91,7 @@ Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
       (c/->lines all-charts phase-lines phstarts)
       (c/->save-dwell-fill root val save-dwell save-fill)
       (c/->vis val root interests vis))
+    (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt))
     (when return ;; Returns map with roots as key and chart collection as vals 
       charts)))
  

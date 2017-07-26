@@ -1,7 +1,8 @@
 (ns proc.charts
   (:require [proc.stacked :as stacked]
             [proc.util :as util]
-            [proc.interests :as ints])
+            [proc.interests :as ints]
+            [proc.powerpoint :as ppt])
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
@@ -164,4 +165,13 @@
     (doseq [chart charts]
       ;;(add-inventory-to-chart chart interests root)
       (show-chart chart))))
-  
+
+(defn charts->ppt [roots filename template num-per-slide]
+  (let [images (apply concat (for [root roots] (map #(str root %) (ppt/find-images root))))
+        pptx (ppt/->pptx template)
+        r (- (count images) (rem (count images) num-per-slide))
+        layout (if (zero? r) (partition num-per-slide images) (conj (partition num-per-slide images) (drop r images)))]
+    (doseq [ps layout]
+      (println ps)
+      (ppt/slide-with-images pptx ps))
+    (ppt/save-ppt pptx filename)))
