@@ -1531,14 +1531,14 @@
     (reduce (fn [cht [title ph-start]] (add-polygon cht [[ph-start lbound] [ph-start ubound]])) chart ph-starts))
  
 (defn show-stack [[pane dwell fill]]
-  (let [_ (println (type (chart! fill)))
-        _ (println (type fill))
-        _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))
-        ]
+  ;(let [_ (println (type (chart! fill)))
+   ;     _ (println (type fill))
+    ;    _ (println (type (swing/stack pane (chart! dwell) (chart! fill))))
+     ;   ]
                                         ;    (swing/display (swing/empty-frame)
     (swing/->scrollable-view 
      (swing/stack pane (chart! dwell) (chart! fill))
-     :title "Dwell Over Fill")))
+     :title "Dwell Over Fill"));)
 
 (defn dwell-over-fill [root src subs phase]
   (let [path (str root "fills/" (first src) ".txt")]

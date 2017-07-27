@@ -25,7 +25,8 @@
     (.setContents cb (new-file-trans files)
                   (proxy [java.awt.datatransfer.ClipboardOwner] []
                     (lostOwnership [cb conts]
-                      (println "Proxy override - lost ownership"))))))
+                      (print ""))))))
+                                        ;(println "Proxy override - lost ownership"))))))
 
 ;; Creates a temp file from buffered image and copies it to the system clipboard
 (defn image-to-temp [buff]

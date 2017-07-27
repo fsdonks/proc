@@ -188,6 +188,6 @@
         r (- (count images) (rem (count images) num-per-slide))
         layout (if (zero? r) (partition num-per-slide images) (conj (partition num-per-slide images) (drop r images)))]
     (doseq [ps layout]
-      (println ps)
+      ;;(println ps)
       (ppt/slide-with-images pptx ps))
     (ppt/save-ppt pptx filename)))

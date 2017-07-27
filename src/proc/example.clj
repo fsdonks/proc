@@ -48,18 +48,19 @@ Call with :sync false in order to not sync the x and y axis across these charts.
   [roots &
    {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds
            vis save-fill save-dwell ppt return]
-    :or {return false subs false phases [nil] syncys false
-         interests ints/defaults group-key :DemandType phase-lines true vis true
-         save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
+    :or {phases [nil] interests ints/defaults group-key :DemandType phase-lines true vis true
+         fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
+  (println "Building charts")
   (let [roots (if (string? roots) [roots] roots)
-        charts (zipmap roots (pmap #(c/root->charts % interests phases group-key subs subints) roots))
+        charts (zipmap roots (doall (pmap #(c/root->charts % interests phases group-key subs subints) roots)))
         phstarts (min (apply concat (map #(phase-starts %) roots)))]
     (doseq [chart charts :let [all-charts (apply concat (vals charts))]]
       (c/->sync all-charts syncys (:dxlow dwellbnds) (:dxhigh dwellbnds) (:dylow dwellbnds) (:dyhigh dwellbnds))
       (c/->lines all-charts phase-lines phstarts)
       (c/->save-dwell-fill (first chart) (last chart) save-dwell save-fill)
       (c/->vis (last chart) (first chart) interests vis))
-    (when ppt (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt)))
+    (println "Done formatting charts")
+    (when ppt (println "Building ppt") (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt)))
     (when return charts)))
 
 ;;One function to make the files for the charts and display the charts at the same time
