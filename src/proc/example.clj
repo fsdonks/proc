@@ -37,65 +37,31 @@ in your interests?"
 ;Do-charts-from creates stacked dwell and fill charts for each interest using AUDIT_deployments.txt and
 ;the fills files produced from proc.fillsfils/run-sample!.
 ;You need to call run-sample! in order to make a folder for fills files within the Marathon run folder before calling do-charts-from
-(defn do-charts-from 
-    "Pass in your own interests if you'd like.  See examples of interests in proc.interests
+(defn do-charts-from
+      "Pass in your own interests if you'd like.  See examples of interests in proc.interests
 :group-key defaults to :DemandType for dwell-before-deployment plot.  Can set :group-key to :UnitType as well.
 Call with :sync false in order to not sync the x and y axis across these charts.  :sync defaults to true.
-Call with :phases set to a sequence of phases defined in the run in order to see separate charts for each phase.  Will throw
-a null pointer exception if one of your phases doesn't exist in the run.
-Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
-:dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
-  [root &
-   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell ppt return]
+  Call with :phases set to a sequence of phases defined in the run in order to see separate charts for each phase.  Will throw
+  a null pointer exception if one of your phases doesn't exist in the run.
+  Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
+  :dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
+  [roots &
+   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds
+           vis save-fill save-dwell ppt return]
     :or {return false subs false phases [nil] syncys false
          interests ints/defaults group-key :DemandType phase-lines true vis true
          save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
-    ;; assumes that ppt arg is a map with keys :filename :template :num-per-slide
-  (let [charts (c/root->charts root interests phases group-key subs subints)
-        dwells (c/charts->dwells charts)
-        fill (c/charts->fills charts)
-        phstarts (phase-starts root)
-        {:keys [fxlow fxhigh fylow fyhigh]} fillbnds
-        {:keys [dxlow dxhigh dylow dyhigh]} dwellbnds]
-       
-    (c/->sync charts syncys dxlow dxhigh dylow dyhigh)
-    (c/->lines charts phase-lines phstarts)
-    (c/->save-dwell-fill root charts save-dwell save-fill)
-    (c/->vis charts root interests vis)
-   (when ppt
-      (c/charts->ppt [root] (:filename ppt) (:template ppt) (:num-per-slide ppt)))
-    (when return
-      charts)))
-
-
-(defn do-multiple-charts-from
-  "Calls do-charts-from on each root in roots. Does formatting accross multiple runs. When return is true, returns a map where root is the key and a collection of charts is the value, otherwise, returns nil."
-  [roots &
-   {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds vis save-fill save-dwell ppt return]
-   :or {return false subs false phases [nil] syncys false
-         interests ints/defaults group-key :DemandType phase-lines true vis true
-         save-fill false save-dwell false fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
-  ;; assumes that ppt arg is a map with keys :filename :template :num-per-slide
-
-  (let [charts (reduce into
-                      (for [root roots] {root (do-charts-from root  
-                                                              ;; don't do any formatting initially, wait for all charts to format
-                                                              ;; so don't have to reformat multiple times
-                                                              :subs subs :phases phases :interests interests :subints subints
-                                                              :group-key group-key :syncys false :phase-lines false
-                                                              :fillbnds fillbnds :dwellbnds dwellbnds :vis false
-                                                              :save-fill false :save-dwell false :return true)}))
-        phstarts (min (apply concat (for [root roots] (phase-starts root))))]
-    
-    (doseq [chart charts :let [root (first chart) val (last chart) all-charts (apply concat (vals charts))]]
+  (let [roots (if (string? roots) [roots] roots)
+        charts (zipmap roots (pmap #(c/root->charts % interests phases group-key subs subints) roots))
+        phstarts (min (apply concat (map #(phase-starts %) roots)))]
+    (doseq [chart charts :let [all-charts (apply concat (vals charts))]]
       (c/->sync all-charts syncys (:dxlow dwellbnds) (:dxhigh dwellbnds) (:dylow dwellbnds) (:dyhigh dwellbnds))
       (c/->lines all-charts phase-lines phstarts)
-      (c/->save-dwell-fill root val save-dwell save-fill)
-      (c/->vis val root interests vis))
+      (c/->save-dwell-fill (first chart) (last chart) save-dwell save-fill)
+      (c/->vis (last chart) (first chart) interests vis))
     (when ppt (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt)))
-    (when return ;; Returns map with roots as key and chart collection as vals 
-      charts)))
- 
+    (when return charts)))
+
 ;;One function to make the files for the charts and display the charts at the same time
 (defn charts-from-unproc-run
   ([path]
