@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [spork "0.2.0.3-SNAPSHOT"]
-                 [incanter "1.5.6"]
+                 [incanter "1.9.1"]
+;                 [incanter "1.5.8"]
                  [iota "1.1.2"]]
   :repl-options {:init (do (println "Loading post processor")
                            (require 'proc.example)

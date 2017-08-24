@@ -789,13 +789,7 @@
         (.setAntiAlias chart false)
         chart)))
 
-(defn sand-chart [ds & {:as opts}]
-  (->> ds 
-       (roll-sand)
-       (stacked-areaxy-chart*  :start
-                               :quantity
-                               :legend true
-                               :group-by :Category :data)))
+
 (defn stacked-areaxy-chart2*
   [^xydataset xytable & options]
   (let [opts         (if options (apply assoc {:legend true :aa false} options)
@@ -843,6 +837,14 @@
         (when tickwidth (set-xticks chart tickwidth))
         (set-theme     chart  theme)
         chart))))
+
+(defn sand-chart [ds & {:as opts}]
+  (->> ds 
+       (roll-sand)
+       (stacked-areaxy-chart2*  :start
+                               :quantity
+                               :legend true
+                               :group-by :Category :data)))
 
 (def ^:dynamic *sampling* :daily)
 

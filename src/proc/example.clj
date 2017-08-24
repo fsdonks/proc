@@ -97,3 +97,15 @@ Call with :sync false in order to not sync the x and y axis across these charts.
 ;given a parent directory, return us all paths of the run folders.... identify
 ;a run folder by some marathon file
 (defn run-names-from [rootsloc]) 
+
+
+;;testing defaults...
+(comment
+  (def root
+    (spork.util.io/alien->native
+     (spork.util.io/hpath "workspacenew/notional/")))
+  (load-file (str root "interests.clj"))
+  
+  
+  
+  )
