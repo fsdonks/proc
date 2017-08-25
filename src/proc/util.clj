@@ -481,3 +481,44 @@
       (second)
       (Integer/parseInt))))
  
+
+
+;;Incanter patches.....
+(in-ns 'incanter.io)
+;;This is just a hack to allow us to parse 9-digit SRCs
+;;without interpreting them as scientific numbers.
+(defn parse-string [x & [default-value]]
+  (if  (and (== (count x) 9)
+            (= (nth x 5) \E))
+    x
+    (or (spork.util.parsing/parse-string x)
+        default-value)))
+(in-ns 'proc.util)
+
+;;This is to try to speed up our damn charts...
+;;proc.stacked/dwell-over-fill doesn't need the
+;;entire fills table....in fact, we ignore
+;;most of the table entirely.  So, we spend more
+;;time parsing and garbage collecting useless
+;;crap.  Also, we can use string 
+(def fill-schema
+  {:fill-type         :text
+   :DwellBeforeDeploy :int
+   :Component   :text 
+   :DwellYearsBeforeDeploy :float
+   :DemandGroup :text
+   :Period      :text
+   :sampled     :text
+   :start  :int
+   :duration :int
+   :quantity :int
+   })
+
+(def deploy-schema
+  {:DeployInterval :int
+   :DwellYearsBeforeDeploy :float 
+   :Component :text
+   :FollowOnCount :int
+   :Demand :text
+   :DemandType :text
+   :Period :text})

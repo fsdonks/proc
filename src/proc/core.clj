@@ -1543,7 +1543,8 @@
      (swing/stack pane (chart! dwell) (chart! fill))
      :title "Dwell Over Fill"));)
 
-(defn dwell-over-fill [root src subs phase]
+;;131 seconds to do basic 8 or so interests...
+#_(defn dwell-over-fill [root src subs phase]
   (let [path (str root "fills/" (first src) ".txt")]
     (if (spork.util.io/fexists? path)
       (let [[fill-data trend-info] (stacked/fill-data (util/as-dataset path) phase subs)]
@@ -1553,6 +1554,29 @@
          ;fill-data is XYdataset ;as-chart returns a jfree chart object?
          (stacked/as-chart fill-data {:title "Fill" :tickwidth 365}))])
       (println [:path path "Does Not Exist!" :ignoring src]))))
+
+;;3 seconds for the same.
+(defn dwell-over-fill [root src subs phase]
+  (let [path (str root "fills/" (first src) ".txt")]
+    (if (spork.util.io/fexists? path)
+      (let [as-str (spork.util.string/->string-pool 1000 2000) 
+            [fill-data trend-info]  (-> path
+                                        (tbl/tabdelimited->table  :schema (into {}
+                                                                                (map (fn [[k v]]
+                                                                                          [k (if (= v :text)
+                                                                                               (fn [s] (as-str s))
+                                                                                               v)]) (seq util/fill-schema))))
+                                        ;(util/as-dataset) ;;no longer needed..tables are datasets.
+                                        (stacked/fill-data phase subs))]
+      [(proc.core/do-chart-pane (str "Run: " (get-run-name root) "<br>Interest: " (first src) )) ;"<br>" for a newline
+       (-> (str root "AUDIT_Deployments.txt")
+           (tbl/tabdelimited->table  :schema util/deploy-schema)
+           (deployment-plot   src phase)); avg line should continue
+       (binding [proc.stacked/*trend-info* trend-info] ;Meh.  if we don't have new trend-info, this is a circular binding
+         ;fill-data is XYdataset ;as-chart returns a jfree chart object?
+         (stacked/as-chart fill-data {:title "Fill" :tickwidth 365}))])
+      (println [:path path "Does Not Exist!" :ignoring src]))))
+
 
 (def somephases ["PreSurge" "Surge1" "Surge2" "BetweenSurge" "PostSurge"])
 

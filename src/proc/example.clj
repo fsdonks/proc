@@ -16,11 +16,15 @@
 #_(load-file (util/path! constants-look))
 
 ;;This dumps out our fills and sandtrends for the interesting srcs.
-(defn run-sample!   "Call with eachsrc true if you want the fills for each SRC individually, or if you want to group the fills by interest,
-call with ints set to a symbol from proc.interests.
-call with :byDemandType? true if you want fills files by demandtype instead of the default by SRC. NotUtilized and Unmet records 
-will always be found in a fills file associated with the respective SRC or interest.  If you don't see a fills file for an SRC, is it
-in your interests?"
+(defn run-sample!
+  "Call with eachsrc true if you want the fills for each SRC
+  individually, or if you want to group the fills by interest, call
+  with ints set to a symbol from proc.interests.  call with
+  :byDemandType? true if you want fills files by demandtype instead of
+  the default by SRC. NotUtilized and Unmet records will always be
+  found in a fills file associated with the respective SRC or
+  interest.  If you don't see a fills file for an SRC, is it in your
+  interests?"
   [path & {:keys [interests subints eachsrc byDemandType?] :or {interests ints/defaults byDemandType? true}}]
   (let [subs (if subints subints (keys interests))]
     (binding [proc.core/*byDemandType?* byDemandType?
@@ -34,17 +38,23 @@ in your interests?"
 ;                                                        (do-charts-from root :interests blah))
 
 
-;Do-charts-from creates stacked dwell and fill charts for each interest using AUDIT_deployments.txt and
-;the fills files produced from proc.fillsfils/run-sample!.
-;You need to call run-sample! in order to make a folder for fills files within the Marathon run folder before calling do-charts-from
+;;Do-charts-from creates stacked dwell and fill charts for each
+;;interest using AUDIT_deployments.txt and the fills files produced
+;;from proc.fillsfils/run-sample!.  You need to call run-sample! in
+;;order to make a folder for fills files within the Marathon run folder
+;;before calling do-charts-from
 (defn do-charts-from
-      "Pass in your own interests if you'd like.  See examples of interests in proc.interests
-:group-key defaults to :DemandType for dwell-before-deployment plot.  Can set :group-key to :UnitType as well.
-Call with :sync false in order to not sync the x and y axis across these charts.  :sync defaults to true.
-  Call with :phases set to a sequence of phases defined in the run in order to see separate charts for each phase.  Will throw
-  a null pointer exception if one of your phases doesn't exist in the run.
-  Call with :fillbnds {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or 
-  :dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to set the bounds for axes."
+   "Pass in your own interests if you'd like.  See examples of
+    interests in proc.interests :group-key defaults to :DemandType for
+    dwell-before-deployment plot.  Can set :group-key to :UnitType as
+    well.  Call with :sync false in order to not sync the x and y axis
+    across these charts.  :sync defaults to true.  Call with :phases set
+    to a sequence of phases defined in the run in order to see separate
+    charts for each phase.  Will throw a null pointer exception if one
+    of your phases doesn't exist in the run.  Call with :fillbnds
+    {:fxlow val0 :fxhigh val1 :fylow val2 :fyhigh val3} and/or
+    :dwellbnds {:dxlow val4 :dxhigh val5 :dylow val6 :dyhigh val7} to
+    set the bounds for axes."
   [roots &
    {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds
            vis save-fill save-dwell ppt return]
@@ -83,14 +93,18 @@ Call with :sync false in order to not sync the x and y axis across these charts.
            (stacked/roll-sand :cat-function stacked/parse-arfor-fill)
            (stacked/expand-samples)) ; this smooths out the picture but what is it doing?
       (stacked/xy-table :start :quantity :group-by :Category :data))
-      (stacked/stacked-areaxy-chart2* :legend true :color-by stacked/arforgen-color-2 :order-by stacked/arforgen-order-2)
+        (stacked/stacked-areaxy-chart2*
+         :legend true :color-by stacked/arforgen-color-2
+         :order-by stacked/arforgen-order-2)
       (view))))
 
 (defn lines-demo 
   "We can make lines instead of stacked area charts, but need to uncompress x labels, and use fewer groups..."
   [fpath]
-  (let [dset (stacked/roll-sand (util/as-dataset fpath) 
-                                   :cols [:FillType :DemandType] :cat-function stacked/suff-cat-fill-subs )]
+  (let [dset (stacked/roll-sand
+              (util/as-dataset fpath) 
+              :cols [:FillType :DemandType]
+              :cat-function stacked/suff-cat-fill-subs )]
     (view (line-chart :start :quantity :group-by :Category :legend true :data dset))))
 
 
