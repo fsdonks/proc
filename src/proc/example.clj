@@ -105,6 +105,7 @@ Call with :sync false in order to not sync the x and y axis across these charts.
     (spork.util.io/alien->native
      (spork.util.io/hpath "workspacenew/notional/")))
   (load-file (str root "interests.clj"))
+  ;;gives us interests, branches  
   
   
   

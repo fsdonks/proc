@@ -212,7 +212,10 @@
                 (assoc l :start start :duration duration))))
          (rconj (assoc le :start (:T le) :duration (+ 1 (- @maxt (:T le)))))))) ;+1 since we'll consider last day processed
 
-
+;;This is a big bottleneck for small records...
+;;Can we stream this?
+;;TODO: stream, don't do a full group-by!  Break apart the work using
+;;channels maybe...
 (defn unit-locs [recs]
     (->> (group-by :EntityFrom recs)
          (map (fn [[u xs]]

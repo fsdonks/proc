@@ -1,11 +1,24 @@
+;;Compatibility layer to extend spork.util.table usage
+;;into incanter datasets (as of 1.9.1).
+;;Since datasets are now based on an API in clojure.core.matrix,
+;;we can extend the API to use our table functions.  This should
+;;eliminate the trouble we've have processing incanter
+;;datasets effeciently, since we can parse spork tables
+;;using schemas.
 (ns proc.dataset
   (:require [spork.util [table :as tbl]]
             [clojure.core.matrix.protocols :as mp]
             [clojure.core.matrix.implementations :as imp]
-            [clojure.core.matrix.impl.dataset :as ds])
+            [clojure.core.matrix.impl.dataset :as dsi]
+            [clojure.core.matrix.dataset :as ds])
   (:import [clojure.lang IPersistentVector]))
 
 ;;In theory, these get us compatible dataset implementations for spork.util.table...
+
+(defn table-col [t i]
+  (if (number? i)
+    (nth (tbl/table-columns t) i)
+    (tbl/field-vals (tbl/get-field i t))))
 
 (extend-type spork.util.table.column-table
 ;;"Protocol to support getting slices of an array.  If implemented, must return either a view, a scalar 
@@ -16,13 +29,16 @@
     (tbl/nth-row m i))
 ;;"Gets a column of a matrix with the given row index."
   (get-column [m i]
-    (nth (tbl/table-columns m) i))
+    (table-col m i))
 ;;"Gets the major slice of an array with the given index. For a 2D matrix, equivalent to get-row"
   (get-major-slice [m i]
     (mp/get-row m i))
 ;;"Gets a slice of an array along a specified dimension with the given index."  
   (get-slice [m dimension i]
-    (throw (Exception. [:not-implemented])))
+    (case dimension
+      0 (tbl/nth-row m i)
+      1 (table-col m i)             
+    (throw (Exception. (str [:invalid-slice dimension i])))))
  
   mp/PMatrixRows 
 ;;"Protocol for accessing rows of a matrix"
@@ -56,7 +72,7 @@
     (mp/new-vector [] length)) 
   (new-matrix [m rows columns] 
     (let [col-indexes (range columns)] 
-      (ds/dataset-from-columns
+      (dsi/dataset-from-columns
        col-indexes 
        (for [i col-indexes] 
          (mp/new-vector (imp/get-canonical-object) rows))))) 
@@ -64,7 +80,7 @@
     (mp/new-matrix-nd [] shape)) 
   (construct-matrix [m data] 
     (if (== 2 (long (mp/dimensionality data))) 
-      (ds/dataset-from-array data) 
+      (dsi/dataset-from-array data) 
       nil)) 
   (supports-dimensionality? [m dims] 
     (<= 1 (long dims) 2))
@@ -128,7 +144,7 @@
       (-> (for [f  (dedupe (concat ls rs))]
             [f  (if (right? f)
                   (mp/get-column ds2 f)
-                  (tbl/field-vals (tbl/get-field ds1 f)))])
+                  (tbl/field-vals (tbl/get-field f ds1)))])
           (vec)
           (tbl/conj-fields tbl/empty-table))))
   ;;"Renames columns based on map of old new column name pairs"
@@ -156,16 +172,45 @@
   ;;"Returns a dataset created by combining the columns of the given datasets"
   (join-columns [ds1 ds2]
     (let [ls (tbl/table-fields ds1)
-          rs (tbl/table-fields ds2)]
+          rs (mp/column-names ds2)]
       (if (empty? (clojure.set/intersection (set ls) (set rs)))
         (mp/merge-datasets ds1 ds2)
         (throw (Exception. (str "cannot merge duplicate fields"))))))
 
   #_mp/PDatasetMaps
   ;"Returns map of columns with associated list of values"
-  #_(to-map [ds]
-    (zip-map (tbl/table-fields ds)
+  (to-map [ds]
+    (zipmap (tbl/table-fields ds)
              (tbl/table-columns ds)))
                    
   ;"Returns seq of maps with row values"
-  #_(row-maps [ds] (tbl/table-records ds)))
+  (row-maps [ds] (tbl/table-records ds)))
+
+
+(comment ;testing dataset api..
+  (def res (tbl/make-table   {:name ["tom" "bill" "joe"], :age [1 2 3]}))
+  (def other (tbl/make-table {:name ["tom" "bill" "joe"], :age [1 2 3]}))
+
+  (ds/join-columns res other)
+  ;#spork.util.table.column-table{:fields [:name :age :year :type], :columns [["tom" "bill" "joe"] [1 2 3] [10 20 30] [:a :b :c]]}
+  (ds/add-column res :blah [:A :a :a])
+  ;#spork.util.table.column-table{:fields [:name :age :blah], :columns [["tom" "bill" "joe"] [1 2 3] [:A :a :a]]}
+  (ds/add-column res :blah [:A :a :a :a])
+  ;#spork.util.table.column-table{:fields [:name :age :blah], :columns [["tom" "bill" "joe"] [1 2 3] [:A :a :a]]}
+  (ds/column-index res :name)
+  ;0
+  (ds/column-index res :age)
+  ;1
+  (ds/except-columns res [:name])
+  ;#spork.util.table.column-table{:fields [:age], :columns [[1 2 3]]}
+  (ds/replace-column res :age [0 0 0])
+  ;#spork.util.table.column-table{:fields [:name :age], :columns [["tom" "bill" "joe"] [0 0 0]]}
+  (ds/row-maps (ds/replace-column res :age [0 0 0]))
+  ;({:name "tom", :age 0} {:name "bill", :age 0} {:name "joe", :age 0})
+  (ds/select-rows res [1])
+  ;#spork.util.table.column-table{:fields [:name :age], :columns [["bill"] [2]]}
+  (ds/select-rows res [0])
+  ;#spork.util.table.column-table{:fields [:name :age], :columns [["tom"] [1]]}
+  (ds/select-rows res [0 1])
+  ;#spork.util.table.column-table{:fields [:name :age], :columns [["tom" "bill"] [1 2]]}
+  )

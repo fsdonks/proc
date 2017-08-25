@@ -4,6 +4,8 @@
             [incanter.core :refer  :all]
             [incanter.io   :refer  :all]
             [proc.schemas          :as schemas]
+            [proc.dataset] ;incanter dataset wrapper for tables.
+            [clojure.core.matrix.dataset :as ds]
             [clojure.core.reducers :as r]            
             [iota :as iota]
             [spork.util [temporal :as temp]
@@ -13,6 +15,26 @@
                         [zipfile  :as z]
                         [general  :as general]
                         [stream :as stream]]))
+
+
+(defn records
+  "Aux function to wrap the legacy incanter dataset and new implementation.
+   Allows us to avoid using (:rows data) to get the seq of maps originally 
+   stored in the old datasets.  We use the protocol functions to access 
+   column stores now."
+  [ds]
+  (ds/row-maps ds))
+
+(defn map-records
+  "Aux function to map functions to a record-based view 
+   of the dataset or table.  Keeps tables in tables.."
+  [f ds]
+  (->> (records ds)
+       (map f)
+       ((if (tbl/tabular? ds)
+          spork.util.table/records->table
+          ds/dataset))))
+  
 
 ;;deleted existing spork patches...
 ;;Moved most functions over to spork, temporarily bridging via
@@ -147,6 +169,7 @@
 (defmethod as-dataset :dataset [ds & opts] ds)
 
 (defmethod as-dataset :table [ds]
+  ;;shouldn't be necessary now...
   (incanter.core/dataset (spork.util.table/table-fields  ds)
                          (spork.util.table/table-records ds)))
 

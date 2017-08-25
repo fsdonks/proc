@@ -727,7 +727,7 @@
           data         (or (:data opts) $data)
           _group-by    (when (:group-by opts) (:group-by opts)) ; (data-as-list (:group-by opts) data)) 
           ;;new
-          series-map   (series-by xkey ykey (or _group-by (fn [_] "Series")) (:rows data))
+          series-map   (series-by xkey ykey (or _group-by (fn [_] "Series")) (util/records #_:rows data))
           ;;new
           order        (get (meta series-map) :order)
           dtbl         (build-datatable   series-map)]
@@ -766,7 +766,7 @@
           vertical?    (if (false? (:vertical opts)) false true)
           legend?      (true? (:legend opts))
           ;;new
-          series-map   (series-by xkey ykey (or _group-by (fn [_] "Series")) (:rows data))
+          series-map   (series-by xkey ykey (or _group-by (fn [_] "Series")) (util/records #_:rows data))
           ;;new
           order        (get (meta series-map) :order)
           dtbl         (build-datatable series-map)
@@ -848,9 +848,15 @@
 
 (def ^:dynamic *sampling* :daily)
 
+;;Since incanter 1.9.1 uses a new dataset implementation, we
+;;really don't want to mess with the internals like we used to.
+;;So, accessing rows the old way is a nono.
 (defn expand-samples [ds & {:keys [samplefn] :or {samplefn daily-samples}}]
-  (if (= *sampling* :daily) 
-    (assoc ds :rows (samplefn (:rows ds)))
+  (if (= *sampling* :daily)
+    ;(assoc ds :rows (samplefn (:rows ds)))
+    (incanter.core/dataset (incanter.core/col-names ds)
+                           (samplefn (util/records ds)))
+
     ds))
   
 
@@ -867,7 +873,7 @@
   (let [group-stack-height (fn [dgroup] (let [caps (str/upper-case dgroup)]
                                           (case caps "UNGROUPED" 0 "HLD" 1 (abs (hash caps)))))
         cat-stack-height (fn [cat] (case cat "Met Demand" 0 "Dwell: AC<1yr RC<4yr" 1 "Extended Force" 2 "Unmet Demand" 3))   
-        cats (->> (:rows rolled-fills)
+        cats (->> (util/records #_:rows rolled-fills)
                (map :Category)
                (set)
                (map (fn [s] (let [[dgroup cat]  (str/split s #"-")]
