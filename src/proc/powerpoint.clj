@@ -161,7 +161,7 @@
 (defn png?
   "Returns true if filename is specified as a png file"
   [filename]
-  (re-matches #"[\d\w_-]*\.png" filename))
+  (re-matches #".*png$" #_#"[\d\w_-]*\.png" filename))
 
 (defn file-names [p]
   (map fname (list-files p)))

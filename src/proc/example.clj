@@ -118,9 +118,18 @@
   (def root
     (spork.util.io/alien->native
      (spork.util.io/hpath "workspacenew/notional/")))
+  ;;Had to figure this out from the code, no documentation.....(weak!)
+  (def ppt-settings {:filename  (str root "dwell-over-fill.pptx")
+                     :template  (spork.util.io/alien->native (str root "template.pptx"))
+                     :num-per-slide 2
+                     })
   (load-file (str root "interests.clj"))
   ;;gives us interests, branches  
-  
-  
-  
-  )
+
+  ;;Building all 38 branches
+  ;;couple of minutes without tweaks, I think we can go much faster here.
+  (run-sample! root :interests branches)
+  ;;~55s without tweaks...can be faster.
+  (do-charts-from root :interests branches
+                  :save-dwell true
+                  :save-fill true :ppt ppt-settings :vis nil))
