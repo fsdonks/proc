@@ -135,9 +135,11 @@
 
 (defmacro only-srcs [xs & expr]
   `(let [srcs# (set ~xs)
-         filterf# (fn [v#] (contains? srcs# v#))
-         loc-filterf# (fn [s#] (contains? (srcs+ srcs# :additions :Donor) s#))
-         demand-filterf#  (fn [t#] (contains? (srcs+ srcs# :additions :Recepient) t#))       ]
+         filterf#     (fn [v#] (contains? srcs# v#))
+         donors#      (srcs+ srcs# :additions :Donor)
+         recepients#  (srcs+ srcs# :additions :Recepient)
+         loc-filterf# (fn [s#] (contains? donors# s#))
+         demand-filterf#  (fn [t#] (contains? recepients# t#))       ]
      (binding [;if looking at src performance only, need anything that can receive our interests as well
                ~'proc.core/*demand-trend-pre-filter*  (if *byDemandType?* filterf# demand-filterf#) 
                ~'proc.core/*demand-trend-filter* (where-key :SRC (if *byDemandType?* filterf# demand-filterf#)) 
