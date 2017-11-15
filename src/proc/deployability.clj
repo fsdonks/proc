@@ -22,17 +22,19 @@
     
     
 (defn deployable-events [root] 
-  (binding [tbl/*split-by* #","]
+  ;(binding [tbl/*split-by* #","]
       (util/with-rdrs [rdr (str root "EventLog.csv")]
                 (->> (tbl/lines->records (line-seq rdr) {"Time" :int "EventType" :text "EntityTo" :text};schemas/eventlog 
                                     :keywordize-fields false 
-                                    :parsemode :noscience)
+                                    :parsemode :noscience
+                                    )
                   (r/filter (fn [{:keys [EventType]}] (contains? #{"Deploying Unit" 
                                                                    "Not Deployable" 
                                                                    "New Deployable Stock"} EventType))) 
                   (into [])
                   (group-by (juxt :EntityTo :Time))
-                  (map (fn [[[unit t] recs]] (deployable-status (last recs))))))))
+                  (map (fn [[[unit t] recs]] (deployable-status (last recs)))))))
+;)
 
 (defn spit-deployable-status [root & {:keys [ubound] :or {ubound (util/last-day root)}}]
   (let [elogrecs (deployable-events root)
@@ -87,11 +89,13 @@
       "Supply Update" (assoc newr :Status "NotDeployable")))) ;unit reset its cycle-time to 0 and is probably not deployable
 
 (defn events-with-deployments [root] 
-  (binding [tbl/*split-by* #","]
+  ;;(binding [tbl/*split-by* #","]
+  ;;everything is tabbed now, note we can override via :delimiter option in lines->records
     (util/with-rdrs [rdr (str root "EventLog.csv")]
       (->> (tbl/lines->records (line-seq rdr) {"Time" :int "EventType" :text "EntityTo" :text "Message" :text};schemas/eventlog 
                                :keywordize-fields? true
-                               :parsemode :noscience)
+                               :parsemode :noscience
+                               )
         (r/filter (fn [{:keys [EventType Message]}] (or (contains? #{"Deploying Unit" 
                                                          "Not Deployable" 
                                                          "New Deployable Stock"} EventType)
@@ -110,7 +114,8 @@
                                (if (nil? deployable-update)
                                  (last recs) ;reset to 0 and not deployable
                                  deployable-update)
-                               deployment)))))))))                                        
+                               deployment))))))))
+;)  
                                   
 ;need to account for no other state but the first one and also
 ; we are popping chunks when we shouldn't be on this test case
@@ -124,9 +129,10 @@
     ;end at the end of the simulation
         (conj chunks (assoc curr :End ubound))))
 
+;;tom: patched to use the function interface defined in tbl/records->file
 (defn deployable-status-chunks  [root & {:keys [ubound] :or {ubound (util/last-day root)}}]
   (let [elogrecs (events-with-deployments root)
-        sampler (sample-trends elogrecs #(get % :Unit) #(get % :Start))
-        recs (mapcat (partial make-event-blocks ubound) sampler)]
-    (tbl/records->file recs (str root "deployable_status_v6.txt") :flds [:Unit :Identifier :SRC :compo :Status :Start :End])))                    
-                    
+        sampler  (sample-trends elogrecs #(get % :Unit) #(get % :Start))
+        recs     (mapcat (partial make-event-blocks ubound) sampler)]
+    (tbl/records->file recs (str root "deployable_status_v6.txt")
+         :field-order [:Unit :Identifier :SRC :compo :Status :Start :End])))                    

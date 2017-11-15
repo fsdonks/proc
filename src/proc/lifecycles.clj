@@ -19,13 +19,14 @@
 (defn policy-changes-by-unit 
   "Returns a map of UIC to a sequence of policy changes."
   [root & {:keys [include-unit?] :or {include-unit? identity}}]
-  (binding [tbl/*split-by* #","]
+  ;(binding [tbl/*split-by* #","]
     (let [recs (->>  (tbl/tabdelimited->records (str root "EventLog.csv") :schema schemas/eventlog
                                                 :parsemode :noscience 
                                                 :keywordize-fields? false)
                  (r/filter (fn [r] (and (= (r "EventType") "Unit Changed Policy") (include-unit? (r "EntityFrom")))))
                  (r/foldcat))]
-    (group-by (fn [r] (r "EntityFrom")) recs))))
+      (group-by (fn [r] (r "EntityFrom")) recs)))
+;)
 
 (defn get-changes 
   "For one unit, returns x and y coordinates before and after policy changes or lifecycle resets.  xs are records from subcycles.txt, last-day of the simulation

@@ -89,21 +89,33 @@
         all-demand-groups (set (map :DemandGroup dmdrecs))]
     (reduce (fn [acc dmd] (assoc acc (str/upper-case dmd) (get-ph2-start dmd dmdrecs))) {} all-demand-groups)))
 
-;it would probably be better to scrape the fills folder for all SRC filenames instead of get-fill-paths which will
-;pull the fill path filenames from the fills edn file which holds filenames for the latest run-sample! run.
+;;it would probably be better to scrape the fills folder for all SRC
+;;filenames instead of get-fill-paths which will pull the fill path
+;;filenames from the fills edn file which holds filenames for the
+;;latest run-sample! run.
+;;Tom: rewrote this to use the tbl/records->file function, which
+;;delegates all of the appending and manual work to spork.util.stream,
+;;which streams sequences of records in a consistent tab-delimited format
+;;defined by the caller, handles appending and all that.  trying to prune
+;;the definition from proc.sporkpatches...
 (defn fills+fields
   "Spits out a new fills file which is a subset of the fills plus additional fields" 
   [root]
   (let [ph2starts (get-phase2-starts root)
-        paths (get-fill-paths root)
-        fillpath->recs (fn [p headers? append?] (-> (files->records [p] :computed-fields (assoc {:TrainLevel train-level
-                                                 ;had to upper-case since fills have UnGrouped where demand records are Ungrouped
-                     :DaysAfterPHII (fn [r] (if-let [ph2start (get ph2starts (str/upper-case (:DemandGroup r)))] (- (:start r) ph2start)))
-                     } :run (fn [r] root)))
-                                 (tbl/records->file (str root "allfills+fields.txt") :headers? headers? :append? append?)))
-        _ (fillpath->recs (first paths) true false)]
-    (doseq [path (rest paths)]
-      (fillpath->recs path false true))))
+        paths     (get-fill-paths root)
+        outpath   (str root "allfills+fields.txt")
+        fillpath->recs
+          (fn [p] 
+            (files->records [p] :computed-fields
+                  (assoc {:TrainLevel train-level
+                  ;had to upper-case since fills have UnGrouped where demand records are Ungrouped
+                          :DaysAfterPHII
+                          (fn [r]
+                            (if-let [ph2start (get ph2starts (str/upper-case (:DemandGroup r)))]
+                              (- (:start r) ph2start)))}
+                         :run (fn [r] root))))]
+    (-> (mapcat fillpath->recs paths)
+        (tbl/records->file outpath))))
 
 (defn samples-and-fills+ [root]
   (#(do (run-sample! % :eachsrc true) (fills+fields %)) root))

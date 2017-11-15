@@ -64,8 +64,11 @@
 ;1) If the last field has no value, we need to patch in an empty string for it.  Else, we try to aget an array                               
 ;index which isn't present.                               
 ;2) We can now bind *split-by* to #"," for csv files                           
-(def ^:dynamic *split-by* #"\t")
-(defn lines->records
+#_(def ^:dynamic *split-by* #"\t")
+
+;;tom: now using pooled-parsing-scheme in spork.util.table,
+;;obviates the need for this.
+#_(defn lines->records
   "Produces a reducible stream of 
    records that conforms to the specifications of the 
    schema.  Unlike typed-lines->table, it does not store
@@ -100,9 +103,10 @@
                 missing (filter (complement known) (map name (keys s)))]
             (assert (empty? missing) (str [:missing-fields missing])))
         ;;added by Tom, Craig's stuff was killing us with reflection costs...
-        ^String sep (if (= (.pattern *split-by*) "\\t") "\t" ",")
+        ;;don't need this anymore, all output should be tabbed now.
+        ^String sep "\t" ;(if (= (.pattern *split-by*) "\\t") "\t" ",")
         ;;our string-pool
-        sp (->string-pool 100 10000)
+        sp     (s/->string-pool 100 10000)
         parse! (fn [x] (if (string? x) (sp x) x))
         ]                                          
     (->> ls
@@ -120,8 +124,10 @@
                               {} idx->fld))))
          )))
 
+;;Note: unpatched, doesn't make sense for main spork.
+
 ;wanted to patch this in case there is no value for the last field but didn't do anything yet (see comment)
-(defn typed-lines->table
+#_(defn typed-lines->table
   "A variant of lines->table that a) uses primitives to build
    up our table columns, if applicable, using rrb-trees.
    b) enforces the schema, ignoring fields that aren't specified.
@@ -173,10 +179,12 @@
          (make-table)
          )))
 
+;;Note: Migrated calls to use the idiomatic API in spork.util.table, delegating functionality to
+;;spork.util.stream functions.
 
 ;patched because craig wanted to specify an order of the fields and wanted to write to the same file multiple times in separate calls.
 ;;this is a pretty useful util function.  could go in table.
-(defn records->file [xs dest & {:keys [flds append? headers?] :or {flds (vec (keys (first xs))) append? false headers? true}}]
+#_(defn records->file [xs dest & {:keys [flds append? headers?] :or {flds (vec (keys (first xs))) append? false headers? true}}]
   (let [hd   (first xs)
         sep  (str \tab)
         header-record (reduce-kv (fn [acc k v]
