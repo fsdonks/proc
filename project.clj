@@ -1,10 +1,10 @@
-(defproject proc "0.2.3-SNAPSHOT"
+(defproject proc "0.2.4-SNAPSHOT"
   :description "Embeddable post-processor."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [spork "0.2.0.7-SNAPSHOT"]
+                 [spork "0.2.0.8-SNAPSHOT"]
                  [joinr/incanter "1.9.1-SNAPSHOT"]
                  ;;Note: the current release of incanter/incanter 1.9.1
                  ;;has a jacked dependency via swingrepl to an ancient clojure.
