@@ -3,12 +3,14 @@
             [proc.util :as util]
             [proc.interests :as ints]
             [proc.powerpoint :as ppt]
-            [proc.clipboard :as clip])
+            [proc.clipboard :as clip]
+            [spork.util.table :as tbl])
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
         [proc.supply])
   (:import [javax.swing JFrame]))
+
 
 (def chart-info {:title 0 :dwell 1 :fill 2})
 
@@ -120,16 +122,50 @@
       )theme))
 
 ;; ===== HELPER FUNCTIONS FOR BUILDING CHARTS/DO-CHARTS-FROM ======================
+(defn scope-to-deployments [root src-set]
+  (let [path (str root "AUDIT_Deployments.txt")
+        deps (tbl/tabdelimited->table path :schema util/deploy-schema)]
+    (tbl/select  :from deps :where
+                (fn [{:keys [UnitType DemandType]}]
+                     (or (src-set UnitType)
+                         (src-set DemandType))))))
+
+(defn interests->src-map [ints]
+  (reduce (fn [acc [k v]]
+            (assoc acc k
+              (conj (get acc k #{}) v)))
+          {}
+          (apply concat
+                 (for [[nm intspec] ints]
+                   (let [[lbl srcs] intspec]
+                     (for [src srcs]
+                       [src nm]))))))
+
+(defn src-map->src-set [sm] (set (keys sm)))
 
 (defn root->charts
   "Creates charts given root, interest, phases, group-key, subs and subints."
   [root interests phases group-key subs subints]
   (org.jfree.chart.ChartFactory/setChartTheme (get-theme "Calibri"))
-  (let [ints (if subints subints (keys interests))]
+  (let [ints (if subints subints (keys interests))
+        src-map          (interests->src-map interests)
+        src-set (src-map->src-set src-map)
+        scoped-deployments (scope-to-deployments root
+                                                 src-set)
+        active-srcs (reduce (fn [acc {:keys [UnitType DemandType]}]
+                              (conj acc UnitType DemandType))
+                            #{} scoped-deployments)
+        active-interests  (reduce clojure.set/union #{}
+                                  (vals (select-keys src-map active-srcs)))]
     (only-by-interest ints interests
-                      (remove nil? (for [int ints phase phases]
-                                     (binding [dep-group-key group-key]
-                                       (dwell-over-fill root (get interests int) subs phase)))))))
+     (doall (remove nil?
+               (for [int ints phase phases]
+                 (if (active-interests int)
+                   (binding [dep-group-key group-key]
+                     (dwell-over-fill root (get interests int)
+                                      subs phase :deployments
+                                      scoped-deployments))
+                   (println [:ignoring int :for-charting :no-deployments!]))))))))
 
 (defn charts->dwells
   "Given a vector of chart objects, returns the dwells plot"
@@ -144,9 +180,13 @@
 (defn ->set-bounds
   "Sets the bounds on all charts in charts to supplied bounds. Returns nil"
   [charts xlow xhigh ylow yhigh]
-  (doseq [chart charts :let [sb (fn [axis l h] (proc.util/set-bounds chart axis :lower l :upper h))]]
-    (sb :x-axis xlow xhigh) (sb :y-axis ylow yhigh)))
-
+  (doseq [chart charts
+          :let [sb (fn [axis l h]
+                     (proc.util/set-bounds chart axis :lower l :upper h))
+                ]]
+    (sb :x-axis xlow xhigh)
+    (sb :y-axis ylow yhigh)))
+  
 (defn ->sync
   "Syncronizes axis/axies on all charts and sets bounds. Returns nil" 
   [charts syncys xlow xhigh ylow yhigh]

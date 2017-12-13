@@ -37,12 +37,19 @@
 ;Can do trac-like charts by demand group by doing (binding [proc.stacked/*by-demandgroup?* true] 
 ;                                                        (do-charts-from root :interests blah))
 
-
 ;;Do-charts-from creates stacked dwell and fill charts for each
 ;;interest using AUDIT_deployments.txt and the fills files produced
 ;;from proc.fillsfils/run-sample!.  You need to call run-sample! in
 ;;order to make a folder for fills files within the Marathon run folder
-;;before calling do-charts-from
+;;before calling do-charts-from.
+;;(Revision): We were getting null pointer errors from here, stemming
+;;from passing empty charts down the pipeline.  Basically, older runs
+;;had generated fills, and the fills were being traversed to build
+;;charts - without deployments from the current run - generating
+;;a bunch of empty charts that had no axes and bombed out when
+;;trying to synchronize scales.  Refactored to produce charts
+;;more effeciently (use deployments to scope interests first),
+;;and ensure we're not passing null charts down the pipe.
 (defn do-charts-from
    "Pass in your own interests if you'd like.  See examples of
     interests in proc.interests :group-key defaults to :DemandType for
@@ -61,12 +68,20 @@
     :or {phases [nil] interests ints/defaults group-key :DemandType phase-lines true vis true
          fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
   (println "Building charts")
-  (let [roots (if (string? roots) [roots] roots)
-        charts (zipmap roots (doall (pmap #(c/root->charts % interests phases group-key subs subints) roots)))
-        phstarts (min (apply concat (map #(phase-starts %) roots)))]
-    (doseq [chart charts :let [all-charts (apply concat (vals charts))]]
-      (c/->sync all-charts syncys (:dxlow dwellbnds) (:dxhigh dwellbnds) (:dylow dwellbnds) (:dyhigh dwellbnds))
-      (c/->lines all-charts phase-lines phstarts)
+  (let [roots  (if (string? roots) [roots] roots)
+        charts (into {} (filter identity)
+                     (pmap  (fn [r]
+                             (let [cs (c/root->charts r interests phases group-key subs subints)]
+                               [r cs])) roots))
+        phstarts   (min (apply concat (map #(phase-starts %) roots)))
+        _          (println :all-charts)
+        all-charts (filterv identity (apply concat (vals charts)))
+        _ (println :syncing)
+        _ (c/->sync all-charts syncys (:dxlow dwellbnds) (:dxhigh dwellbnds) (:dylow dwellbnds) (:dyhigh dwellbnds))
+        _ (println :adding-lines)
+        _ (c/->lines all-charts phase-lines phstarts)
+        ]
+    (doseq [chart charts]
       (c/->save-dwell-fill (first chart) (last chart) save-dwell save-fill)
       (c/->vis (last chart) (first chart) interests vis))
     (println "Done formatting charts")
