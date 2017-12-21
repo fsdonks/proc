@@ -4,7 +4,9 @@
             [proc.interests :as ints]
             [proc.powerpoint :as ppt]
             [proc.clipboard :as clip]
-            [spork.util.table :as tbl])
+            [spork.util.table :as tbl]
+            [spork.util [io :refer [fname]]]
+            [clojure.string :as str])
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
@@ -222,12 +224,50 @@
       ;;(add-inventory-to-chart chart interests root)
       (show-chart root chart))))
 
-(defn charts->ppt [roots filename template num-per-slide]
-  (let [images (apply concat (for [root roots] (map #(str root %) (ppt/find-images root))))
-        pptx (ppt/->pptx template)
-        r (- (count images) (rem (count images) num-per-slide))
-        layout (if (zero? r) (partition num-per-slide images) (conj (partition num-per-slide images) (drop r images)))]
-    (doseq [ps layout]
-      ;;(println ps)
+(defn find-images
+  "get a sequence of .png filepaths from each root"
+  [roots]
+  (apply concat (for [root roots] (map #(str root %) (ppt/find-images root)))))
+
+(defn get-interest [png-filepath]
+  (-> (str/replace  png-filepath #"-dwell.png|-fill.png" "")
+      (str/split #"-")
+      (last)))
+
+(defn run-name [png-filepath]
+  (let [int (get-interest png-filepath)]
+    (first (str/split png-filepath (re-pattern (str "-" int "-"))))))
+         
+(defn sorted-images
+  "returns a sorted sequence of image filepaths.  Sorted according to
+  the order of roots and int-order"
+  [int-order roots]
+  (->> (find-images roots)
+       (util/sorted-by-vals [#(get-interest (fname %)) #(run-name (fname %))] (concat int-order roots))))
+
+(defn prep-images
+  "get a sequence of image filepaths from multiple directories"
+  [roots num-per-slide img-finder]
+  (let [images (img-finder roots)
+        r (- (count images) (rem (count images) num-per-slide))]
+    (if (zero? r) (partition num-per-slide images) (conj (partition num-per-slide images) (drop r images)))))
+
+(defn charts->ppt
+  "take images and put them in a powerpoint presentation"
+  [roots filename template num-per-slide & {:keys [img-finder] :or {img-finder find-images}}]
+  (let [pptx (ppt/->pptx template)]
+    (doseq [ps (prep-images roots num-per-slide img-finder)]
       (ppt/slide-with-images pptx ps))
     (ppt/save-ppt pptx filename)))
+
+;example
+(comment
+(def t1 "C:\\Users\\craig.j.flewelling\\Desktop\\t\\testdata-v6\\")
+
+(def t2 "C:\\Users\\craig.j.flewelling\\Desktop\\t\\testdata-v6 - Copy\\")
+
+(def test-order ["QM" "CAB"])
+
+(def i-finder (partial sorted-images test-order))
+
+(charts->ppt  [t1 t2] "C:\\Users\\craig.j.flewelling\\Desktop\\t\\test.pptx" (str t1 "\\template.pptx") 4 :img-finder i-finder))

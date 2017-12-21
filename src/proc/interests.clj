@@ -36,11 +36,17 @@ a number."
   (let [srcseq (str->seq src)]
     (and (= (count srcseq) 9) (every? number? (take 5 srcseq)) (string? (nth srcseq 5 false)))))  
 
-
 (defn srcs->interests 
   "takes a sequence of srcs as strings and returns an interest for each of these srcs"
   [srcs]  
   (reduce (fn [acc src] (assoc acc (keyword src) [src [src]])) {} srcs))
+
+(defn src->int
+  "Take interests and turn them into a map of src->interest"
+  [ints]
+  (reduce-kv (fn [a k v] (let [name (first v) srcs (second v)]
+                           (merge a
+                                  (reduce (fn [acc src] (assoc acc src name)) {} srcs)))) {} ints))
 
 (def ^:dynamic *include-fn* src9?)
 

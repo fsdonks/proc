@@ -424,6 +424,18 @@
     (filter (fn [rec] (contains? (set values) (column rec))) xs)
     (reduce (fn [recs val] (filter (fn [rec] (oper (column rec) val)) recs)) xs values)))
 
+(defn priority-map [coll]
+  (into {} (map-indexed (fn [i e] [e i]) coll)))
+
+(defn sorted-by-vals
+  "Sort a collection by by calling the juxt of fns on each item in collection.  Order is determined by
+   the order of juxt fns and the values in vals."
+  [fns vals coll]
+  (let [priority (priority-map vals)]
+    ;(+ 1 (count priority)) so that any value not in vals will go to the end of the returned collection.
+    (->> (sort-by #((apply juxt fns) %) coll)
+     (sort-by #(vec (map (fn [v] (get priority v (+ 1 (count priority))))  ((apply juxt fns) %)))))))
+
 ;;pulled from commented-out spork.util.table
 (definline zip-record! [xs ys]
   (let [ks  (with-meta (gensym "ks") {:tag 'objects})

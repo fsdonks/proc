@@ -4,7 +4,10 @@
 (ns proc.demandanalysis
   (:require 
             [proc.util :as util]
-            [clojure.string :as str])
+            [proc.schemas :as schemas]
+            [proc.interests :as ints]
+            [clojure.string :as str]
+            [spork.util.table :as tbl])
   (:use [incanter.core]
         [incanter.charts]))
 
@@ -99,3 +102,72 @@ group-bys is an alternative vector of column labels for grouping.   "
        (view (xy-plot times quants))))
         
 
+;;___________________________________
+
+;;spark charts
+
+(defn key->str
+  "Take a keyword, remove the : and return a string"
+  [keyw]
+  (last (clojure.string/split (str keyw) #":")))
+
+(defn keymap->strmap 
+  "proc.charts/interests->src-map returns a map of src to a set of interest keywords.
+  This will turn those interest keywords to strings."
+  [m]
+  (reduce-kv (fn [acc k v] (assoc acc k (set (map key->str v))))  {} m))
+
+(defn src->int
+  "This will return a set of interests for each src instead of one interest per
+  src like ints/src->int"
+  [interests]
+  (->> (interests->src-map interests)
+       (keymap->strmap)))
+  
+(defn met-by-time
+  "Demand satisfaction by group-fn and time from demandtrends.txt.
+  group-fn can be (src->int interests), identity for by src, or (fn [s] 'All') for everything"
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  ;allow for multiple interests per SRC.
+    (->> (tbl/tabdelimited->records path :pasemode :noscience :schema schemas/dschema)
+         (into [])
+         (mapcat (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled]}]
+              (let [grp (group-fn SRC)
+                    intr (if (coll? grp) grp [grp])
+                    basemap {:t t :req (+ TotalRequired Overlapping) :filled TotalFilled}]
+                  (for [i intr] (assoc basemap :interest i)))))
+         (remove (fn [r] (nil? (:interest r))))
+         (group-by :interest)
+         (reduce-kv (fn [acc interest v]
+                      (let [parts (partition-by :t v)]
+                        (conj acc
+                        [interest
+                         (map :t (map first parts))
+                         (map (fn [p] (/ (reduce + (map :filled p)) (reduce + (map :req p)))) parts)]))) [])))
+
+(defn smooth
+  "Used when plotting x and y values.  When the xs are sparse, this
+  returns new xs and ys so that there are 90 degree angles between
+  each delta"
+  [xs ys]
+  (let [spliced (->> (for [x (range 1 (count xs))]
+                       [[(- (nth xs x) 0.00001) (nth xs x)] [(nth ys (- x 1)) (nth ys x)]])
+                     (concat [[[(first xs)] [(first ys)]]]))
+        agg (fn [f parts] (mapcat f parts))]
+    [(agg first spliced) (agg second spliced)]))
+  
+(defn spark-charts
+  "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
+  group-fn"
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (doseq [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
+    (let [[sts sys] (smooth ts ys)
+          plt (xy-plot sts sys)
+          _ (.setTitle plt group)
+          _ (doto (new org.jfree.chart.ChartFrame group plt)                   
+              (.setSize 500 400)
+              (.setVisible true))])))
+
+;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5))
+
+;(add-polygon ap [[15 225] [35 225]])

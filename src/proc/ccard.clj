@@ -211,7 +211,7 @@
   "Sort a sequence of records (maps) by calling key on each record.  Order is determined by
    the order of the values in vals."
   [maps key vals]
-  (sort-by #((into {} (map-indexed (fn [i e] [e i]) vals)) (key %)) maps))
+  (util/sorted-by-vals [key] vals maps))
 
 ;roman numeral sort might be nice for surge 3.
 (defn get-phases 
