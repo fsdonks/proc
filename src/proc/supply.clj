@@ -62,39 +62,12 @@ with the changes made for one interest."
 
 
 (def supply-order [:Type :Enabled :Quantity :SRC :Component :OITitle :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position])
+(def key-fields [:Type :SRC :Component :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position] )
 
-;This is the laborious method.
-(comment
-(defn extra-fields [supply-fields]
-  (clojure.set/difference
-   (set supply-fields)
-   (set (map keyword (keys (dissoc schemas/supply-recs "Original?"))))))
-
-(defn merge-quants 
+(defn merge-quants
   "If there are duplicate (same compo and SRC) in supply records, this is meant to merge the quantities into one record
    and return a table.  The OI title of the record will be the last one found"
-  [path] ;path is expected to be a supply records tab-delim text file
-  (let [untable (tbl/tabdelimited->table (slurp path) :parsemode :noscience )
-        fields (:fields untable)
-        extrafields (conj (extra-fields fields) :OITitle :Enabled)
-        extrafields (if (:Spawntime extrafields) (disj extrafields :Spawntime) extrafields)
-        reducer (fn [quantmap {:keys [Quantity] :as rec}] (let [k (apply dissoc rec (conj extrafields :Quantity))
-                                                                currquant (:Quantity (get quantmap k))] 
-                                                                (assoc quantmap k (merge {:Quantity (if currquant (+ Quantity currquant)
-                                                                                                 Quantity)}
-                                                                                          (reduce #(assoc %1 %2 (get rec %2)) {} extrafields)))))                                                        
-        out (clojure.string/replace path "AUDIT_SupplyRecords.txt" "AUDIT_SupplyRecords_merged.txt")
-         table (-> (->> (reduce reducer {} (tbl/table-records untable))
-          (reduce-kv (fn [acc r p] (conj acc (merge r p))) [])
-          (tbl/records->table)
-          (tbl/order-fields-by supply-order))
-                   )] 
-    (tbl/table->file table out :stringify-fields? true
-                     )))
-)
-
-(def key-fields [:Type :SRC :Component :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position] )
-(defn merge-quants [path]
+  [path]
   (let [recs (tbl/tabdelimited->records (slurp path) :parsemode :noscience )
         out (clojure.string/replace path "AUDIT_SupplyRecords.txt" "AUDIT_SupplyRecords_merged.txt")]
     (-> (->> (group-by #(map % key-fields) recs)
