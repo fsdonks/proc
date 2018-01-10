@@ -35,7 +35,7 @@
   (.setTitle (first (all-chart-types :title [chart])) title))
   
 
-(defn get-chart-interest
+(defn get-chart-interest-string
   "Given a chart vector, returns the interest of the chart"
   [chart]
   (let [htmlstr (.getText (first (all-chart-types :title [chart])))
@@ -58,9 +58,9 @@
 
 (defn get-total-inventory
   "returns the total inventory as a string given the chart, interest, and root dir"
-  [chart interest root]
-  (let [chart-int (keyword (get-chart-interest chart))
-        srcs (last (get interest chart-int))
+  [chart interests root]
+  (let [chart-int (get-chart-interest-string chart)
+        srcs (get (proc.interests/str-interests->srcs interests) chart-int)
         supply (proc.supply/supply-by-compo root)
         inv (filter #(not (not %)) (map #(get supply %) srcs))]
     (add-all-invs inv)))

@@ -48,6 +48,12 @@ a number."
                            (merge a
                                   (reduce (fn [acc src] (assoc acc src name)) {} srcs)))) {} ints))
 
+(defn str-interests->srcs
+  "Turn interests into a map of the interest string to the SRC vector."
+  [interests]
+  (->> (map second interests)
+       (into {})))
+
 (def ^:dynamic *include-fn* src9?)
 
 (defn ints-for-srcs 
