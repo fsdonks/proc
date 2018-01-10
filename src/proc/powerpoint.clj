@@ -5,13 +5,13 @@
              [clojure.java [io :as io]]
              [proc.eutil :as eutil]
              [spork.util [io :refer [list-files fpath fname fext]]])
-   (:import [org.apache.poi.xslf.usermodel 
-             XMLSlideShow XSLFSlide XSLFPictureData XSLFTheme
-             XSLFSlideLayout XSLFSlideMaster SlideLayout XSLFPictureShape] ;any more?
-            [java.awt Rectangle]
+  (:import [org.apache.poi.xslf.usermodel 
+            XMLSlideShow XSLFSlide XSLFPictureData XSLFTheme
+            XSLFSlideLayout XSLFSlideMaster SlideLayout XSLFPictureShape] ;any more?
+           [java.awt Rectangle]))
               ;[java.io ;maybe unnecessary, used in demo.
             ; FileInputStream FileOutputStream File]
-            ))
+            
 
 ;;TODO: Fix reflection warnings.
 ;; Added wrapper functions to fix reflection warnings
@@ -195,15 +195,64 @@
    3 [(Rectangle. 36 120 318 180) (Rectangle. 366 120 318 180) (Rectangle. 201 324 318 180)]
    4 [(Rectangle. 36 120 318 180) (Rectangle. 366 120 318 180) (Rectangle. 36 324 318 180) (Rectangle. 366 324 318 180)]})
  
+(def rectangles {11 (Rectangle. 124 126 476 358)
+                 21 (Rectangle. 36 184 318 238)
+                 22 (Rectangle. 336 184 318 238)
+                 31 (Rectangle. 36 120 318 180) 
+                 32 (Rectangle. 366 120 318 180)
+                 33 (Rectangle. 201 324 318 180)
+                 41 (Rectangle. 36 120 318 180)
+                 42 (Rectangle. 366 120 318 180) 
+                 43 (Rectangle. 36 324 318 180) 
+                 44 (Rectangle. 366 324 318 180)})
+           
+(def positions {"Middle" 11
+                 "Top" 21
+                 "Bottom" 22
+                 "Top A" 31 
+                 "Top B" 32
+                 "Bottom Middle" 33
+                 "Top Left" 41
+                 "Top Right" 42
+                 "Bottom Left" 43
+                 "Bottom Right" 44})
+
 (defn set-positions [^clojure.lang.LazySeq images] ;; Sets the positions of the images (at this point images are already linked to slide)
-  (doseq [^XSLFPictureShape i images :let [index  (.indexOf  images i)]]
+  (doseq [^XSLFPictureShape i images :let [index (.indexOf images i)]]
     (.setAnchor i  (nth (get layout-map (count images)) index))))
 
+;; Adds picture to power point at position pos, where pos is a rectangle object
+(defn add-image-to-ppt [ppt slide filename pos & {:keys [format] :or {format "PNG"}}]
+  (let [data (^XSLFPictureData .addPicture ^XMLSlideShow ppt (picture->data filename) (get-picturedata-type format))
+        pic-shape (.createPicture ^XSLFSlide slide data)]
+    (.setAnchor pic-shape pos)
+    pic-shape))
+
+(comment
+  (defn prep-images
+    "get a sequence of image filepaths from multiple directories"
+    [roots num-per-slide img-finder] 
+    (let [images (img-finder roots)
+          r (- (count images) (rem (count images) num-per-slide))]
+      (if (zero? r) (partition num-per-slide images) (conj (partition num-per-slide images) (drop r images))))))
+
+;;layout is seq of rectangle objects
+;;if filenames is not divisible by layout, will leave out remainder of filenames
+;;returns ppt, need to reduce into to force for seq to evaluate, otherwise will result in empty file if never evaluated
+(defn add-images-to-ppt [ppt filenames layout]
+  (let [part-imgs (map #(zipmap % layout) (partition (count layout) filenames))
+        slides (for [n (range (count part-imgs))] (->slide ppt))
+        args (zipmap part-imgs slides)]
+    (reduce into [] (for [a (keys args)] (map #(add-image-to-ppt ppt (get args a) % (get a %)) (keys a))))
+    ppt))
+    
+    
+ 
 ;; Adds a new slide with images in the correct layout
-(defn slide-with-images [ppt filenames & {:keys [format] :or {format "PNG"} }]
+(defn slide-with-images [ppt filenames & {:keys [format] :or {format "PNG"}}]
   (let [slide (->slide ppt)
         imgs (for [i filenames] (get-image-shape ppt slide i))]
-    (set-positions imgs) slide)) ;; returns new slide with formatted images
+    (reduce into [] (set-positions imgs)) slide)) ;; returns new slide with formatted images
 
 ;; given a filepath for a .png file, this should make a powerpoint with 5 slides containg with 0 - 4 images on each 
 (defn test-slide-layout [filename & ppt] ;; Used to test if functions work

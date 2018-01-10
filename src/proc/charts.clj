@@ -31,6 +31,10 @@
                         (= :interest key) (first (s (last (s htmlstr #"Interest: ")) #"<"))))]
     (str (ttl :run) "-" (ttl :interest))))
 
+(defn set-chart-title [chart title]
+  (.setTitle (first (all-chart-types :title [chart])) title))
+  
+
 (defn get-chart-interest
   "Given a chart vector, returns the interest of the chart"
   [chart]
@@ -48,7 +52,9 @@
   "Given a collection of inventory strings, adds inventories together and returns sum as a inventroy string"
   [invs]
   (let [p (apply map + (for [i invs] (inv-to-nums i)))]
-    (str (first p) "/" (nth p 1) "/" (nth p 2) "//" (last p))))
+    (if (= '() invs) 
+      (str "No inventory found") ;;when invs is empty
+      (str (first p) "/" (nth p 1) "/" (nth p 2) "//" (last p)))))
 
 (defn get-total-inventory
   "returns the total inventory as a string given the chart, interest, and root dir"
@@ -69,6 +75,18 @@
                      info "<br>Inventory: " inv "</font></b></center></html>")]
     (.setText (first (all-chart-types :title [chart])) new-str)))
 
+(defn get-inventory-title 
+  [chart interest root]
+  (let [htmlstr (.getText (first (all-chart-types :title [chart])))
+        info (first (clojure.string/split (last (clojure.string/split htmlstr #"<b>")) #"</b>"))
+        inv (get-total-inventory chart interest root)
+        new-str (str "<html><center><b><font size=6>"
+                     info "<br>Inventory: " inv "</font></b></center></html>")]
+    (str "Run: " (.trim (first (clojure.string/split (last (clojure.string/split new-str #"Run:")) #"<br>"))) "   "
+      "Interest: " (.trim (first (clojure.string/split (last (clojure.string/split new-str #"Interest:")) #"<"))) "   "
+      "Inventory: " (.trim (first (clojure.string/split (last (clojure.string/split new-str #"Inventory:")) #"<"))))))
+  
+
 (defn sync-chart-scales
   "Given a collection of charts, takes keys :x-axis, :y-axis, or all, and syncs the given axis on all charts in coll"
   [coll axis] ;;syncs the axies of the given collection of charts
@@ -80,12 +98,12 @@
 ;; saves the jfree chart given the chart vector of chart objs, the title of the chart, and key (:dwell or :fill)
 (defn save-jfree-chart
   "Saves chart as image"
-  [chart title key & {:keys [width height full-title] :or {width 700 height 420 full-title true}}] 
+  [chart title key & {:keys [width height full-title root interests] :or {width 700 height 420 full-title true}}] 
   (let [t (fn [ntitle] (.setTitle (first (all-chart-types key [chart])) ntitle))] 
     (when full-title ;; When full-title, change the title of the dwell or fill chart to include run + intereset
-      (let [ftitle (get-chart-title chart)]
-        (when (= key (keyword "fill")) (t (str ftitle " - Fill")))
-        (when (= key (keyword "dwell")) (t (str ftitle " - Dwell")))))
+      (let [ftitle (get-chart-title chart) new-ttl (get-inventory-title chart interests root)]
+        (when (= key (keyword "fill")) (t new-ttl))
+        (when (= key (keyword "dwell")) (t new-ttl))))
     (org.jfree.chart.ChartUtilities/saveChartAsPNG
      (java.io.File. title) (first (all-chart-types key [chart])) width height)
     (when (= key (keyword "fill")) (t "Fill")) ;; Change title of chart back to short title 
@@ -120,8 +138,8 @@
       (.setExtraLargeFont (java.awt.Font. font-name (java.awt.Font/BOLD) 26))
       (.setLargeFont (java.awt.Font. font-name (java.awt.Font/BOLD) 22))
       (.setRegularFont (java.awt.Font. font-name (java.awt.Font/PLAIN) 14))
-      (.setSmallFont (java.awt.Font. font-name (java.awt.Font/PLAIN) 12))
-      )theme))
+      (.setSmallFont (java.awt.Font. font-name (java.awt.Font/PLAIN) 12)))
+    theme))
 
 ;; ===== HELPER FUNCTIONS FOR BUILDING CHARTS/DO-CHARTS-FROM ======================
 (defn scope-to-deployments [root src-set]
@@ -129,8 +147,8 @@
         deps (tbl/tabdelimited->table path :schema util/deploy-schema)]
     (tbl/select  :from deps :where
                 (fn [{:keys [UnitType DemandType]}]
-                     (or (src-set UnitType)
-                         (src-set DemandType))))))
+                    (or (src-set UnitType)
+                        (src-set DemandType))))))
 
 (defn interests->src-map [ints]
   (reduce (fn [acc [k v]]
@@ -159,7 +177,6 @@
                             #{} scoped-deployments)
         active-interests  (reduce clojure.set/union #{}
                                   (vals (select-keys src-map active-srcs)))]
-    (only-by-interest ints interests
      (doall (remove nil?
                (for [int ints phase phases]
                  (if (active-interests int)
@@ -167,7 +184,7 @@
                      (dwell-over-fill root (get interests int)
                                       subs phase :deployments
                                       scoped-deployments))
-                   (println [:ignoring int :for-charting :no-deployments!]))))))))
+                   (println [:ignoring int :for-charting :no-deployments!])))))))
 
 (defn charts->dwells
   "Given a vector of chart objects, returns the dwells plot"
@@ -184,8 +201,8 @@
   [charts xlow xhigh ylow yhigh]
   (doseq [chart charts
           :let [sb (fn [axis l h]
-                     (proc.util/set-bounds chart axis :lower l :upper h))
-                ]]
+                     (proc.util/set-bounds chart axis :lower l :upper h))]]
+                
     (sb :x-axis xlow xhigh)
     (sb :y-axis ylow yhigh)))
   
@@ -209,19 +226,18 @@
 
 (defn ->save-dwell-fill
   "Given root, charts, and booleans for save-dwell/save-fill, saves charts as images. Returns nil"
-  [root charts save-dwell save-fill]
+  [root charts interests save-dwell save-fill]
   (when (or save-dwell save-fill) 
     (doseq [chart charts :let [title (get-chart-title chart)]]
-      ;;(add-inventory-to-chart chart interest root)
-      (when save-fill (save-jfree-chart chart (str root title "-fill.png") :fill))
-      (when save-dwell (save-jfree-chart chart (str root title "-dwell.png") :dwell)))))
+      (when save-fill (save-jfree-chart chart (str root title "-fill.png") :fill :root root :interests interests))
+      (when save-dwell (save-jfree-chart chart (str root title "-dwell.png") :dwell :root root :interests interests)))))
 
 (defn ->vis
   "Sets charts to visible. Returns nil"
   [charts root interests vis]
   (when vis
     (doseq [chart charts]
-      ;;(add-inventory-to-chart chart interests root)
+      (add-inventory-to-chart chart interests root)
       (show-chart root chart))))
 
 (defn find-images
@@ -247,7 +263,7 @@
 
 (defn prep-images
   "get a sequence of image filepaths from multiple directories"
-  [roots num-per-slide img-finder]
+  [roots num-per-slide img-finder] 
   (let [images (img-finder roots)
         r (- (count images) (rem (count images) num-per-slide))]
     (if (zero? r) (partition num-per-slide images) (conj (partition num-per-slide images) (drop r images)))))
@@ -260,14 +276,22 @@
       (ppt/slide-with-images pptx ps))
     (ppt/save-ppt pptx filename)))
 
+(defn charts->ppt-with-layout [roots filename template layout & {:keys [img-finder] :or {img-finder find-images}}]
+  (ppt/save-ppt (ppt/add-images-to-ppt (ppt/->pptx template) (img-finder roots) layout) filename))
+ 
 ;example
 (comment
-(def t1 "C:\\Users\\craig.j.flewelling\\Desktop\\t\\testdata-v6\\")
+ (def t1 "C:\\Users\\craig.j.flewelling\\Desktop\\t\\testdata-v6\\")
 
-(def t2 "C:\\Users\\craig.j.flewelling\\Desktop\\t\\testdata-v6 - Copy\\")
+ (def t2 "C:\\Users\\craig.j.flewelling\\Desktop\\t\\testdata-v6 - Copy\\")
 
-(def test-order ["QM" "CAB"])
+ (def test-order ["QM" "CAB"])
 
-(def i-finder (partial sorted-images test-order))
+ (def i-finder (partial sorted-images test-order))
 
-(charts->ppt  [t1 t2] "C:\\Users\\craig.j.flewelling\\Desktop\\t\\test.pptx" (str t1 "\\template.pptx") 4 :img-finder i-finder))
+ (charts->ppt  [t1 t2] "C:\\Users\\craig.j.flewelling\\Desktop\\t\\test.pptx" (str t1 "\\template.pptx") 4 :img-finder i-finder)
+
+ (def ppt-settings {:filename (str t1 "dwell-over-fill.pptx") :template (str t1 "template.pptx") :layout (map #(get ppt/rectangles %) (map #(get ppt/positions %) ["Top Left" "Bottom Right"]))})
+
+ (charts->ppt-with-layout [t1 t2] (:filename ppt-settings) (:template ppt-settings) (:layout ppt-settings) :img-finder i-finder)
+ )

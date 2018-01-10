@@ -4,8 +4,8 @@
             [proc.util :as util]
             [proc.interests :as ints]
             [proc.charts :as c]
-            [proc.powerpoint :as ppt]  ;; changes when move to new ns 
-            )
+            [proc.powerpoint :as ppt])  ;; changes when move to new ns 
+            
   (:use [proc.core]
         [incanter.charts]
         [incanter.core]
@@ -64,50 +64,57 @@
     set the bounds for axes."
   [roots &
    {:keys [subs phases interests subints group-key syncys phase-lines fillbnds dwellbnds
-           vis save-fill save-dwell ppt return]
+           vis save-fill save-dwell ppt return] ;;ppt is a map {:filename "filename" :template "template" :num-per-slide N or :layout [rectange objs] & :img-finder fn
     :or {phases [nil] interests ints/defaults group-key :DemandType phase-lines true vis true
          fillbnds {:fxlow 0 :fylow 0} dwellbnds {:dxlow 0}}}]
   (println "Building charts")
   (let [roots  (if (string? roots) [roots] roots)
-        charts (into {} (filter identity)
-                     (pmap  (fn [r]
-                             (let [cs (c/root->charts r interests phases group-key subs subints)]
-                               [r cs])) roots))
+        charts (into {} (filter identity
+                          (pmap  (fn [r]
+                                   (let [cs (c/root->charts r interests phases group-key subs subints)]
+                                     [r cs])) roots)))
         phstarts   (min (apply concat (map #(phase-starts %) roots)))
         _          (println :all-charts)
         all-charts (filterv identity (apply concat (vals charts)))
         _ (println :syncing)
         _ (c/->sync all-charts syncys (:dxlow dwellbnds) (:dxhigh dwellbnds) (:dylow dwellbnds) (:dyhigh dwellbnds))
         _ (println :adding-lines)
-        _ (c/->lines all-charts phase-lines phstarts)
-        ]
+        _ (c/->lines all-charts phase-lines phstarts)]
+        
     (doseq [chart charts]
-      (c/->save-dwell-fill (first chart) (last chart) save-dwell save-fill)
+      (c/->save-dwell-fill (first chart) (last chart) interests save-dwell save-fill)
       (c/->vis (last chart) (first chart) interests vis))
     (println "Done formatting charts")
-    (when ppt (println "Building ppt") (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt)))
+    
+    (when ppt (println "Building ppt") 
+      (if (:num-per-slide ppt)
+       (c/charts->ppt roots (:filename ppt) (:template ppt) (:num-per-slide ppt)))
+      (if (:layout ppt)
+        (if (:img-finder ppt)
+          (c/charts->ppt-with-layout roots (:filename ppt) (:template ppt) (:layout ppt) :img-finder (:img-finder ppt))
+          (c/charts->ppt-with-layout roots (:filename ppt) (:template ppt) (:layout ppt)))))
     (when return charts)))
 
 ;;One function to make the files for the charts and display the charts at the same time
 (defn charts-from-unproc-run
   ([path]
-    (do (run-sample! path)
-        (do-charts-from path))))
+   (do (run-sample! path)
+       (do-charts-from path))))
 
 (defn view-deployments 
   ([int interests deploymentspath]
-    (let [dwell-plot (deployment-plot deploymentspath (get interests int) nil)
-          _ (add-trend-lines! dwell-plot :bnds (:x (xy-bounds dwell-plot)))]
-      (view dwell-plot)))
+   (let [dwell-plot (deployment-plot deploymentspath (get interests int) nil)
+         _ (add-trend-lines! dwell-plot :bnds (:x (xy-bounds dwell-plot)))]
+     (view dwell-plot)))
   ([deploymentspath] (view-deployments :BCTS ints/cints19-23 deploymentspath)))    
 
 ; pipeline copied from sand-chart2
 (defn unit-sand-from [path interest] ;oops.  Need to do daily samples here
   (let [ds (util/as-dataset (str path "sand/" interest ".txt"))]
     (-> (->> (-> (util/as-dataset ds)
-           (stacked/roll-sand :cat-function stacked/parse-arfor-fill)
-           (stacked/expand-samples)) ; this smooths out the picture but what is it doing?
-      (stacked/xy-table :start :quantity :group-by :Category :data))
+              (stacked/roll-sand :cat-function stacked/parse-arfor-fill)
+              (stacked/expand-samples)) ; this smooths out the picture but what is it doing?
+         (stacked/xy-table :start :quantity :group-by :Category :data))
         (stacked/stacked-areaxy-chart2*
          :legend true :color-by stacked/arforgen-color-2
          :order-by stacked/arforgen-order-2)
@@ -119,7 +126,7 @@
   (let [dset (stacked/roll-sand
               (util/as-dataset fpath) 
               :cols [:FillType :DemandType]
-              :cat-function stacked/suff-cat-fill-subs )]
+              :cat-function stacked/suff-cat-fill-subs)]
     (view (line-chart :start :quantity :group-by :Category :legend true :data dset))))
 
 
@@ -127,6 +134,10 @@
 ;a run folder by some marathon file
 (defn run-names-from [rootsloc]) 
 
+(defn get-layout [layout-strings] ;;takes seq of strings that are keys in the positions map in ppt and recturs the corresponding java rectangle object
+  (map #(get ppt/rectangles %) (map #(get ppt/positions %) layout-strings)))
+  
+  
 
 ;;testing defaults...
 (comment
@@ -136,8 +147,8 @@
   ;;Had to figure this out from the code, no documentation.....(weak!)
   (def ppt-settings {:filename  (str root "dwell-over-fill.pptx")
                      :template  (spork.util.io/alien->native (str root "template.pptx"))
-                     :num-per-slide 2
-                     })
+                     :num-per-slide 2})
+                     
   (load-file (str root "interests.clj"))
   ;;gives us interests, branches  
 
@@ -148,3 +159,6 @@
   (do-charts-from root :interests branches
                   :save-dwell true
                   :save-fill true :ppt ppt-settings :vis nil))
+
+;;Example useage of updated ppt options where t1 is roots, and outfile and temp are filepaths to ppts 
+;;(do-charts-from t1 :save-fill true :save-dwell true :vis false :ppt {:filename outfile :template temp :layout (get-layout ["Bottom Right" "Top Left"]) :img-finder i-finder})
