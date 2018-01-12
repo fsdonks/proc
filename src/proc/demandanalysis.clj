@@ -7,7 +7,10 @@
             [proc.schemas :as schemas]
             [proc.interests :as ints]
             [clojure.string :as str]
-            [spork.util.table :as tbl])
+            [spork.util.table :as tbl]
+            [spork.util.temporal :as temp]
+            [proc.dynamicbars :refer [enabled-demand]]
+            [proc.core :as c])
   (:use [incanter.core]
         [incanter.charts]))
 
@@ -69,7 +72,7 @@ group-bys is an alternative vector of column labels for grouping.   "
   tds is a dataset.  Defaults to enabled is true and false.  try :enabled true for only enabled records
 Returns a map where {:SRC SRC :DemandGroup DemandGroup} are keys and value are integers.
 group-bys is an alternative vector of column labels for grouping.   "
-  [root & {:keys [pred group-bys] :or {pred ($fn [Enabled] (= Enabled "True")) group-bys [:SRC :DemandGroup]}}]
+  [root & {:keys [pred group-bys] :or {pred ($fn [Enabled] (= (str/upper-case Enabled) "TRUE")) group-bys [:SRC :DemandGroup]}}]
   (let [tds (util/as-dataset (str root "AUDIT_DemandRecords.txt"))
         bigmap (->> ($where pred tds)
                 ($group-by group-bys))
@@ -121,7 +124,7 @@ group-bys is an alternative vector of column labels for grouping.   "
   "This will return a set of interests for each src instead of one interest per
   src like ints/src->int"
   [interests]
-  (->> (interests->src-map interests)
+  (->> (proc.charts/interests->src-map interests)
        (keymap->strmap)))
   
 (defn met-by-time
@@ -155,18 +158,64 @@ group-bys is an alternative vector of column labels for grouping.   "
                      (concat [[[(first xs)] [(first ys)]]]))
         agg (fn [f parts] (mapcat f parts))]
     [(agg first spliced) (agg second spliced)]))
-  
+
+(def pt (atom nil))
+
+(def curr (atom nil))
+
+(defn peak-times-by
+  "Groups xs by a key function, f, and for each group, returns the peak along 2 item
+  vectors containing the start and end of each period of peak as defined by an optional peak-function.
+Defaults to the number of active records in an activity sample as the peak."
+  [f xs & {:keys [start-func duration-func peak-function] 
+           :or   {start-func :Start duration-func :Duration
+                  peak-function (fn [r] (:count r))}}]
+        (for [[k recs] (group-by f xs)]
+          (let [activities (temp/activity-profile recs :start-func start-func 
+                                        :duration-func duration-func)
+                _ (reset! curr nil)
+                _ (println (count activities))
+                deltas (remove (fn [[t r]] ((constantly (= @curr (peak-function r)))
+                                            (reset! curr (peak-function r)))) activities)
+                _ (reset! pt deltas)
+                peak (apply max (map (fn [[t r]] (peak-function r)) deltas))
+                _ (reset! curr nil)
+                peaks (reduce (fn [acc [t r]] (if @curr
+                                                ((constantly (conj acc [@curr (- t 1)])) (reset! curr nil))
+                                                (if (= (peak-function r) peak)
+                                                  (do (reset! curr t) acc)
+                                                  acc))) [peak] deltas)]
+            ;if the period ended on a peak, add the start of the last peak period to the vector
+            (if @curr [k (conj peaks @curr)] [k peaks]))))
+
+                                        ;inscope-srcs
+
+(defn add-tadmudi
+  "Add horizontal lines to the spark chart for the TADMUDI % demand met.  These
+  lines are drawn wherever there is peak demand.  path is the marathon audit
+  trail directory"
+  [plt path]
+  (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
+        inscope? (fn [src] (not (nil? (inscopes src))))
+        demands (->> (enabled-demand path)
+                     (filter (fn [r] (inscope? (:SRC r)))))
+        peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
+    (peak-times-by (fn [r] (:SRC r)) demands :start-func :StartDay :duration-func :Duration :peak-function peakfn)))
+
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn"
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (doseq [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
     (let [[sts sys] (smooth ts ys)
-          plt (xy-plot sts sys)
-          _ (.setTitle plt group)
-          _ (doto (new org.jfree.chart.ChartFrame group plt)                   
-              (.setSize 500 400)
-              (.setVisible true))])))
+          plt (reset! pt (xy-plot sts sys))]
+      (.setTitle plt group)
+      (proc.core/phases-to-chart plt path)
+      ;(add-tadmudi plt path)
+      ;change this to doto too
+      (doto (new org.jfree.chart.ChartFrame group plt)                   
+        (.setSize 500 400)
+        (.setVisible true)))))
 
 ;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5))
 

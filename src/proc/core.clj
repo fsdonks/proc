@@ -1533,8 +1533,14 @@
 (defn add-phase-lines 
   "Take a chart and adds vertical lines indicating the start of each phase"
   [ph-starts lbound ubound chart]
-    (reduce (fn [cht [title ph-start]] (add-polygon cht [[ph-start lbound] [ph-start ubound]])) chart ph-starts))
- 
+  (reduce (fn [cht [title ph-start]] (add-polygon cht [[ph-start lbound] [ph-start ubound]])) chart ph-starts))
+
+(defn phases-to-chart
+  "Given the path to a Marathon audit trail, add phase lines to the chart"
+  [chart root]
+  (let [y-axis (:y-axis (util/state chart))]
+  (add-phase-lines (phase-starts root) (.getLowerBound y-axis) (.getUpperBound y-axis) chart)))
+
 (defn show-stack [[pane dwell fill]]
   ;(let [_ (println (type (chart! fill)))
    ;     _ (println (type fill))
