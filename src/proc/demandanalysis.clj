@@ -176,7 +176,6 @@ group-bys is an alternative vector of column labels for grouping.   "
                                         (if (= (peak-function r) peak)
                                           (do (reset! curr t) acc)
                                           acc))) [] deltas)
-        _ (when (nil? @curr) (throw (Exception. "The last activity should always have no activities so we should end during a peak")))  
         last-rec (last (:actives (last (last activities))))]
                                         ;If the peak is 0, it's not really a peak.
     (assoc {:peak peak} :intervals (if (= peak 0) [] peaks))))
@@ -210,16 +209,16 @@ Defaults to the number of active records in an activity sample as the peak."
       (assoc (peak-times acts peak-function) :group k :period Name)))
   
 (defn peaks-from
-  "Given the path to a Marathon audit trail, compute peak-times-by for the enabled, in-scope
+  "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled, in-scope
   demand records."
-  [path]
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
         demands (->> (enabled-demand path)
                      (filter (fn [r] (inscope? (:SRC r)))))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))
         periods (util/load-periods path)]
-    (peak-times-by-period (fn [r] (:SRC r)) demands periods :StartDay :Duration peakfn)))
+    (peak-times-by-period (fn [r] (group-fn (:SRC r))) demands periods :StartDay :Duration peakfn)))
 
 (defn rotational-discounts
   "Given the path to a Marathon audit trail, compute the rotational discount for
@@ -241,6 +240,7 @@ Defaults to the number of active records in an activity sample as the peak."
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn"
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (let [tadmudi (add-tadmudi)]
   (doseq [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
     (let [[sts sys] (smooth ts ys)
           plt (reset! pt (xy-plot sts sys))]
@@ -250,7 +250,7 @@ Defaults to the number of active records in an activity sample as the peak."
       ;change this to doto too
       (doto (new org.jfree.chart.ChartFrame group plt)                   
         (.setSize 500 400)
-        (.setVisible true)))))
+        (.setVisible true))))))
 
 ;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5))
 

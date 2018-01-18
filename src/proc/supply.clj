@@ -45,7 +45,7 @@ of all units as records at time t.  Can also provide a substring of the unit nam
 
 (defn merge-ints
   "For one interest, combine the quantities into one map keyed by the name in interest. Returns the complete quantity map
-with the changes made for one interest."
+  with the changes made for one interest. Removes srcs that are included in the interest."
   [m [name srcs]]
   (let [quant-map (apply merge-with + (map m srcs))
         new-map (reduce #(dissoc %1 %2) m srcs)]
@@ -74,6 +74,14 @@ with the changes made for one interest."
     (if interests 
       (add-totals (reduce merge-ints quants (vals interests)))
       (add-totals quants))))
+
+(defn by-compo-supply-map-groupf
+  "like by-compo-supply-map but groups the srcs according to groupfn"
+  [root & {:keys [supply-filter group-fn] :or {supply-filter (fn [r] (:Enabled r)) group-fn (fn [s] s)}}]
+  (let [quants (quants-by-compo root :supply-filter supply-filter)]
+    (reduce (fn [acc [group quants]]
+              (assoc acc group (apply merge-with + (map second quants)))) {} 
+            (group-by (fn [[src quantmap]] (group-fn src)) quants))))
 
 (defn supply-by-compo 
   "returns a map where the interests and/or SRCs are keywords and the values are the strings computed
