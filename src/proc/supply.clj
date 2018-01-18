@@ -18,13 +18,30 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                   (samples-at time))]
     (filter (fn [r] (.contains (:EntityFrom r) unitpart)) (map second samples))))
 
-;what about multiple records for one src and one compo?  this keeps latest.  What does Marathon do?
-(defn quants-by-compo [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
+(def supply-order [:Type :Enabled :Quantity :SRC :Component :OITitle :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position])
+(def key-fields [:Type :SRC :Component :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position] )
+
+(defn merged-quantities
+  "Given records of Marathon AUDIT_SupplyRecords and if there are duplicates (same compo and SRC) in the records, this is meant to merge the quantities into one record and return a new sequence of supply records.  The OI title of the record will be the last one found"
+  [recs]
+    (->> (group-by #(map % key-fields) recs)
+         (reduce-kv (fn [a k v] (conj a (assoc (last v) :Quantity (reduce + (map :Quantity v))))) [])))
+
+(defn merge-quants
+  "Given the path to Marathon supply records and if there are duplicates (same compo and SRC) in supply records, this is meant to merge the quantities into one record and write a table to the same directory.  The OI title of the record will be the last one found"
+  [path]
+  (let [recs (merged-quantities (tbl/tabdelimited->records (slurp path) :parsemode :noscience))
+        out (clojure.string/replace path "AUDIT_SupplyRecords.txt" "AUDIT_SupplyRecords_merged.txt")]
+    (tbl/records->file recs out :field-order supply-order)))
+
+(defn quants-by-compo
+  "Given a path to a Marathon audit trail, returns a map where the keys are srcs and the values are nested maps where the keys are components and the values are quantities.  Merges supply records according to merged-quantities."
+  [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
   (let [supprecs (->> (tbl/tabdelimited->table (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
                    (tbl/table-records)
-                   (filter supply-filter))]
+                   (filter supply-filter)
+                   (merged-quantities))]
     (reduce (fn [map r] (assoc map (:SRC r) (assoc (map (:SRC r)) (:Component r) (:Quantity r)))) {} supprecs)))
-
 
 (defn merge-ints
   "For one interest, combine the quantities into one map keyed by the name in interest. Returns the complete quantity map
@@ -49,27 +66,31 @@ with the changes made for one interest."
 (defn print-all-invs [invs]
   (reduce-kv (fn [m k v] (assoc m k (print-inv v))) {} invs))
 
+(defn by-compo-supply-map
+  "returns a map where the interests and/or SRCs are keywords and the values are maps of components
+  and a total to the supply quantities."
+  [root & {:keys [interests supply-filter] :or {supply-filter (fn [r] (:Enabled r)) interests nil}}]
+  (let [quants (quants-by-compo root :supply-filter supply-filter)]
+    (if interests 
+      (add-totals (reduce merge-ints quants (vals interests)))
+      (add-totals quants))))
+
 (defn supply-by-compo 
   "returns a map where the interests and/or SRCs are keywords and the values are the strings computed
  from print-inventory."
   [root & {:keys [interests supply-filter] :or {supply-filter (fn [r] (:Enabled r)) interests nil}}]
-  (let [quants (quants-by-compo root :supply-filter supply-filter)
-        invs (if interests 
-               (add-totals (reduce merge-ints quants (vals interests)))
-               (add-totals quants))]
-    (print-all-invs invs)))
+  (print-all-invs (by-compo-supply-map root :interests interests :supply-filter supply-filter)))
 
+;(tbl/tabdelimited->table (slurp (str root "AUDIT_PeriodRecords.txt")) :parsemode :noscience 
+                                         ;:schema schemas/periodrecs
+                        ; )
 
+(defn rotational-discounts
+  "Given the path to a Marathon audit trail directory, returns a map where the keys are time period titles and values are nested maps where the keys are components and the values are rotational discounts."
+  [root]
+  (let [periods (util/load-periods root)]
+    periods))
 
-(def supply-order [:Type :Enabled :Quantity :SRC :Component :OITitle :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position])
-(def key-fields [:Type :SRC :Component :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position] )
-
-(defn merge-quants
-  "If there are duplicate (same compo and SRC) in supply records, this is meant to merge the quantities into one record
-   and return a table.  The OI title of the record will be the last one found"
-  [path]
-  (let [recs (tbl/tabdelimited->records (slurp path) :parsemode :noscience )
-        out (clojure.string/replace path "AUDIT_SupplyRecords.txt" "AUDIT_SupplyRecords_merged.txt")]
-    (-> (->> (group-by #(map % key-fields) recs)
-         (reduce-kv (fn [a k v] (conj a (assoc (last v) :Quantity (reduce + (map :Quantity v))))) []))
-         (tbl/records->file out :field-order supply-order))))
+;supply filter for inscopes
+(defn theoretical-capacities [root interests]
+  (by-compo-supply-map root :interests interests))

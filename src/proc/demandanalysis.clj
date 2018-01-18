@@ -163,44 +163,79 @@ group-bys is an alternative vector of column labels for grouping.   "
 
 (def curr (atom nil))
 
+(defn peak-times
+  "Returns a map with the peak of the activity profile along with 2 item vectors containing the start and end of each period of peak as defined the peak-function."
+  [activities  peak-function]
+  (let [_ (reset! curr nil)
+        deltas (remove (fn [[t r]] ((constantly (= @curr (peak-function r)))
+                                    (reset! curr (peak-function r)))) activities)
+        peak (apply max (map (fn [[t r]] (peak-function r)) deltas))
+        _ (reset! curr nil)
+        peaks (reduce (fn [acc [t r]] (if @curr
+                                        ((constantly (conj acc [@curr (- t 1)])) (reset! curr nil))
+                                        (if (= (peak-function r) peak)
+                                          (do (reset! curr t) acc)
+                                          acc))) [] deltas)
+        _ (when (nil? @curr) (throw (Exception. "The last activity should always have no activities so we should end during a peak")))  
+        last-rec (last (:actives (last (last activities))))]
+                                        ;If the peak is 0, it's not really a peak.
+    (assoc {:peak peak} :intervals (if (= peak 0) [] peaks))))
+
 (defn peak-times-by
-  "Groups xs by a key function, f, and for each group, returns the peak along 2 item
-  vectors containing the start and end of each period of peak as defined by an optional peak-function.
-Defaults to the number of active records in an activity sample as the peak."
+  "Groups xs by a key function, f, and for each group, returns a map with the peak, 2 item
+  vectors containing the start and end of each period of peak as defined by an optional peak-function and result of applying
+  f to the records.  Defaults to the number of active records in an activity sample as the peak."
   [f xs & {:keys [start-func duration-func peak-function] 
            :or   {start-func :Start duration-func :Duration
                   peak-function (fn [r] (:count r))}}]
         (for [[k recs] (group-by f xs)]
           (let [activities (temp/activity-profile recs :start-func start-func 
-                                        :duration-func duration-func)
-                _ (reset! curr nil)
-                _ (println (count activities))
-                deltas (remove (fn [[t r]] ((constantly (= @curr (peak-function r)))
-                                            (reset! curr (peak-function r)))) activities)
-                _ (reset! pt deltas)
-                peak (apply max (map (fn [[t r]] (peak-function r)) deltas))
-                _ (reset! curr nil)
-                peaks (reduce (fn [acc [t r]] (if @curr
-                                                ((constantly (conj acc [@curr (- t 1)])) (reset! curr nil))
-                                                (if (= (peak-function r) peak)
-                                                  (do (reset! curr t) acc)
-                                                  acc))) [peak] deltas)]
-            ;if the period ended on a peak, add the start of the last peak period to the vector
-            (if @curr [k (conj peaks @curr)] [k peaks]))))
+                                        :duration-func duration-func)]
+            (assoc (peak-times activities peak-function) :group k))))
 
-                                        ;inscope-srcs
-
-(defn add-tadmudi
-  "Add horizontal lines to the spark chart for the TADMUDI % demand met.  These
-  lines are drawn wherever there is peak demand.  path is the marathon audit
-  trail directory"
-  [plt path]
+(defn peak-times-by-period
+  "Groups xs by a key function, f, and for each group, returns the peak along with 2 item
+  vectors containing the start and end of each period of peak as defined by an optional peak-function.
+Defaults to the number of active records in an activity sample as the peak."
+  [f xs period-recs start-func duration-func peak-function]
+  (for [[k recs] (group-by f xs)
+        :let [activities (temp/activity-profile recs :start-func start-func :duration-func duration-func)]
+        {:keys [FromDay ToDay Name] :as r} period-recs
+        :let [during (filter (fn [[t m]] (and (>= t FromDay) (<= t ToDay))) activities)
+                                        ;this will be nil if there were no activities before
+              before (last (take-while (fn [[t m]] (< t FromDay)) activities))
+                                        ;if the period ended on a peak, stop the last interval at the end of the period
+                                        ;if the period started on a peak, begin the first interval at the beginning of the period
+              acts (concat [[FromDay (second before)]] during [[(+ ToDay 1) {}]])]]
+      (assoc (peak-times acts peak-function) :group k :period Name)))
+  
+(defn peaks-from
+  "Given the path to a Marathon audit trail, compute peak-times-by for the enabled, in-scope
+  demand records."
+  [path]
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
         demands (->> (enabled-demand path)
                      (filter (fn [r] (inscope? (:SRC r)))))
-        peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
-    (peak-times-by (fn [r] (:SRC r)) demands :start-func :StartDay :duration-func :Duration :peak-function peakfn)))
+        peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))
+        periods (util/load-periods path)]
+    (peak-times-by-period (fn [r] (:SRC r)) demands periods :StartDay :Duration peakfn)))
+
+(defn rotational-discounts
+  "Given the path to a Marathon audit trail, compute the rotational discount for
+  the AC and RC for each period."
+  [path])
+
+(defn capacity-by
+  "Given a path to a Marathon audit trail, compute the theoretical capacity for each group
+  of supply records defined by f."
+  [f path]
+  )
+
+(defn add-tadmudi
+  "Add horizontal lines to the spark chart for the TADMUDI % demand met.  These
+  lines are drawn wherever there is peak demand.  path is the marathon audit
+  trail directory" [])
 
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of

@@ -534,3 +534,10 @@
    :Demand :text
    :DemandType :text
    :Period :text})
+
+(defn load-periods
+  "Returns the records of AUDIT_PeriodRecords.txt in the root dir."
+  [root]
+  (->> (tbl/tabdelimited->records (str root "AUDIT_PeriodRecords.txt") :parsemode :noscience :schema schemas/periodrecs)
+       (into [])
+       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
