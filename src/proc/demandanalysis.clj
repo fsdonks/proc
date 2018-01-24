@@ -120,12 +120,14 @@ group-bys is an alternative vector of column labels for grouping.   "
   [m]
   (reduce-kv (fn [acc k v] (assoc acc k (set (map key->str v))))  {} m))
 
+;might want to duplicate nterests->src-map return the lbl instead
 (defn src->int
   "This will return a set of interests for each src instead of one interest per
   src like ints/src->int"
   [interests]
-  (->> (proc.charts/interests->src-map interests)
-       (keymap->strmap)))
+  (->> (proc.charts/interests->src-strings interests)
+       ;(keymap->strmap)
+       ))
   
 (defn met-by-time
   "Demand satisfaction by group-fn and time from demandtrends.txt.
@@ -209,38 +211,31 @@ Defaults to the number of active records in an activity sample as the peak."
       (assoc (peak-times acts peak-function) :group k :period Name)))
   
 (defn peaks-from
-  "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled, in-scope
-  demand records."
-  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
-        inscope? (fn [src] (not (nil? (inscopes src))))
-        demands (->> (enabled-demand path)
-                     (filter (fn [r] (inscope? (:SRC r)))))
+  "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled
+  demand records. Supply an optional demand-filter for the demand records."
+  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All") demand-filter (fn [r] true)}}]
+  (let [demands (->> (enabled-demand path)
+                     (filter demand-filter))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))
         periods (util/load-periods path)]
     (peak-times-by-period (fn [r] (group-fn (:SRC r))) demands periods :StartDay :Duration peakfn)))
 
-(defn rotational-discounts
-  "Given the path to a Marathon audit trail, compute the rotational discount for
-  the AC and RC for each period."
-  [path])
 
-(defn capacity-by
-  "Given a path to a Marathon audit trail, compute the theoretical capacity for each group
-  of supply records defined by f."
-  [f path]
-  )
+(defn add-polygons
+  "Adds a sequence of polygons to the plt."
+  [plt polygons])
 
-(defn add-tadmudi
-  "Add horizontal lines to the spark chart for the TADMUDI % demand met.  These
-  lines are drawn wherever there is peak demand.  path is the marathon audit
-  trail directory" [])
-
+;something needs to call peaks from and supply stuff in order to make a mapping of interest to polygons [[[x1 y1] [x2 y2]]   ... ]
+;group peaks-from by :group and pull theoretical capacity from a theoretical capacity map.
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn"
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  (let [tadmudi (add-tadmudi)]
+  (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
+        inscope? (fn [src] (not (nil? (inscopes src))))
+                                        ;(filter (fn [r] (inscope? (:SRC r)))) for peaks-from
+        ;use inscope for inscope supply too
+        tadmudi (add-tadmudi)]
   (doseq [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
     (let [[sts sys] (smooth ts ys)
           plt (reset! pt (xy-plot sts sys))]

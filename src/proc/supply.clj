@@ -4,7 +4,10 @@
             [spork.util.table :as tbl]
             [proc.schemas :as schemas]
             [proc.util :as util]
-            [clojure.pprint :refer [cl-format]])
+            [clojure.pprint :refer [cl-format]]
+            [spork.util.general :refer [line-reducer]]
+            [spork.util.excel.core :as xl]
+            [clojure.string :as str])
   (:use [proc.core]))
 
 
@@ -93,12 +96,60 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                                          ;:schema schemas/periodrecs
                         ; )
 
-(defn rotational-discounts
-  "Given the path to a Marathon audit trail directory, returns a map where the keys are time period titles and values are nested maps where the keys are components and the values are rotational discounts."
-  [root]
-  (let [periods (util/load-periods root)]
-    periods))
+(defn wbpath-from-auditpath
+  "Returns the path of the marathon workbook if given the path of the audit trail."
+  [auditpath]
+  (let [mpath (str/join "/" (butlast (str/split auditpath #"[/\\\\]")))
+        run-name (get-run-name auditpath)]
+    (str mpath "/" run-name ".xlsx")))
 
-;supply filter for inscopes
-(defn theoretical-capacities [root interests]
-  (by-compo-supply-map root :interests interests))
+(defn get-policies
+  "Returns a map of compo to policy name for each component given the path to the audit trail"
+  [path]
+  (->> (line-reducer (str path "AUDIT_Parameters.txt"))
+       (into [])
+       (map tbl/split-by-tab)
+       (reduce (fn [acc line-vec] (case (first line-vec)
+                                    "DefaultACPolicy" (assoc acc "AC" (second line-vec))
+                                    "DefaultRCPolicy" (assoc acc "RC" (second line-vec))
+                                    "DefaultNGPolicy" (assoc acc "NG" (second line-vec))
+                                    acc)) {})))
+
+(defn compute-discount
+  "given a policy record, compute the static analysis rotational discount."
+  [{:keys [MaxBog MaxDwell Overlap]}]
+  (/ (- MaxBog Overlap) MaxDwell))
+
+(defn rotational-discounts
+  "Given the path to a Marathon audit trail, compute the rotational discount for
+  the AC and RC for each period."
+  [path]
+  (let [{composites "CompositePolicyRecords"
+         policies "PolicyRecords"} (->> (xl/wb->tables (xl/as-workbook (wbpath-from-auditpath path))
+                                                       :sheetnames ["CompositePolicyRecords" "PolicyRecords"])
+                                        (reduce-kv (fn [acc k v] (assoc acc k
+                                                                        (tbl/table-records (tbl/keywordize-field-names v))))
+                                                   {}))
+        periods (util/load-periods path)
+        active-policies (get-policies path)
+        policy-names (set (vals active-policies))
+        policy-map (reduce (fn [acc {:keys [PolicyName] :as r}] (assoc acc PolicyName r)) {} policies)
+        composite-map (reduce (fn [acc {:keys [CompositeName Period Policy] :as r}]
+                              (if (contains? policy-names CompositeName)
+                                (assoc acc [CompositeName Period] (policy-map Policy)) acc)) {} composites)]
+    (for [[compo policy] (get-policies path)
+          {nm :Name} periods]
+      [[compo nm] (if (contains? policy-map policy)
+                                    (policy-map policy)
+                                    (composite-map [policy nm]))])))
+
+;use rotational-discounts and a compo supply map to return a map of [int period] to theoretical capacities
+(defn theoretical-capacities
+  [root compo-supply-map]
+  (by-compo-supply-map-groupf root :supply-filter (fn [r] (and (:Enabled r)))))
+
+(defn capacity-by
+  "Given a path to a Marathon audit trail, compute the theoretical capacity for each group
+  of supply records defined by f."
+  [f path]
+  )
