@@ -120,7 +120,6 @@ group-bys is an alternative vector of column labels for grouping.   "
   [m]
   (reduce-kv (fn [acc k v] (assoc acc k (set (map key->str v))))  {} m))
 
-;might want to duplicate nterests->src-map return the lbl instead
 (defn src->int
   "This will return a set of interests for each src instead of one interest per
   src like ints/src->int"

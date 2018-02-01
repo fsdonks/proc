@@ -151,52 +151,69 @@ of all units as records at time t.  Can also provide a substring of the unit nam
       "AC" (when (static-policy? MaxBOG policy)
              (staticf MaxBOG)))))
 
-(defn discounts-by-period
-  "Given the path to a Marathon audit trail, compute the rotational discount for
-  the AC and RC for each period."
-  [path]
+(defn policy-info
+  "given the path to a Marathon audit trail, return a map of {:composites {...} :policies {...}} where the composites map
+  is a map of [CompitePolicyName Period] to the policy record and the policies map is a map of PolicyName to the policy record."
+  [path & {:keys [active-policies] :or {active-policies (get-policies path)}}]
   (let [{composites "CompositePolicyRecords"
          policies "PolicyRecords"} (->> (xl/wb->tables (xl/as-workbook (wbpath-from-auditpath path))
                                                        :sheetnames ["CompositePolicyRecords" "PolicyRecords"])
                                         (reduce-kv (fn [acc k v] (assoc acc k
                                                                         (tbl/table-records (tbl/keywordize-field-names v))))
                                                    {}))
-        periods (util/load-periods path)
-        active-policies (get-policies path)
         policy-names (set (vals active-policies))
         policy-map (reduce (fn [acc {:keys [PolicyName] :as r}] (assoc acc PolicyName r)) {} policies)
         composite-map (reduce (fn [acc {:keys [CompositeName Period Policy] :as r}]
-                              (if (contains? policy-names CompositeName)
-                                (assoc acc [CompositeName Period] (policy-map Policy)) acc)) {} composites)]
-    (into {} (for [[compo policy] (get-policies path)
+                                
+                                  (assoc acc [CompositeName Period] (policy-map Policy))) {} composites)]
+    {:composites composite-map :policies policy-map}))
+
+(defn discount-from-policies
+  "given a policy name, period name, and the policies and composites maps from policy-info, compute the discount for
+  the period.  If the policy doesn't exist in either policies or composites, you can supply a default value for
+  the rotational discount. Otherwise, an exception is thrown."
+  [policy period policies composites & {:keys [default]}]
+  (if (contains? policies policy)
+    (compute-discount (policies policy))
+    (if (contains? composites [policy period])
+      (compute-discount (composites [policy period]))
+      (if default default
+          (throw (Exception. (str [:policy policy] "does not exist in the PolicyRecords or CompositePolicyRecords")))))))
+
+(defn discounts-by-period
+  "Given the path to a Marathon audit trail, compute the rotational discount for
+  the AC and RC for each period."
+  [path & {:keys [policyinfo periods active-policies]}]
+  (let [active-policies (if active-policies active-policies (get-policies path))
+        {:keys [composites policies]} (if policyinfo policyinfo
+                                          (policy-info path :active-policies active-policies))
+        periods (if periods periods (util/load-periods path))]
+    (into {} (for [[compo policy] active-policies
                    {nm :Name} periods]
-               [[compo nm] (if (contains? policy-map policy)
-                             (compute-discount (policy-map policy))
-                             (compute-discount (composite-map [policy nm])))]))))
+               [[compo nm] (discount-from-policies policy nm policies composites)]))))
+                        
+(defn capacities
+  "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
+  [path & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
+  (let [active-policies (get-policies path)
+        {:keys [composites policies] :as policyinfo} (policy-info path :active-policies active-policies)
+        periods (util/load-periods path)
+        discount (discounts-by-period path :policyinfo policyinfo :periods periods :active-policies active-policies)
+        supprecs (->> (tbl/tabdelimited->table (slurp (str path "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
+                      (tbl/table-records)
+                      (filter supply-filter)
+                                        ;multiple policies for one src will still exist after merging
+                      (merged-quantities))]
+    (for [{:keys [Policy Quantity Component SRC] :as r} supprecs
+          {nm :Name} periods]
+      {:src SRC :period nm :capacity (* Quantity (discount-from-policies Policy nm policies composites
+                                                                :default (discount [Component nm])))})))
 
-;use rotational-discounts and a compo supply map to return a map of [int period] to theoretical capacities
-(defn theoretical-capacities
-  [root compo-supply-map]
-  (let [supply (by-compo-supply-map-groupf root :supply-filter (fn [r] (and (:Enabled r))))
-        ]
-
-    ))
-                                        ;load policies
-                                        ;supply-by-compo
-                                        
-                                        
-
-  
-  (defn capacities-by-interest
-    "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
-    [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
-  (let [supprecs (->> (util/load-supply)
-                   (filter supply-filter)
-                   (merged-quantities))]
-    ))
-  
 (defn capacity-by
-  "Given a path to a Marathon audit trail, compute the theoretical capacity for each group
-  of supply records defined by f."
-  [f path]
-  )
+  "Given a path to a Marathon audit trail, compute the theoretical capacity by period for each group
+  of supply records defined by group-fn."
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (->> (capacities path)
+       (group-by (juxt group-fn :period))
+       (map (fn [[[interest period] recs]] [[interest period] (reduce + (map :capacity recs))]))
+       (into {})))
