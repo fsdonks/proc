@@ -130,7 +130,7 @@ group-bys is an alternative vector of column labels for grouping.   "
   
 (defn met-by-time
   "Demand satisfaction by group-fn and time from demandtrends.txt.
-  group-fn can be (src->int interests), identity for by src, or (fn [s] 'All') for everything"
+  group-fn operates on the SRC string and can be (src->int interests), identity for by src, or (fn [s] 'All') for everything"
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   ;allow for multiple interests per SRC.
     (->> (tbl/tabdelimited->records path :pasemode :noscience :schema schemas/dschema)

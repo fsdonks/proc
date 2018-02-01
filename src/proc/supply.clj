@@ -214,6 +214,6 @@ of all units as records at time t.  Can also provide a substring of the unit nam
   of supply records defined by group-fn."
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (->> (capacities path)
-       (group-by (juxt group-fn :period))
+       (group-by (juxt (fn [{:keys [src]}] (group-fn src)) :period))
        (map (fn [[[interest period] recs]] [[interest period] (reduce + (map :capacity recs))]))
        (into {})))
