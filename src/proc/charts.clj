@@ -150,7 +150,7 @@
                     (or (src-set UnitType)
                         (src-set DemandType))))))
 
-(defn interests->src-map [ints]
+(defn interests->src-map [ints & {:keys [interest-name?]}]
   (reduce (fn [acc [k v]]
             (assoc acc k
               (conj (get acc k #{}) v)))
@@ -159,18 +159,9 @@
                  (for [[nm intspec] ints]
                    (let [[lbl srcs] intspec]
                      (for [src srcs]
-                       [src nm]))))))
-
-(defn interests->src-strings [ints]
-  (reduce (fn [acc [k v]]
-            (assoc acc k
-              (conj (get acc k #{}) v)))
-          {}
-          (apply concat
-                 (for [[nm intspec] ints]
-                   (let [[lbl srcs] intspec]
-                     (for [src srcs]
-                       [src lbl]))))))
+                       (if interest-name?
+                         [src lbl]
+                         [src nm])))))))
   
 (defn src-map->src-set [sm] (set (keys sm)))
 

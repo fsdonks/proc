@@ -125,7 +125,7 @@ group-bys is an alternative vector of column labels for grouping.   "
   "This will return a set of interests for each src instead of one interest per
   src like ints/src->int"
   [interests]
-  (->> (proc.charts/interests->src-strings interests)
+  (->> (proc.charts/interests->src-map interests :interest-name? true)
        ;(keymap->strmap)
        ))
   

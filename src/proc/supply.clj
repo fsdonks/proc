@@ -37,6 +37,7 @@ of all units as records at time t.  Can also provide a substring of the unit nam
         out (clojure.string/replace path "AUDIT_SupplyRecords.txt" "AUDIT_SupplyRecords_merged.txt")]
     (tbl/records->file recs out :field-order supply-order)))
 
+
 (defn quants-by-compo
   "Given a path to a Marathon audit trail, returns a map where the keys are srcs and the values are nested maps where the keys are components and the values are quantities.  Merges supply records according to merged-quantities."
   [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
@@ -115,12 +116,42 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                                     "DefaultNGPolicy" (assoc acc "NG" (second line-vec))
                                     acc)) {})))
 
+(defn parse-template
+  "given a template string, categorize the template for compute-discount."
+  [template]
+  (if (str/includes? template "NearMaxUtilization")
+    "NearMaxUtilization"
+    (if (= template "MaxUtilization")
+      "MaxUtilization"
+      (if (= (subs template 0 2) "RC")
+        "RC"
+        (if (= (subs template 0 2) "AC")
+            "AC"
+            (throw (Exception. (str "Unknown template " template))))))))
+
+(defn static-policy?
+  "Throw an exception if the policy violates static analysis assumptions. Otherwise, return true."
+  [bog {:keys [MaxBOG MaxDwell MinDwell StopDeployable StartDeployable PolicyName]}]
+  (if (or (not= (- StopDeployable StartDeployable) bog) ;violates static analysis assumption
+          (< StartDeployable (- StopDeployable bog)) ;lifecycle shortened when deployed
+          (< StopDeployable MaxDwell)
+          (not= MaxDwell (+ MinDwell bog)))
+    (throw (Exception. (str "The " PolicyName " might violate static analysis assumptions.")))
+    true))
+
 (defn compute-discount
   "given a policy record, compute the static analysis rotational discount."
-  [{:keys [MaxBog MaxDwell Overlap]}]
-  (/ (- MaxBog Overlap) MaxDwell))
+  [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}]
+  (let [staticf (fn [bog] (/ (- bog Overlap) MaxDwell))]
+    (case (parse-template Template)
+      "MaxUtilization" 1
+      "NearMaxUtilization" (/ (- MaxBOG Overlap) (+ MinDwell MaxBOG))
+      "RC" (when (static-policy? (+ MaxBOG 95) policy)
+             (staticf (+ MaxBOG 95)))    
+      "AC" (when (static-policy? MaxBOG policy)
+             (staticf MaxBOG)))))
 
-(defn rotational-discounts
+(defn discounts-by-period
   "Given the path to a Marathon audit trail, compute the rotational discount for
   the AC and RC for each period."
   [path]
@@ -137,17 +168,33 @@ of all units as records at time t.  Can also provide a substring of the unit nam
         composite-map (reduce (fn [acc {:keys [CompositeName Period Policy] :as r}]
                               (if (contains? policy-names CompositeName)
                                 (assoc acc [CompositeName Period] (policy-map Policy)) acc)) {} composites)]
-    (for [[compo policy] (get-policies path)
-          {nm :Name} periods]
-      [[compo nm] (if (contains? policy-map policy)
-                                    (policy-map policy)
-                                    (composite-map [policy nm]))])))
+    (into {} (for [[compo policy] (get-policies path)
+                   {nm :Name} periods]
+               [[compo nm] (if (contains? policy-map policy)
+                             (compute-discount (policy-map policy))
+                             (compute-discount (composite-map [policy nm])))]))))
 
 ;use rotational-discounts and a compo supply map to return a map of [int period] to theoretical capacities
 (defn theoretical-capacities
   [root compo-supply-map]
-  (by-compo-supply-map-groupf root :supply-filter (fn [r] (and (:Enabled r)))))
+  (let [supply (by-compo-supply-map-groupf root :supply-filter (fn [r] (and (:Enabled r))))
+        ]
 
+    ))
+                                        ;load policies
+                                        ;supply-by-compo
+                                        
+                                        
+
+  
+  (defn capacities-by-interest
+    "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
+    [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
+  (let [supprecs (->> (util/load-supply)
+                   (filter supply-filter)
+                   (merged-quantities))]
+    ))
+  
 (defn capacity-by
   "Given a path to a Marathon audit trail, compute the theoretical capacity for each group
   of supply records defined by f."

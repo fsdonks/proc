@@ -541,3 +541,7 @@
   (->> (tbl/tabdelimited->records (str root "AUDIT_PeriodRecords.txt") :parsemode :noscience :schema schemas/periodrecs)
        (into [])
        (filter (fn [r] (not (= (:Name r) "Initialization"))))))
+
+(defn load-supply
+  [root]
+  (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs))
