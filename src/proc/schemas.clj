@@ -70,7 +70,14 @@
               :RCFilled	        :int
               :NGFilled	        :int
               :GhostFilled	:int
-              :OtherFilled	:int})
+              :OtherFilled	:int
+              ;;added
+              :ACOverlap	:int
+              :RCOverlap	:int
+              :NGOverlap	:int
+              :GhostOverlap	:int
+              :OtherOverlap	:int
+              })
 
 (def cycleschema 
   {"tstart"	      :int
