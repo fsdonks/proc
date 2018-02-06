@@ -398,6 +398,17 @@
       (doseq [l (line-seq rdr)]
         (io/writeln! w (str (hash l)))))))
 
+(defn separate-by
+  "Like group-by, but if f returns a collection, merge the items into the return map for each item in the sequence. Doesn't
+  include items that return nil when f is called on them."
+  [f coll]
+  (let [groups (group-by f coll)]
+    (reduce-kv (fn [acc k v] (if k (if (coll? k)
+                               (reduce (fn [m grp]
+                                         (assoc m grp (concat v (get m grp [])))) acc k)
+                               (assoc acc k (concat v (get acc k []))))
+                                 acc)) {} groups)))
+
 ;;compute the areas in each sequence where the hashes do not align.
 ;;We probably need to avoid using map here because it may well be that
 ;;one of our sequences is longer.  map will impliclty truncate the sequence.

@@ -93,10 +93,6 @@ of all units as records at time t.  Can also provide a substring of the unit nam
   [root & {:keys [interests supply-filter] :or {supply-filter (fn [r] (:Enabled r)) interests nil}}]
   (print-all-invs (by-compo-supply-map root :interests interests :supply-filter supply-filter)))
 
-;(tbl/tabdelimited->table (slurp (str root "AUDIT_PeriodRecords.txt")) :parsemode :noscience 
-                                         ;:schema schemas/periodrecs
-                        ; )
-
 (defn wbpath-from-auditpath
   "Returns the path of the marathon workbook if given the path of the audit trail."
   [auditpath]
@@ -130,14 +126,24 @@ of all units as records at time t.  Can also provide a substring of the unit nam
             (throw (Exception. (str "Unknown template " template))))))))
 
 (defn static-policy?
-  "Throw an exception if the policy violates static analysis assumptions. Otherwise, return true."
+  "Throw an exception if the policy violates static analysis assumptions. Otherwise, return true. These cases would probably
+  be when static analysis is most valid, but a lot of our policies violate these assumptions so I rewrote this fn below to
+  be more liberal."
   [bog {:keys [MaxBOG MaxDwell MinDwell StopDeployable StartDeployable PolicyName]}]
   (if (or (not= (- StopDeployable StartDeployable) bog) ;violates static analysis assumption
           (< StartDeployable (- StopDeployable bog)) ;lifecycle shortened when deployed
           (< StopDeployable MaxDwell)
           (not= MaxDwell (+ MinDwell bog)))
-    (throw (Exception. (str "The " PolicyName " might violate static analysis assumptions.")))
+    (throw (Exception. (str "The " PolicyName " policy might violate static analysis assumptions.")))
     true))
+
+(defn static-policy?
+  "In this case, we can assume that a unit always bogs at the end of his lifecycle."
+  [bog {:keys [MaxDwell StopDeployable StartDeployable PolicyName]}]
+                                        ;make sure they're deployable at the end of the lifecycle
+  (if (and (<= (- MaxDwell bog) StopDeployable) (<= StartDeployable (- MaxDwell bog))) 
+    true                            
+    (throw (Exception. (str "The " PolicyName " policy might violate static analysis assumptions.")))))
 
 (defn compute-discount
   "given a policy record, compute the static analysis rotational discount."
@@ -209,11 +215,15 @@ of all units as records at time t.  Can also provide a substring of the unit nam
       {:src SRC :period nm :capacity (* Quantity (discount-from-policies Policy nm policies composites
                                                                 :default (discount [Component nm])))})))
 
+
 (defn capacity-by
   "Given a path to a Marathon audit trail, compute the theoretical capacity by period for each group
   of supply records defined by group-fn."
-  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  (->> (capacities path)
-       (group-by (juxt (fn [{:keys [src]}] (group-fn src)) :period))
+  [path & {:keys [group-fn supply-filter] :or {group-fn (fn [s] "All") supply-filter (fn [r] (:Enabled r))}}]
+  (->> (capacities path :supply-filter supply-filter)
+                                        ;(group-by (juxt (fn [{:keys [src]}] (group-fn src)) :period))
+       (util/separate-by (fn [{:keys [src]}] (group-fn src)))
+       (mapcat (fn [[grp xs]] (for [[period recs] (group-by :period xs)]
+                             [[grp period] recs])))
        (map (fn [[[interest period] recs]] [[interest period] (reduce + (map :capacity recs))]))
        (into {})))

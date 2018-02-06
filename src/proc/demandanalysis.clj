@@ -10,9 +10,13 @@
             [spork.util.table :as tbl]
             [spork.util.temporal :as temp]
             [proc.dynamicbars :refer [enabled-demand]]
-            [proc.core :as c])
+            [proc.core :as c]
+            [proc.supply :as supply]
+            [proc.stacked :as stacked])
   (:use [incanter.core]
-        [incanter.charts]))
+        [incanter.charts])
+  (:import [org.jfree.chart.annotations XYLineAnnotation]
+           [ java.awt.Color]))
 
 
 ;Idea was to compute the deltas in the demand signal by computing a net gain of demand quantity each time we have events starting
@@ -135,19 +139,16 @@ group-bys is an alternative vector of column labels for grouping.   "
   ;allow for multiple interests per SRC.
     (->> (tbl/tabdelimited->records path :pasemode :noscience :schema schemas/dschema)
          (into [])
-         (mapcat (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled]}]
-              (let [grp (group-fn SRC)
-                    intr (if (coll? grp) grp [grp])
-                    basemap {:t t :req (+ TotalRequired Overlapping) :filled TotalFilled}]
-                  (for [i intr] (assoc basemap :interest i)))))
-         (remove (fn [r] (nil? (:interest r))))
-         (group-by :interest)
+         (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled]}]
+                    {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled}))
+         (util/separate-by (fn [r] (group-fn (:SRC r))))
          (reduce-kv (fn [acc interest v]
+                      ;demandtrends should be sorted by time, so this is okay.
                       (let [parts (partition-by :t v)]
                         (conj acc
                         [interest
                          (map :t (map first parts))
-                         (map (fn [p] (/ (reduce + (map :filled p)) (reduce + (map :req p)))) parts)]))) [])))
+                         (map (fn [p] (* 100 (/ (reduce + (map :filled p)) (reduce + (map :req p))))) parts)]))) [])))
 
 (defn smooth
   "Used when plotting x and y values.  When the xs are sparse, this
@@ -159,8 +160,6 @@ group-bys is an alternative vector of column labels for grouping.   "
                      (concat [[[(first xs)] [(first ys)]]]))
         agg (fn [f parts] (mapcat f parts))]
     [(agg first spliced) (agg second spliced)]))
-
-(def pt (atom nil))
 
 (def curr (atom nil))
 
@@ -198,7 +197,7 @@ group-bys is an alternative vector of column labels for grouping.   "
   vectors containing the start and end of each period of peak as defined by an optional peak-function.
 Defaults to the number of active records in an activity sample as the peak."
   [f xs period-recs start-func duration-func peak-function]
-  (for [[k recs] (group-by f xs)
+  (for [[k recs] (util/separate-by f xs)
         :let [activities (temp/activity-profile recs :start-func start-func :duration-func duration-func)]
         {:keys [FromDay ToDay Name] :as r} period-recs
         :let [during (filter (fn [[t m]] (and (>= t FromDay) (<= t ToDay))) activities)
@@ -219,29 +218,60 @@ Defaults to the number of active records in an activity sample as the peak."
         periods (util/load-periods path)]
     (peak-times-by-period (fn [r] (group-fn (:SRC r))) demands periods :StartDay :Duration peakfn)))
 
+(defn peak-lines
+  "given the path to a marathon audit trail, compute a sequence of [[x1 y1] [x2 y2]] vectors for each interest in order to draw
+  horizontal lines whenever there is peak demand."
+  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All") demand-filter (fn [r] true)}}]
+  ;demand-filter should work on supply-filter too
+  (let [capacities (supply/capacity-by path :group-fn group-fn :supply-filter demand-filter)]
+  (->> (peaks-from path :group-fn group-fn :demand-filter demand-filter)
+       (remove (fn [r] (= (:peak r) 0)))
+       (group-by :group)
+       (map (fn [[group rs]]
+              [group (reduce (fn [acc {:keys [intervals peak period]}]
+                               (concat acc (map (fn [[x1 x2]] (let [static-met (* 100 (/ (capacities [group period]) peak))]
+                                                                [[x1 static-met] [x2 static-met]])) intervals))) [] rs)]))
+       (into {}))))
 
-(defn add-polygons
-  "Adds a sequence of polygons to the plt."
-  [plt polygons])
+(def tatom (atom nil))
 
-;something needs to call peaks from and supply stuff in order to make a mapping of interest to polygons [[[x1 y1] [x2 y2]]   ... ]
-;group peaks-from by :group and pull theoretical capacity from a theoretical capacity map.
+(defn draw-line
+  "Takes the plot and adds a line to it.  Like add-polygon, but the stroke and paint are specified via
+  the options"
+  [plt [[x1 y1] [x2 y2]] & {:keys [paint stroke]}]
+  (let [annotation (new XYLineAnnotation x1 y1 x2 y2 (new java.awt.BasicStroke 3) java.awt.Color/blue)]
+    (.addAnnotation (.getXYPlot plt) annotation)))
+
+;;this isn't working.  probably need to change the renderer for the plot?
+(defn set-legend-stroke
+  "Takes the plot and sets the stroke width of the nth item in the LegendCollection to stroke-width."
+  [plt n stroke-width]
+  (let [i-legend (-> (.getXYPlot plt)
+            (.getLegendItems)
+            (.get n))]
+    (.setLineStroke i-legend (new java.awt.BasicStroke 3)) ))
+
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn"
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
-                                        ;(filter (fn [r] (inscope? (:SRC r)))) for peaks-from
-        ;use inscope for inscope supply too
-        tadmudi (add-tadmudi)]
+        lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))]
   (doseq [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
     (let [[sts sys] (smooth ts ys)
-          plt (reset! pt (xy-plot sts sys))]
-      (.setTitle plt group)
+          plt (xy-plot sts sys :legend true
+                       :x-label "Time (days)"
+                       :y-label "Percentage of Demand Met"
+                       :series-label "Simulation")
+          _ (reset! tatom plt)]
+      (doseq [i (lines group)] (draw-line plt i))
+      (.setTitle plt (str group " TADMUDI and Simulation Results"))
+      ;add the TADMUDI entry to the legend.
+      (add-lines plt [] [] :series-label "TADMUDI and Peak Demand Periods")
+      ;change the stroke of the new TADMUDI entry to match the stroke of draw-line
+      ;(set-legend-stroke plt 1 3)
       (proc.core/phases-to-chart plt path)
-      ;(add-tadmudi plt path)
-      ;change this to doto too
       (doto (new org.jfree.chart.ChartFrame group plt)                   
         (.setSize 500 400)
         (.setVisible true))))))
