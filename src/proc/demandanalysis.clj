@@ -233,8 +233,6 @@ Defaults to the number of active records in an activity sample as the peak."
                                                                 [[x1 static-met] [x2 static-met]])) intervals))) [] rs)]))
        (into {}))))
 
-(def tatom (atom nil))
-
 (defn draw-line
   "Takes the plot and adds a line to it.  Like add-polygon, but the stroke and paint are specified via
   the options"
@@ -251,6 +249,25 @@ Defaults to the number of active records in an activity sample as the peak."
             (.get n))]
     (.setLineStroke i-legend (new java.awt.BasicStroke 3)) ))
 
+(defn extend-bounds
+  "Makes a progress listener for a jfreechart.  Listens for when the plot is done drawing and then extends the y axis beyond mx.
+  Also adds phase lines to the chart based on the marathon audit trail path."
+  [cht mx path]
+  (reify org.jfree.chart.event.ChartProgressListener
+                      (chartProgress [this e]
+                        (when (= (.getType e) org.jfree.chart.event.ChartProgressEvent/DRAWING_FINISHED)
+                          (let [tickunit (-> cht (.getXYPlot) (.getRangeAxis) (.getTickUnit) (.getSize))
+                                above (if (zero? (rem mx tickunit))
+                                        (+ mx (/ tickunit 2))
+                                        (+ (- mx (rem mx tickunit)) tickunit))
+                                        ;need to bump the upper bound up a bit in this case.  Should probably be a function of draw-line
+                                        ;stroke width but this is okay for now after some testing.
+                                above (if (<= (/ (- above mx) tickunit) 0.075) (+ above (/ tickunit 2)) above)]
+                            (util/set-bounds cht :y-axis :upper above)
+                            (proc.core/phases-to-chart cht path)
+                            (.removeProgressListener cht this)
+                            )))))
+
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn"
@@ -264,14 +281,15 @@ Defaults to the number of active records in an activity sample as the peak."
                        :x-label "Time (days)"
                        :y-label "Percentage of Demand Met"
                        :series-label "Simulation")
-          _ (reset! tatom plt)]
+          maxpercent (reduce max (concat ys (map (fn [[[x y] []]] y) (lines group))))]
+      (util/set-bounds plt :y-axis :upper maxpercent) ;tried this first but then the bar at maxpercent is sometimes cut off
+      (.addProgressListener plt (extend-bounds plt maxpercent path))
       (doseq [i (lines group)] (draw-line plt i))
       (.setTitle plt (str group " TADMUDI and Simulation Results"))
       ;add the TADMUDI entry to the legend.
       (add-lines plt [] [] :series-label "TADMUDI and Peak Demand Periods")
       ;change the stroke of the new TADMUDI entry to match the stroke of draw-line
       ;(set-legend-stroke plt 1 3)
-      (proc.core/phases-to-chart plt path)
       (doto (new org.jfree.chart.ChartFrame group plt)                   
         (.setSize 500 400)
         (.setVisible true))))))
