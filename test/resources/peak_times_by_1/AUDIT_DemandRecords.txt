@@ -1,0 +1,18 @@
+Type	Enabled	Priority	Quantity	DemandIndex	StartDay	Duration	Overlap	SRC	SourceFirst	DemandGroup	Vignette	Operation	Category	Title 10_32	OITitle	OriginalPriority
+DemandRecord	TRUE	4133	1	12294	721	1	45	77202K100	Uniform	Moke	Tangerine	I Vger	Rotational	10	OI18	1
+DemandRecord	TRUE	4134	1	12295	722	32	45	77202K100	Uniform	Moke	Tangerine	II Kahn	Rotational	10	OI18	1
+DemandRecord	TRUE	4135	1	12296	754	32	45	77202K100	Uniform	Moke	Tangerine	III Kruge	Rotational	10	OI18	1
+DemandRecord	TRUE	4136	1	12297	786	24	45	77202K100	Uniform	Moke	Tangerine	IV Whales	Rotational	10	OI18	1
+DemandRecord	TRUE	4137	2	12298	810	24	45	77202K100	Uniform	Moke	Tangerine	IV Whales	Rotational	10	OI18	1
+DemandRecord	TRUE	4138	2	12299	834	40	45	77202K100	Uniform	Moke	Tangerine	V Sybok	Rotational	10	OI18	1
+DemandRecord	TRUE	4139	2	12300	874	24	45	77202K100	Uniform	Moke	Tangerine	VI Chang	Rotational	10	OI18	1
+DemandRecord	TRUE	4140	2	12301	898	24	45	77202K100	Uniform	Moke	Tangerine	VII Soran	Rotational	10	OI18	1
+DemandRecord	TRUE	4141	2	12302	922	519	45	77202K100	Uniform	Moke	Tangerine	IX Ahdar	Rotational	10	OI18	1
+DemandRecord	TRUE	4142	2	12303	1441	384	45	77202K100	Uniform	Moke	Tangerine	X Shinzon	Rotational	10	OI18	1
+DemandRecord	TRUE	7738	1	5693	1636	40	45	77202K100	Uniform	Jack	Kayla	VI Chang	Rotational	10	OI18	2
+DemandRecord	TRUE	7739	1	5694	1676	24	45	77202K100	Uniform	Jack	Kayla	VII Soran	Rotational	10	OI18	2
+DemandRecord	TRUE	7740	1	5695	1700	24	45	77202K100	Uniform	Jack	Kayla	VIII Borg	Rotational	10	OI18	2
+DemandRecord	TRUE	7741	1	5696	1724	192	45	77202K100	Uniform	Jack	Kayla	IX Ahdar	Rotational	10	OI18	2
+DemandRecord	TRUE	8788	1	6743	1589	16	45	77202K100	Uniform	Jack	Kayla	V Sybok	Rotational	10	OI18	2
+DemandRecord	TRUE	8789	1	6744	1605	32	45	77202K100	Uniform	Jack	Kayla	V Sybok	Rotational	10	OI18	2
+DemandRecord	TRUE	10698	1	492	1	721	45	77202K100	Uniform	Molly	Katie	Homer	Rotational	10	OI18	3

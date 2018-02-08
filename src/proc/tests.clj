@@ -1,10 +1,11 @@
 (ns proc.tests
   (:require [proc [example :as ex]
-                  [stats :as stats]
-                  [util :as util]
-                  [core :as core]]
+             [stats :as stats]
+             [util :as util]
+             [core :as core]
+             [demandanalysis :as demand]]
             [spork.util [table :as tbl]
-                        [io :as io]]
+             [io :as io]]
             [clojure.test :refer :all]
             [proc.stats :as stats]
             [proc.constants :as consts]
@@ -57,7 +58,6 @@
                           (tbl/table-records))
             results (into #{} statsrecs)]
         (=  results somestats))))
-
 
 (deftest demandmap-test
   (is (let [dpath (str (path!) "AUDIT_DemandRecords.txt")]
@@ -143,7 +143,8 @@
               (first (test-lines (line-seq utype-all-fills) (line-seq dtype-all-fills)))))
       "byDemandType? fills should be the same as byDemandType? false fills as long as no substitutions"))
 
-  
+
+
 (defn get-line 
   "Returns a string of line number number from a file pointed to by path string."
   [number path]
@@ -169,19 +170,32 @@
 last-day unmet record for a demand name properly."
   [dtrendpath]
   (->> (tbl/tabdelimited->records dtrendpath :schema proc.schemas/dschema :parsemode :noscience)
-    (reduce (fn [acc r] (assoc acc (:DemandName r) r)) {} )))
+       (reduce (fn [acc r] (assoc acc (:DemandName r) r)) {} )))
 
-(comment
+
+;;---------------------------------------------
+;use sets in case order every changes.  order shouldn't matter.
+(deftest peaks-from-test
+  (is (= (set (demand/peaks-from "test/resources/peak_times_by_1/" :group-fn (fn [s] s)))
+         (set [{:peak 2, :intervals [[721 721]], :group "77202K100", :period "PreSurge"}
+               {:peak 4, :intervals [[1636 1636]], :group "77202K100", :period "Surge"}
+               {:peak 3, :intervals [[1801 1824]], :group "77202K100", :period "PostSurge"}]))
+      ;;My visual check failed at first.  Turns out, proc was right and I wasn't.
+      "Verified this visually, so wanted to make a regression test."))
+
   ;;we want to make sure our tests run in-order.
   ;;specifically, we need the tests to happen in a bundle, like run-sample, then
   ;;all-fills, etc.
   
   ;;possibly rip this out.
   ;;The order of precedence seems to be running correctly already just using
-  ;;run-test. 
+;;run-test.
   (defn test-ns-hook []
+    ;lacking NIPR sample data for these first 4 tests.  
     #_(stats)
-    (demandmap-test)
-    (hash-test)
-    (small-test)))
+    ;(demandmap-test)
+    ;(hash-test)
+    ;(small-test)
+    (peaks-from-test)
+    )
 

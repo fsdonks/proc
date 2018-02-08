@@ -207,7 +207,7 @@ Defaults to the number of active records in an activity sample as the peak."
                                         ;if the period started on a peak, begin the first interval at the beginning of the period
               acts (concat [[FromDay (second before)]] during [[(+ ToDay 1) {}]])]]
       (assoc (peak-times acts peak-function) :group k :period Name)))
-  
+
 (defn peaks-from
   "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled
   demand records. Supply an optional demand-filter for the demand records."

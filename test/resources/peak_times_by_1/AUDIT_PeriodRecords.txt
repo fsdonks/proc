@@ -1,0 +1,5 @@
+Type	Name	FromDay	ToDay	PeriodCategory	Notes	Base
+PeriodRecord	Initialization	0	0	Initialization		no like empty
+PeriodRecord	PreSurge	1	721	PreSurge		no like empty
+PeriodRecord	Surge	722	1800	Surge		no like empty
+PeriodRecord	PostSurge	1801	2147483647	PostSurge		no like empty
