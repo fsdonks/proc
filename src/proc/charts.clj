@@ -109,6 +109,12 @@
     (when (= key (keyword "fill")) (t "Fill")) ;; Change title of chart back to short title 
     (when (= key (keyword "dwell")) (t "Dwell"))))
 
+(defn simple-save-jfree-chart
+  "Save a jfree chart to outfile as PNG."
+  [chart outfile & {:keys [width height] :or {width 700 height 420}}]
+  (org.jfree.chart.ChartUtilities/saveChartAsPNG
+   (java.io.File. outfile) chart width height))
+
 (defn listen-for-keys [root chart title frame] 
   (.addKeyListener frame (proxy [java.awt.event.KeyListener] []
                            (keyPressed [e]

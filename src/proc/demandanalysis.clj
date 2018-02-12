@@ -12,7 +12,8 @@
             [proc.dynamicbars :refer [enabled-demand]]
             [proc.core :as c]
             [proc.supply :as supply]
-            [proc.stacked :as stacked])
+            [proc.stacked :as stacked]
+            [proc.charts :as charts])
   (:use [incanter.core]
         [incanter.charts])
   (:import [org.jfree.chart.annotations XYLineAnnotation]
@@ -252,7 +253,7 @@ Defaults to the number of active records in an activity sample as the peak."
 (defn extend-bounds
   "Makes a progress listener for a jfreechart.  Listens for when the plot is done drawing and then extends the y axis beyond mx.
   Also adds phase lines to the chart based on the marathon audit trail path."
-  [cht mx path]
+  [cht mx path phase-lines?]
   (reify org.jfree.chart.event.ChartProgressListener
                       (chartProgress [this e]
                         (when (= (.getType e) org.jfree.chart.event.ChartProgressEvent/DRAWING_FINISHED)
@@ -264,26 +265,29 @@ Defaults to the number of active records in an activity sample as the peak."
                                         ;stroke width but this is okay for now after some testing.
                                 above (if (<= (/ (- above mx) tickunit) 0.075) (+ above (/ tickunit 2)) above)]
                             (util/set-bounds cht :y-axis :upper above)
-                            (proc.core/phases-to-chart cht path)
+                            (when phase-lines? (c/phases-to-chart cht path))
                             (.removeProgressListener cht this)
                             )))))
 
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
-  group-fn"
-  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  group-fn."
+  [path & {:keys [group-fn show-charts? phase-lines?] :or {group-fn (fn [s] "All") show-charts? false phase-lines? true}}]
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
         lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))]
-  (doseq [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
+  (for [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
     (let [[sts sys] (smooth ts ys)
           plt (xy-plot sts sys :legend true
                        :x-label "Time (days)"
                        :y-label "Percentage of Demand Met"
                        :series-label "Simulation")
           maxpercent (reduce max (concat ys (map (fn [[[x y] []]] y) (lines group))))]
-      (util/set-bounds plt :y-axis :upper maxpercent) ;tried this first but then the bar at maxpercent is sometimes cut off
-      (.addProgressListener plt (extend-bounds plt maxpercent path))
+      (if show-charts?
+                                        ;tried this first but then the bar at maxpercent is sometimes cut off
+        (do (util/set-bounds plt :y-axis :upper maxpercent) 
+            (.addProgressListener plt (extend-bounds plt maxpercent path phase-lines?)))
+        (do (when phase-lines? (c/phases-to-chart plt path)) (util/set-bounds plt :y-axis :upper (+ maxpercent 5))))
       (doseq [i (lines group)] (draw-line plt i))
       (.setTitle plt (str group " TADMUDI and Simulation Results"))
       ;add the TADMUDI entry to the legend.
@@ -292,8 +296,28 @@ Defaults to the number of active records in an activity sample as the peak."
       ;(set-legend-stroke plt 1 3)
       (doto (new org.jfree.chart.ChartFrame group plt)                   
         (.setSize 500 400)
-        (.setVisible true))))))
+        (.setVisible show-charts?))
+      [group plt]))))
+
+(defn dump-spark-charts
+  "Load spark charts from a marathon audit trail directory specified by in and save all spark charts to the out directory.
+  Calling an optional function f on each chart before saving."
+  [in out & {:keys [group-fn f phase-lines?] :or {group-fn (fn [s] "All") f identity phase-lines? true}}]
+  (doseq [[group chart] (spark-charts in :group-fn group-fn :phase-lines? phase-lines?)]
+                                        ;create the out dir if it doesn't exist
+    (clojure.java.io/make-parents (str out "."))
+    (charts/simple-save-jfree-chart (f chart) (str out group ".png"))))
+
+(defn dump-sparks-for
+  "Save the spark charts for the period named by period"
+  [in out period group-fn]
+  (let [[{:keys [Name FromDay ToDay]} :as periods] (filter (fn [{:keys [Name]}] (= Name period)) (util/load-periods in))]
+    (when (not= (count periods) 1) (throw (Exception. (str "There needs to be only one period with that name.  There are " (count periods) " with that name."))))
+    (dump-spark-charts in out :group-fn group-fn :f (fn [cht] (util/set-bounds cht :x-axis :lower FromDay :upper ToDay)
+                                                      (.setTitle cht (str (.getText (.getTitle cht)) "\nTime Period: " Name))  cht ) :phase-lines? false)))
+
 
 ;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5))
 
 ;(add-polygon ap [[15 225] [35 225]])
+
