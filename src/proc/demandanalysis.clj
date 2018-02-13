@@ -57,12 +57,16 @@ and highest time"
   ([data & args]
     (reduce (fn [acc [column-name from-columns f]] (add-derived-column column-name from-columns f acc)) data args)))
 
-(defn load-time-map
-  [root & {:keys [pred groupf] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))
-                                       groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
+(defn filtered-demand
+  [root & {:keys [pred] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))}}]
   (->> (tbl/tabdelimited->records (str root "AUDIT_DemandRecords.txt") :paresmode :noscience :schema schemas/drecordschema)
        (into [])
-       (filter pred)
+       (filter pred)))
+  
+(defn load-time-map
+  [root & {:keys [pred groupf] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))
+                                    groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
+  (->> (filtered-demand root :pred pred)
        (group-by groupf)))
   
 (defn get-peak-demands 
@@ -91,14 +95,9 @@ group-bys is an alternative vector of column labels for grouping.   "
                           peak (apply max quants)
                           samples (build-samples [times quants])
                           peakts (filter (fn [[t quant]] (= quant peak)) samples)]                         
-                    (conj acc (assoc k :peak peak :times (map first peakts)))))]
+                    (conj acc (assoc {:group k} :peak peak :times (map first peakts)))))]
     (reduce-kv  get-peaks [] bigmap)))
 
-(defn get-peak-demands3 
-  "want to pull out peak demand by period"
-  []
-)
-  
 ;(filter (fn [[k v]] (= (:DemandGroup k) "Scenario9")) peaks) ;where peaks is the result of get-peak-demands        
 
 ;(view (stacked-area-chart ["a" "a" "b" "b" "c" "c" ] [10 20 30 10 40 20] :legend true :group-by ["I" "II" "I" "II" "I" "II"]))
@@ -109,9 +108,8 @@ group-bys is an alternative vector of column labels for grouping.   "
 (defn graph-demand 
   "these need to smoothed I think"
   [root & {:keys [pred] :or {pred ($fn [SRC DemandGroup] true)}}]
-  (let [ds (->> (util/as-dataset (str root "AUDIT_DemandRecords.txt"))
-             ($where pred))
-        [times quants] (quant-by-time (add-deltas ds))]
+  (let [recs (filtered-demand root :pred pred)
+        [times quants] (quant-by-time (add-deltas recs))]
        (view (xy-plot times quants))))
         
 
