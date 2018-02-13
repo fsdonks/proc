@@ -24,19 +24,18 @@
 ;or ending.
 ;Could also use a sampler for this, but this was done before I learned of the sampler
 (defn add-deltas 
-  "takes incanter dataset.  Adds a row for the end day of each demand with a negative quantity.  Groups by :StartDay"
-  [ds] 
-  (let [negs (assoc ds :rows (map (fn [row] (assoc row :Quantity (- (:Quantity row)) 
-                                                     :StartDay (+ (:StartDay row) (:Duration row)))) (:rows ds)))
-         ]
-    ($group-by [:StartDay] (conj-rows negs ds))))
+  "takes DemandRecords.  Adds a row for the end day of each demand with a negative quantity.  Groups by :StartDay"
+  [recs] 
+  (let [negs (for [row recs] (assoc row :Quantity (- (:Quantity row)) 
+                                    :StartDay (+ (:StartDay row) (:Duration row))))]
+    (group-by (fn [r] (:StartDay r)) (concat recs negs))))
 
 (defn quant-by-time 
   "returns two vetors within a vector where the first vector is times and the second vector is quantities between the lowest time
 and highest time"
   [daymap]  
-  (let [daymkeys (map #(:StartDay %) (keys daymap))
-        deltars (map (fn [ds] (:rows ds)) (vals daymap))
+  (let [daymkeys (keys daymap)
+        deltars (vals daymap)
         deltas (map (fn [rows] (apply + (map #(:Quantity %) rows))) deltars)
         deltmap (zipmap daymkeys deltas)
         max (apply max daymkeys)]
@@ -58,14 +57,21 @@ and highest time"
   ([data & args]
     (reduce (fn [acc [column-name from-columns f]] (add-derived-column column-name from-columns f acc)) data args)))
 
+(defn load-time-map
+  [root & {:keys [pred groupf] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))
+                                       groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
+  (->> (tbl/tabdelimited->records (str root "AUDIT_DemandRecords.txt") :paresmode :noscience :schema schemas/drecordschema)
+       (into [])
+       (filter pred)
+       (group-by groupf)))
+  
 (defn get-peak-demands 
   "tds is a dataset.  Defaults to enabled is true and false.  try :enabled true for only enabled records
 Returns a map where {:SRC SRC :DemandGroup DemandGroup} are keys and value are integers.
 group-bys is an alternative vector of column labels for grouping.   "
-  [root & {:keys [enabled group-bys] :or {enabled true group-bys [:SRC :DemandGroup]}}]
-  (let [tds (util/as-dataset (str root "AUDIT_DemandRecords.txt"))
-        bigmap (->> (if enabled ($where ($fn [Enabled] (= (str/upper-case Enabled) "TRUE")) tds) tds)
-                ($group-by group-bys))]
+  [root & {:keys [pred groupf] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))
+                                       groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
+  (let [bigmap (load-time-map root :pred pred :groupf groupf)]
     (reduce-kv (fn [acc k v] (assoc acc k (apply max (second (quant-by-time (add-deltas v)))))) {} bigmap)))
  
 (defn build-samples [[times quants]]
@@ -77,10 +83,9 @@ group-bys is an alternative vector of column labels for grouping.   "
   tds is a dataset.  Defaults to enabled is true and false.  try :enabled true for only enabled records
 Returns a map where {:SRC SRC :DemandGroup DemandGroup} are keys and value are integers.
 group-bys is an alternative vector of column labels for grouping.   "
-  [root & {:keys [pred group-bys] :or {pred ($fn [Enabled] (= (str/upper-case Enabled) "TRUE")) group-bys [:SRC :DemandGroup]}}]
-  (let [tds (util/as-dataset (str root "AUDIT_DemandRecords.txt"))
-        bigmap (->> ($where pred tds)
-                ($group-by group-bys))
+  [root & {:keys [pred groupf] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))
+                                       groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
+  (let [bigmap (load-time-map root :pred pred :groupf groupf)
         get-peaks (fn [acc k v] 
                     (let [[times quants] (quant-by-time (add-deltas v))
                           peak (apply max quants)
@@ -320,4 +325,3 @@ Defaults to the number of active records in an activity sample as the peak."
 ;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5))
 
 ;(add-polygon ap [[15 225] [35 225]])
-
