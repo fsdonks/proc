@@ -118,17 +118,35 @@
               (first  (util/hash-misses (map util/string->int (line-seq hashfills))
                                         (line-seq runfills))))))
   
-(defn test-lines [file1 file2]
+(defn test-lines
+  "Given line-seqs for file1 and file2, returns [linenumber false] for every line that doesn't match between the two files."
+  [file1 file2]
   (->>  (map (fn [l r] (= l r)) file1 file2)
                 (map-indexed vector)
                 (filter (fn [[idx x]]
                           (not x)))))
 
-(defn compare-files [filepath1 filepath2]
+(defn compare-files
+  "returns nil if the files are the same. Otherwise, returns [linenumber false] for the first line that is different."
+  [filepath1 filepath2]
   (util/with-rdrs [f1 filepath1
                    f2  filepath2]
     (first (test-lines (line-seq f1) (line-seq f2)))))
 
+(defn compare-directories
+  "check if all text files in dir1 match the text files under the same name in dir2. Returns a sequence of [filename nil] for files that match, [filename numDifferentLines] for files that don't have the same number of lines, [filename [linenumber false]] for files that don't match, and [filename :notfound] if the file doesn't exist in dir2. Use name-filter to filter the names of the files."
+  [dir1 dir2 & {:keys [name-filter] :or {name-filter (fn [n] true)}}]
+  (let [filenames (filter name-filter (seq (.list (clojure.java.io/file dir1))))]
+    (for [f filenames]
+      (if (io/fexists? (str dir2 f))
+        (let [linediff (util/with-rdrs [f1 (str dir1 f) f2 (str dir2 f)]
+                         (- (count (line-seq f1)) (count (line-seq f2))))]
+          (if (= linediff 0)
+            [f (compare-files (str dir1 f) (str dir2 f))]
+            [f linediff]))
+        [f :notfound]))))
+
+  
 ;added demand-type or unit-type fills views.  fills and sand should remain identical if no subtitutions?
 (deftest small-test
   (is (do (println [:testing :fills :byeDemandType?])
