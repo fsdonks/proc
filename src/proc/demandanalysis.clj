@@ -146,13 +146,11 @@ group-bys is an alternative vector of column labels for grouping.   "
          (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled]}]
                     {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled}))
          (util/separate-by (fn [r] (group-fn (:SRC r))))
-         (reduce-kv (fn [acc interest v]
-                      ;demandtrends should be sorted by time, so this is okay.
-                      (let [parts (partition-by :t v)]
-                        (conj acc
+         (map (fn [[interest v]]
+                      (let [parts (into (sorted-map) (group-by :t v))]
                         [interest
-                         (map :t (map first parts))
-                         (map (fn [p] (* 100 (/ (reduce + (map :filled p)) (reduce + (map :req p))))) parts)]))) [])))
+                         (map first parts)
+                         (map (fn [[t p]] (* 100 (/ (reduce + (map :filled p)) (reduce + (map :req p))))) parts)])))))
 
 (defn smooth
   "Used when plotting x and y values.  When the xs are sparse, this
