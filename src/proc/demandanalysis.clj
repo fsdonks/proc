@@ -17,6 +17,7 @@
   (:use [incanter.core]
         [incanter.charts])
   (:import [org.jfree.chart.annotations XYLineAnnotation]
+           [org.jfree.chart LegendItemCollection]
            [ java.awt.Color]))
 
 
@@ -135,22 +136,54 @@ group-bys is an alternative vector of column labels for grouping.   "
   (->> (proc.charts/interests->src-map interests :interest-name? true)
        ;(keymap->strmap)
        ))
-  
+
+(defn partition-trends
+  "Partitions the sorted-map of demandtrends where the keys are time and the vals are records into a partitioned sequence of records.
+  A new partition is made each time there is a period of no demand."
+  [sorted-trends]
+  (->> (map second sorted-trends)
+       (partition 2 1)
+       (partition-by (fn [[[{deltat1 :deltat t1 :t}] [{t2 :t}]]]
+                       ;(assert (<= (+ deltat1 t1) t2) "demand samples should never overlap")
+                       (< (+ deltat1 t1) t2)))
+       (map (fn [parts] (map (fn [[left right]] left) parts)))
+       ))
+
+;;need to account for deltat between gaps so decided to use loop recur
+;;expect no last recordded on. Handle that at end of loop
+(defn part-trends
+  "Partitions the sorted-map of demandtrends where the keys are time and the vals are records into a partitioned sequence of records.
+  A new partition is made each time there is a period of no demand."
+  [sorted-trends]
+  (loop [trends (map second sorted-trends)
+         gapped-trends []
+         current []]
+    (if (empty? trends)
+      (conj gapped-trends (conj current )
+  ))))
+
+
+;deltat = duration
 (defn met-by-time
   "Demand satisfaction by group-fn and time from demandtrends.txt.
-  group-fn operates on the SRC string and can be (src->int interests), identity for by src, or (fn [s] 'All') for everything"
+  group-fn operates on the SRC string and can be (src->int interests), identity for by src, or (fn [s] 'All') for everything.
+  Demand satistfaction is partition each time there is no demand."
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   ;allow for multiple interests per SRC.
-    (->> (tbl/tabdelimited->records path :pasemode :noscience :schema schemas/dschema)
+    (->> (tbl/tabdelimited->records path :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
          (into [])
-         (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled]}]
-                    {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled}))
+         (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled deltaT]}]
+                    {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled :deltat deltaT}))
          (util/separate-by (fn [r] (group-fn (:SRC r))))
          (map (fn [[interest v]]
-                      (let [parts (into (sorted-map) (group-by :t v))]
+                (let [parts (into (sorted-map) (group-by :t v))
+                      [last-t [{deltat :deltat} :as recs]] (last parts)
+                      endtime (- (+ last-t deltat) 1)
+                      parts (assoc parts endtime (map (fn [r] (assoc r :t endtime)) recs))
+                      partitions (partition-trends parts)]
                         [interest
-                         (map first parts)
-                         (map (fn [[t p]] (* 100 (/ (reduce + (map :filled p)) (reduce + (map :req p))))) parts)])))))
+                         (map (fn [part] (map (fn [[{:keys [t]}]] t) part)) partitions)
+                         (map (fn [part] (map (fn [p] (* 100 (/ (reduce + (map :filled p)) (reduce + (map :req p))))) part)) partitions)])))))
 
 (defn smooth
   "Used when plotting x and y values.  When the xs are sparse, this
@@ -270,6 +303,33 @@ Defaults to the number of active records in an activity sample as the peak."
                             (.removeProgressListener cht this)
                             )))))
 
+(def plt (xy-plot [1 2 3 4 5] [5 8 2 9 5] :legend true))
+(view plt)
+(doto plt (add-lines [7 9] [5 10]))
+
+(defn remove-extra-legend-items
+  "An extra item is added to the legend every time add-lines is called.  Only keep the first item that was added to the legend."
+  [plot]
+  (let [plt (.getPlot plot)
+        legendItemsOld (.getLegendItems plt)
+        legendItemsNew (new LegendItemCollection)]
+    (.add legendItemsNew (.get legendItemsOld 0))
+    (.setFixedLegendItems plt legendItemsNew)))
+
+
+(defn plot-separate-lines
+  "Can create an xy-plot with gaps.  xs and ys are sequences of partitioned x and y values for each line segment."
+  [xs ys]
+  (let [[sts sys] (smooth (first xs) (first ys))
+        plt (xy-plot sts sys :legend true
+                       :x-label "Time (days)"
+                       :y-label "Percentage of Demand Met"
+                       :series-label "Simulation")]
+  (doseq [x (range 1 (count xs))]
+    (add-lines plt (nth xs x) (nth ys x)))
+  (remove-extra-legend-items plt)
+  plt))
+
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn."
@@ -278,12 +338,8 @@ Defaults to the number of active records in an activity sample as the peak."
         inscope? (fn [src] (not (nil? (inscopes src))))
         lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))]
   (for [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
-    (let [[sts sys] (smooth ts ys)
-          plt (xy-plot sts sys :legend true
-                       :x-label "Time (days)"
-                       :y-label "Percentage of Demand Met"
-                       :series-label "Simulation")
-          maxpercent (reduce max (concat ys (map (fn [[[x y] []]] y) (lines group))))]
+    (let [plt (plot-separate-lines ts ys)
+          maxpercent (reduce max (concat (reduce concat ys) (map (fn [[[x y] []]] y) (lines group))))]
       (if show-charts?
                                         ;tried this first but then the bar at maxpercent is sometimes cut off
         (do (util/set-bounds plt :y-axis :upper maxpercent) 
@@ -318,6 +374,6 @@ Defaults to the number of active records in an activity sample as the peak."
                                                       (.setTitle cht (str (.getText (.getTitle cht)) "\nTime Period: " Name))  cht ) :phase-lines? false)))
 
 
-;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5))
+;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5]))
 
 ;(add-polygon ap [[15 225] [35 225]])

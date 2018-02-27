@@ -56,6 +56,7 @@
                     "OITitle" :text})
 ;Strength
 
+;;might want deltaT here now.
 (def dschema {:t  	        :int
               :Quarter	        :int
               :SRC	        :text

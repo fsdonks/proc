@@ -190,6 +190,10 @@ last-day unmet record for a demand name properly."
   (->> (tbl/tabdelimited->records dtrendpath :schema proc.schemas/dschema :parsemode :noscience)
        (reduce (fn [acc r] (assoc acc (:DemandName r) r)) {} )))
 
+(defn same-delta-ts?
+  "One spark chart assumption that we make is that the delta t for all demands on a given day is the same.  Given the path
+  to a demandtrends file, this will return true or false for that assumption."
+  [])
 
 ;;---------------------------------------------
 ;use sets in case order every changes.  order shouldn't matter.
