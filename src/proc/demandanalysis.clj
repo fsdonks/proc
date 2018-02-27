@@ -149,19 +149,37 @@ group-bys is an alternative vector of column labels for grouping.   "
        (map (fn [parts] (map (fn [[left right]] left) parts)))
        ))
 
+(defn satisfaction
+  "compute the demand satisfaction from a sequence of demantrend records."
+  [[{:keys [deltat t] } :as part]]
+  {:percent (* 100 (/ (reduce + (map :filled part)) (reduce + (map :req part))))
+   :deltat deltat
+   :t t})
+
+(defn lastday
+  "compute the lastday for a demand given the start time and duration.  lastday and t are inclusive."
+  [t duration]
+  (- (+ t duration) 1))
+
 ;;need to account for deltat between gaps so decided to use loop recur
 ;;expect no last recordded on. Handle that at end of loop
 (defn part-trends
   "Partitions the sorted-map of demandtrends where the keys are time and the vals are records into a partitioned sequence of records.
-  A new partition is made each time there is a period of no demand."
+  A new partition is made each time there is a period of no demand. Returns [ts ys]"
   [sorted-trends]
-  (loop [trends (map second sorted-trends)
+  (loop [[[{firstt :t firstdt :deltat :as firstrend}
+           :as trend]
+          :as trends] (into [] (rest (map second sorted-trends)))
          gapped-trends []
-         current []]
-    (if (empty? trends)
-      (conj gapped-trends (conj current )
-  ))))
-
+         current [(satisfaction (first (map second sorted-trends)))]] ;{:t 3 :percent 60 :deltat 3}
+    (let [{:keys [t percent deltat] :as lastcurr} (last current)]
+      (if (empty? trends)
+        (conj gapped-trends (conj current (assoc lastcurr :t (lastday t deltat))))
+        (if (= (+ 1 (lastday t deltat)) firstt)
+          (recur (rest trends) gapped-trends (conj current (satisfaction trend)) )
+          ;;duration of last demand before a gap is always 1
+          (recur (rest trends) (conj gapped-trends current) [(satisfaction trend)])
+          )))))
 
 ;deltat = duration
 (defn met-by-time
@@ -177,13 +195,10 @@ group-bys is an alternative vector of column labels for grouping.   "
          (util/separate-by (fn [r] (group-fn (:SRC r))))
          (map (fn [[interest v]]
                 (let [parts (into (sorted-map) (group-by :t v))
-                      [last-t [{deltat :deltat} :as recs]] (last parts)
-                      endtime (- (+ last-t deltat) 1)
-                      parts (assoc parts endtime (map (fn [r] (assoc r :t endtime)) recs))
-                      partitions (partition-trends parts)]
+                      partitions (part-trends parts)]
                         [interest
-                         (map (fn [part] (map (fn [[{:keys [t]}]] t) part)) partitions)
-                         (map (fn [part] (map (fn [p] (* 100 (/ (reduce + (map :filled p)) (reduce + (map :req p))))) part)) partitions)])))))
+                         (map (fn [part] (map :t part)) partitions)
+                         (map (fn [part] (map :percent part)) partitions)])))))
 
 (defn smooth
   "Used when plotting x and y values.  When the xs are sparse, this
@@ -303,10 +318,6 @@ Defaults to the number of active records in an activity sample as the peak."
                             (.removeProgressListener cht this)
                             )))))
 
-(def plt (xy-plot [1 2 3 4 5] [5 8 2 9 5] :legend true))
-(view plt)
-(doto plt (add-lines [7 9] [5 10]))
-
 (defn remove-extra-legend-items
   "An extra item is added to the legend every time add-lines is called.  Only keep the first item that was added to the legend."
   [plot]
@@ -314,6 +325,7 @@ Defaults to the number of active records in an activity sample as the peak."
         legendItemsOld (.getLegendItems plt)
         legendItemsNew (new LegendItemCollection)]
     (.add legendItemsNew (.get legendItemsOld 0))
+    (.add legendItemsNew (.get legendItemsOld (- (.getItemCount legendItemsOld) 1)))
     (.setFixedLegendItems plt legendItemsNew)))
 
 
@@ -326,8 +338,8 @@ Defaults to the number of active records in an activity sample as the peak."
                        :y-label "Percentage of Demand Met"
                        :series-label "Simulation")]
   (doseq [x (range 1 (count xs))]
-    (add-lines plt (nth xs x) (nth ys x)))
-  (remove-extra-legend-items plt)
+    (add-lines plt (nth xs x) (nth ys x))
+    (set-stroke-color plt java.awt.Color/red :dataset x))
   plt))
 
 (defn spark-charts
@@ -349,6 +361,7 @@ Defaults to the number of active records in an activity sample as the peak."
       (.setTitle plt (str group " TADMUDI and Simulation Results"))
       ;add the TADMUDI entry to the legend.
       (add-lines plt [] [] :series-label "TADMUDI and Peak Demand Periods")
+      (remove-extra-legend-items plt)
       ;change the stroke of the new TADMUDI entry to match the stroke of draw-line
       ;(set-legend-stroke plt 1 3)
       (doto (new org.jfree.chart.ChartFrame group plt)                   
