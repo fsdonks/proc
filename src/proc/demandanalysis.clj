@@ -183,13 +183,13 @@ group-bys is an alternative vector of column labels for grouping.   "
 
 ;deltat = duration
 (defn met-by-time
-  "Demand satisfaction by group-fn and time from demandtrends.txt.
+  "Demand satisfaction by group-fn and time from demandtrends.txt. xs is the path to a marathon audit trail directory or
+  the demandtrend records.
   group-fn operates on the SRC string and can be (src->int interests), identity for by src, or (fn [s] 'All') for everything.
-  Demand satistfaction is partition each time there is no demand."
-  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  ;allow for multiple interests per SRC.
-    (->> (tbl/tabdelimited->records path :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
-         (into [])
+  Demand satistfaction is partitioned each time there is no demand."
+  [xs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (let [recs (if (coll? xs) xs (util/load-trends xs))]
+    (->> (into [] recs)
          (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled deltaT]}]
                     {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled :deltat deltaT}))
          (util/separate-by (fn [r] (group-fn (:SRC r))))
@@ -198,7 +198,7 @@ group-bys is an alternative vector of column labels for grouping.   "
                       partitions (part-trends parts)]
                         [interest
                          (map (fn [part] (map :t part)) partitions)
-                         (map (fn [part] (map :percent part)) partitions)])))))
+                         (map (fn [part] (map :percent part)) partitions)]))))))
 
 (defn smooth
   "Used when plotting x and y values.  When the xs are sparse, this
@@ -342,21 +342,30 @@ Defaults to the number of active records in an activity sample as the peak."
     (set-stroke-color plt java.awt.Color/red :dataset x))
   plt))
 
+(def tatom (atom nil))
+
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
   group-fn."
   [path & {:keys [group-fn show-charts? phase-lines?] :or {group-fn (fn [s] "All") show-charts? false phase-lines? true}}]
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
-        lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))]
-  (for [[group ts ys] (met-by-time (str path "DemandTrends.txt") :group-fn group-fn)]
+        lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))
+        _ (reset! tatom lines)
+        drecs (util/load-trends path)
+        {finalt :t finaldt :deltaT} (last drecs)
+        ;;automatic x axis max does not account for tadmudi lines.  Let's assume that last day we care about is
+        xbound (lastday finalt finaldt) ]
+  (for [[group ts ys] (met-by-time drecs :group-fn group-fn)]
     (let [plt (plot-separate-lines ts ys)
           maxpercent (reduce max (concat (reduce concat ys) (map (fn [[[x y] []]] y) (lines group))))]
       (if show-charts?
-                                        ;tried this first but then the bar at maxpercent is sometimes cut off
+                                        ;this is odd. can probably just use the false branch of this if
+                                        ;tried this first but then the bar at maxpercent is sometimes cut off.
         (do (util/set-bounds plt :y-axis :upper maxpercent) 
             (.addProgressListener plt (extend-bounds plt maxpercent path phase-lines?)))
         (do (when phase-lines? (c/phases-to-chart plt path)) (util/set-bounds plt :y-axis :upper (+ maxpercent 5))))
+      (util/set-bounds plt :x-axis :upper xbound) 
       (doseq [i (lines group)] (draw-line plt i))
       (.setTitle plt (str group " TADMUDI and Simulation Results"))
       ;add the TADMUDI entry to the legend.
