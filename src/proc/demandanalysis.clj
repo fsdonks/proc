@@ -344,10 +344,44 @@ Defaults to the number of active records in an activity sample as the peak."
 
 (def tatom (atom nil))
 
+(defn intersect?
+  "Given two line segments ([x11 x12] and [x21 x22]), determine if they intersect at all."
+  [x11 x12 x21 x22]
+  (assert (<= x11 x12) "The second value of the first line segment needs to be greater than the first value.")
+  (assert (<= x21 x22) "The second value of the second line segment needs to be greater than the first value.")
+  (if (< x11 x21)
+    (>= x12 x21)
+    (<= x11 x22)))
+
+(defn max-within
+  "Given a sequence of line seqments in 2-d like [[x1 y1] [x2 y2]], finds the maximum value of the lines between xlow and xhigh."
+  [xlow xhigh xs]
+  (->> xs
+  (filter (fn [[[x1 y1] [x2 y2]]]
+          (if (and x1 x2) (intersect? x1 x2 xlow xhigh) x1)))
+  (map (fn [[[x1 y1] [x2 y2]]]
+       (if x2 (max y1 y2)
+           y1)))
+  (reduce max)))
+
+;;account for grouped mots and mys
+(defn find-max
+  "returns the maximum percent demand met of tadmudi lines and marathon lines between low and high inclusive times."
+  [[low high] mts mys tadlines]
+  (->> (map (fn [ts ys] (->> (map #(conj %1 %2) ts ys)
+                             (partition 2 1)
+                             (max-within low high)))
+            mts mys)
+       (reduce concat) 
+       (concat [(max-within low  high tadlines)])
+       (reduce max)))
+
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
-  group-fn."
-  [path & {:keys [group-fn show-charts? phase-lines?] :or {group-fn (fn [s] "All") show-charts? false phase-lines? true}}]
+  group-fn. set the x bounds with a vector of [lowbound highbound].  Y axis max will be determined
+  based on these bounds."
+  [path & {:keys [group-fn show-charts? phase-lines? bounds] :or {group-fn (fn [s] "All") show-charts? false phase-lines? true
+                                                                  bounds nil}}]
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
         lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))
@@ -355,17 +389,19 @@ Defaults to the number of active records in an activity sample as the peak."
         drecs (util/load-trends path)
         {finalt :t finaldt :deltaT} (last drecs)
         ;;automatic x axis max does not account for tadmudi lines.  Let's assume that last day we care about is
-        xbound (lastday finalt finaldt) ]
+        xbound (if bounds (second bounds) (lastday finalt finaldt)) ]
   (for [[group ts ys] (met-by-time drecs :group-fn group-fn)]
     (let [plt (plot-separate-lines ts ys)
-          maxpercent (reduce max (concat (reduce concat ys) (map (fn [[[x y] []]] y) (lines group))))]
-      (if show-charts?
+          maxpercent (if bounds (find-max bounds ts ys (lines group)) 
+                         (reduce max (concat (reduce concat ys) (map (fn [[[x y] []]] y) (lines group)))))]
+      ;(if show-charts?
                                         ;this is odd. can probably just use the false branch of this if
                                         ;tried this first but then the bar at maxpercent is sometimes cut off.
-        (do (util/set-bounds plt :y-axis :upper maxpercent) 
-            (.addProgressListener plt (extend-bounds plt maxpercent path phase-lines?)))
-        (do (when phase-lines? (c/phases-to-chart plt path)) (util/set-bounds plt :y-axis :upper (+ maxpercent 5))))
-      (util/set-bounds plt :x-axis :upper xbound) 
+        ;(do (util/set-bounds plt :y-axis :upper maxpercent) 
+            ;(.addProgressListener plt (extend-bounds plt maxpercent path phase-lines?)))
+      (do (util/set-bounds plt :y-axis :upper (+ maxpercent 5))
+        (when phase-lines? (c/phases-to-chart plt path)));)
+      (util/set-bounds plt :x-axis :upper xbound :lower (when bounds (first bounds))) 
       (doseq [i (lines group)] (draw-line plt i))
       (.setTitle plt (str group " TADMUDI and Simulation Results"))
       ;add the TADMUDI entry to the legend.
@@ -381,8 +417,9 @@ Defaults to the number of active records in an activity sample as the peak."
 (defn dump-spark-charts
   "Load spark charts from a marathon audit trail directory specified by in and save all spark charts to the out directory.
   Calling an optional function f on each chart before saving."
-  [in out & {:keys [group-fn f phase-lines?] :or {group-fn (fn [s] "All") f identity phase-lines? true}}]
-  (doseq [[group chart] (spark-charts in :group-fn group-fn :phase-lines? phase-lines?)]
+  [in out & {:keys [group-fn f phase-lines? bounds] :or {group-fn (fn [s] "All") f identity phase-lines? true
+                                                  bounds nil}}]
+  (doseq [[group chart] (spark-charts in :group-fn group-fn :phase-lines? phase-lines? :bounds nil)]
                                         ;create the out dir if it doesn't exist
     (clojure.java.io/make-parents (str out "."))
     (charts/simple-save-jfree-chart (f chart) (str out group ".png"))))
