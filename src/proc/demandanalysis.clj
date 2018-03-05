@@ -354,28 +354,41 @@ Defaults to the number of active records in an activity sample as the peak."
     (>= x12 x21)
     (<= x11 x22)))
 
+(defn within?
+  "test if x is contained within the interval from low to high inclusive."
+  [x low high]
+  (and (>= x low) (<= x high)))
+
 (defn max-within
-  "Given a sequence of line seqments in 2-d like [[x1 y1] [x2 y2]], finds the maximum value of the lines between xlow and xhigh."
+  "Given a sequence of line seqments in 2-d like [[x1 y1] [x2 y2]] where the y value of the line is specified by y1, finds the maximum value of the lines between xlow and xhigh."
   [xlow xhigh xs]
   (->> xs
-  (filter (fn [[[x1 y1] [x2 y2]]]
-          (if (and x1 x2) (intersect? x1 x2 xlow xhigh) x1)))
+       (filter (fn [[[x1 y1] [x2 y2]]] (reset! tatom [[x1 y1] [x2 y2]])
+                 (if (and x1 x2) (intersect? x1 x2 xlow xhigh)
+                     ;;probably don't need this.  Should always have x1 and x2
+                     (within? x1 xlow xhigh))))
   (map (fn [[[x1 y1] [x2 y2]]]
-       (if x2 (max y1 y2)
-           y1)))
-  (reduce max)))
+       y1))
+  ;(reduce max)
+  ))
 
 ;;account for grouped mots and mys
 (defn find-max
   "returns the maximum percent demand met of tadmudi lines and marathon lines between low and high inclusive times."
-  [[low high] mts mys tadlines]
-  (->> (map (fn [ts ys] (->> (map #(conj %1 %2) ts ys)
+  [[low high] mts mys tadlines] 
+  (->> (map (fn [ts ys] (->> (map #(conj [%1] %2) ts ys)
                              (partition 2 1)
+                             ;;second t is the next record.
+                             (map (fn [[[x1 y1] [x2 y2]]] (reset! tatom [[x1 y1] [x2 y2]])
+
+                                    [[x1 y1] [(if (> x2 x1) (dec x2) x2) y2]]))
                              (max-within low high)))
             mts mys)
        (reduce concat) 
-       (concat [(max-within low  high tadlines)])
-       (reduce max)))
+       (concat (max-within low  high tadlines))
+       ((fn [xs] (if (empty? xs) 0 (reduce max xs))))))
+
+(def satom (atom nil))
 
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
@@ -389,10 +402,12 @@ Defaults to the number of active records in an activity sample as the peak."
         _ (reset! tatom lines)
         drecs (util/load-trends path)
         {finalt :t finaldt :deltaT} (last drecs)
+        {firstday :t} (first drecs)
         ;;automatic x axis max does not account for tadmudi lines.  Let's assume that last day we care about is
-        xbound (if bounds (second bounds) (lastday finalt finaldt)) ]
+        xbound (if bounds (second bounds) (lastday finalt finaldt))]
   (for [[group ts ys] (met-by-time drecs :group-fn group-fn)]
-    (let [plt (plot-separate-lines ts ys)
+    (let [_ (reset! satom group)
+          plt (plot-separate-lines ts ys)
           maxpercent (if bounds (find-max bounds ts ys (lines group)) 
                          (reduce max (concat (reduce concat ys) (map (fn [[[x y] []]] y) (lines group)))))]
       ;(if show-charts?
@@ -402,7 +417,7 @@ Defaults to the number of active records in an activity sample as the peak."
             ;(.addProgressListener plt (extend-bounds plt maxpercent path phase-lines?)))
       (do (util/set-bounds plt :y-axis :upper (+ maxpercent 5))
         (when phase-lines? (c/phases-to-chart plt path)));)
-      (util/set-bounds plt :x-axis :upper xbound :lower (when bounds (first bounds))) 
+      (util/set-bounds plt :x-axis :upper xbound :lower (if bounds (first bounds) firstday)) 
       (doseq [i (lines group)] (draw-line plt i))
       (.setTitle plt (str group " TADMUDI and Simulation Results"))
       ;add the TADMUDI entry to the legend.
@@ -420,7 +435,7 @@ Defaults to the number of active records in an activity sample as the peak."
   Calling an optional function f on each chart before saving."
   [in out & {:keys [group-fn f phase-lines? bounds] :or {group-fn (fn [s] "All") f identity phase-lines? true
                                                   bounds nil}}]
-  (doseq [[group chart] (spark-charts in :group-fn group-fn :phase-lines? phase-lines? :bounds nil)]
+  (doseq [[group chart] (spark-charts in :group-fn group-fn :phase-lines? phase-lines? :bounds bounds)]
                                         ;create the out dir if it doesn't exist
     (clojure.java.io/make-parents (str out "."))
     (charts/simple-save-jfree-chart (f chart) (str out group ".png"))))
@@ -430,8 +445,9 @@ Defaults to the number of active records in an activity sample as the peak."
   [in out period group-fn]
   (let [[{:keys [Name FromDay ToDay]} :as periods] (filter (fn [{:keys [Name]}] (= Name period)) (util/load-periods in))]
     (when (not= (count periods) 1) (throw (Exception. (str "There needs to be only one period with that name.  There are " (count periods) " with that name."))))
-    (dump-spark-charts in out :group-fn group-fn :f (fn [cht] (util/set-bounds cht :x-axis :lower FromDay :upper ToDay)
-                                                      (.setTitle cht (str (.getText (.getTitle cht)) "\nTime Period: " Name))  cht ) :phase-lines? false)))
+    (dump-spark-charts in out :group-fn group-fn :f (fn [cht] ;(util/set-bounds cht :x-axis :lower FromDay :upper ToDay)
+                                                      (.setTitle cht (str (.getText (.getTitle cht)) "\nTime Period: " Name))  cht ) :phase-lines? false
+                       :bounds [FromDay ToDay])))
 
 
 ;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5]))
