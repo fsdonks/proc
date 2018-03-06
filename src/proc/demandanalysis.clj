@@ -254,9 +254,11 @@ Defaults to the number of active records in an activity sample as the peak."
         :let [during (filter (fn [[t m]] (and (>= t FromDay) (<= t ToDay))) activities)
                                         ;this will be nil if there were no activities before
               before (last (take-while (fn [[t m]] (< t FromDay)) activities))
+              ;;if there is an activity on the first day of the period, we don't want a before
+              initial (if (= (ffirst during) FromDay) [] [[FromDay (second before)]])
                                         ;if the period ended on a peak, stop the last interval at the end of the period
                                         ;if the period started on a peak, begin the first interval at the beginning of the period
-              acts (concat [[FromDay (second before)]] during [[(+ ToDay 1) {}]])]]
+              acts (concat initial during [[(+ ToDay 1) {}]])]]
       (assoc (peak-times acts peak-function) :group k :period Name)))
 
 (defn peaks-from
@@ -288,7 +290,8 @@ Defaults to the number of active records in an activity sample as the peak."
   "Takes the plot and adds a line to it.  Like add-polygon, but the stroke and paint are specified via
   the options"
   [plt [[x1 y1] [x2 y2]] & {:keys [paint stroke]}]
-  (let [annotation (new XYLineAnnotation x1 y1 x2 y2 (new java.awt.BasicStroke 3) java.awt.Color/blue)]
+  (let [color (new java.awt.Color (float 0) (float 0) (float 1) (float 0.37))
+        annotation (new XYLineAnnotation x1 y1 x2 y2 (new java.awt.BasicStroke 3) color)]
     (.addAnnotation (.getXYPlot plt) annotation)))
 
 ;;this isn't working.  probably need to change the renderer for the plot?
