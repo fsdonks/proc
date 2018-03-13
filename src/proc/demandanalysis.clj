@@ -162,7 +162,9 @@ group-bys is an alternative vector of column labels for grouping.   "
   (- (+ t duration) 1))
 
 ;;need to account for deltat between gaps so decided to use loop recur
-;;expect no last recordded on. Handle that at end of loop
+;;expect no last recorded on. Handle that at end of loop
+;;deltat for all demands on a single day should be the same. Can test this assumption later or assert in met-by-time
+;;at a performance cost.
 (defn part-trends
   "Partitions the sorted-map of demandtrends where the keys are time and the vals are records into a partitioned sequence of records.
   A new partition is made each time there is a period of no demand. Returns [ts ys]"
@@ -181,7 +183,7 @@ group-bys is an alternative vector of column labels for grouping.   "
           (recur (rest trends) (conj gapped-trends current) [(satisfaction trend)])
           )))))
 
-;deltat = duration
+;;deltat = duration
 (defn met-by-time
   "Demand satisfaction by group-fn and time from demandtrends.txt. xs is the path to a marathon audit trail directory or
   the demandtrend records.
@@ -346,8 +348,6 @@ Defaults to the number of active records in an activity sample as the peak."
     (set-stroke-color plt java.awt.Color/red :dataset x))
   plt))
 
-(def tatom (atom nil))
-
 (defn intersect?
   "Given two line segments ([x11 x12] and [x21 x22]), determine if they intersect at all."
   [x11 x12 x21 x22]
@@ -366,7 +366,7 @@ Defaults to the number of active records in an activity sample as the peak."
   "Given a sequence of line seqments in 2-d like [[x1 y1] [x2 y2]] where the y value of the line is specified by y1, finds the maximum value of the lines between xlow and xhigh."
   [xlow xhigh xs]
   (->> xs
-       (filter (fn [[[x1 y1] [x2 y2]]] (reset! tatom [[x1 y1] [x2 y2]])
+       (filter (fn [[[x1 y1] [x2 y2]]]
                  (if (and x1 x2) (intersect? x1 x2 xlow xhigh)
                      ;;probably don't need this.  Should always have x1 and x2
                      (within? x1 xlow xhigh))))
@@ -382,7 +382,7 @@ Defaults to the number of active records in an activity sample as the peak."
   (->> (map (fn [ts ys] (->> (map #(conj [%1] %2) ts ys)
                              (partition 2 1)
                              ;;second t is the next record.
-                             (map (fn [[[x1 y1] [x2 y2]]] (reset! tatom [[x1 y1] [x2 y2]])
+                             (map (fn [[[x1 y1] [x2 y2]]] 
 
                                     [[x1 y1] [(if (> x2 x1) (dec x2) x2) y2]]))
                              (max-within low high)))
@@ -390,8 +390,6 @@ Defaults to the number of active records in an activity sample as the peak."
        (reduce concat) 
        (concat (max-within low  high tadlines))
        ((fn [xs] (if (empty? xs) 0 (reduce max xs))))))
-
-(def satom (atom nil))
 
 (defn spark-charts
   "make a spark chart for each group.  Once it's added, see met-by-time for an explanation of
@@ -402,15 +400,13 @@ Defaults to the number of active records in an activity sample as the peak."
   (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
         lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))
-        _ (reset! tatom lines)
         drecs (util/load-trends path)
         {finalt :t finaldt :deltaT} (last drecs)
         {firstday :t} (first drecs)
         ;;automatic x axis max does not account for tadmudi lines.  Let's assume that last day we care about is
         xbound (if bounds (second bounds) (lastday finalt finaldt))]
   (for [[group ts ys] (met-by-time drecs :group-fn group-fn)]
-    (let [_ (reset! satom group)
-          plt (plot-separate-lines ts ys)
+    (let [plt (plot-separate-lines ts ys)
           maxpercent (if bounds (find-max bounds ts ys (lines group)) 
                          (reduce max (concat (reduce concat ys) (map (fn [[[x y] []]] y) (lines group)))))]
       ;(if show-charts?
