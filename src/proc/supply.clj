@@ -125,7 +125,7 @@ of all units as records at time t.  Can also provide a substring of the unit nam
             "AC"
             (throw (Exception. (str "Unknown template " template))))))))
 
-(defn static-policy?
+(defn restricted-static-policy?
   "Throw an exception if the policy violates static analysis assumptions. Otherwise, return true. These cases would probably
   be when static analysis is most valid, but a lot of our policies violate these assumptions so I rewrote this fn below to
   be more liberal."
@@ -148,73 +148,111 @@ of all units as records at time t.  Can also provide a substring of the unit nam
 (defn compute-discount
   "given a policy record, compute the static analysis rotational discount."
   [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}]
-  (let [staticf (fn [bog] (/ (- bog Overlap) MaxDwell))]
+  (let [;;this might have made more sense sometimes
+        staticf (fn [bog] (/ (- bog Overlap) MaxDwell))
+        ;;this will be useful for a couple use cases below
+        deployablef (fn [bog] (/ (- bog Overlap) (+ StartDeployable bog)))]
     (case (parse-template Template)
-      "MaxUtilization" 1
-      "NearMaxUtilization" (/ (- MaxBOG Overlap) (+ MinDwell MaxBOG))
-      "RC" (when (static-policy? (+ MaxBOG 95) policy)
-             (staticf (+ MaxBOG 95)))    
-      "AC" (when (static-policy? MaxBOG policy)
-             (staticf MaxBOG)))))
+      "MaxUtilization" (deployablef MaxBOG)
+      ;always RC so far so +95
+      "NearMaxUtilization" (deployablef (+ 95 MaxBOG))
+      "RC" (case PolicyName
+             ;;static analysis is assuming that a unit deploys every lifecycle since
+             ;;we remove overlap from bog.  Therefore, if our BOG is > stopdeployable - start
+             ;;deployable, we can probably just use
+             "TAA21-25_RC_1:2" (deployablef (+ 95 MaxBOG))
+      (when (restricted-static-policy? (+ MaxBOG 95) policy)
+             (staticf (+ MaxBOG 95))))    
+      "AC" (case PolicyName
+             "ReqAnalysis_MaxUtilization_FullSurge_AC" (deployablef MaxBOG)
+      (when (restricted-static-policy? MaxBOG policy)
+             (staticf MaxBOG))))))
+
+(defn policy-name
+  "given a policy record and component, creates a name for the policy in terms of BOG:Dwell"
+  [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}
+   component]
+  (let [;for mobilization (only seen 95 recently)
+        bog (if (or (= component "RC") (= component "NG")) (+ MaxBOG 95) MaxBOG)
+        round (fn [num] (let [x (format "%.1f" (float num))
+                              [o t] (clojure.string/split x #"\.")]
+                          (if (= t "0") o x)))]
+      (str (round (/ bog 365)) ":" (round (/ StartDeployable 365)))))
+
+(defn policy-string
+  "given the path to a marathon audit trail, compute the policy string in the form of
+  RABOG:RAStartDeployable/RCBOG:RCStartDeployable for each period separated by ->.
+  Assumes that NG and RC follow the same policies."
+  [path]
+  (let [policies (policies-by-period path)]
+    (assert (->> (remove (fn [[[compo period] v]] (= compo "AC")) policies)
+                 (group-by (fn [[[compo period] v]] period))
+                 (every? (fn [[period xs]] (apply = (map (fn [[[compo period] v]] (:PolicyName v)) xs)))))
+            "Assume that NG and RC follow the same policies.")
+                                        ;reduce over period recs,
+                                        ;for ac and rc make this joined by ->
+    (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->") (policy-name (policies ["AC" Name]) "AC") "/"
+                                            (policy-name (policies ["NG" Name]) "NG")))
+            "" (util/load-periods path))))
 
 (defn policy-info
   "given the path to a Marathon audit trail, return a map of {:composites {...} :policies {...}} where the composites map
   is a map of [CompitePolicyName Period] to the policy record and the policies map is a map of PolicyName to the policy record."
-  [path & {:keys [active-policies] :or {active-policies (get-policies path)}}]
+  [path]
   (let [{composites "CompositePolicyRecords"
          policies "PolicyRecords"} (->> (xl/wb->tables (xl/as-workbook (wbpath-from-auditpath path))
                                                        :sheetnames ["CompositePolicyRecords" "PolicyRecords"])
                                         (reduce-kv (fn [acc k v] (assoc acc k
                                                                         (tbl/table-records (tbl/keywordize-field-names v))))
                                                    {}))
-        policy-names (set (vals active-policies))
         policy-map (reduce (fn [acc {:keys [PolicyName] :as r}] (assoc acc PolicyName r)) {} policies)
         composite-map (reduce (fn [acc {:keys [CompositeName Period Policy] :as r}]
                                 
                                   (assoc acc [CompositeName Period] (policy-map Policy))) {} composites)]
     {:composites composite-map :policies policy-map}))
 
-(defn discount-from-policies
-  "given a policy name, period name, and the policies and composites maps from policy-info, compute the discount for
-  the period.  If the policy doesn't exist in either policies or composites, you can supply a default value for
-  the rotational discount. Otherwise, an exception is thrown."
-  [policy period policies composites & {:keys [default]}]
-  (if (contains? policies policy)
-    (compute-discount (policies policy))
-    (if (contains? composites [policy period])
-      (compute-discount (composites [policy period]))
-      (if default default
-          (throw (Exception. (str [:policy policy] "does not exist in the PolicyRecords or CompositePolicyRecords")))))))
 
-(defn discounts-by-period
-  "Given the path to a Marathon audit trail, compute the rotational discount for
+(defn policy-record
+  "given a policy name, period name, and the policies and composites maps from policy-info, return the period
+  record for the period.  An exception is thrown if the policy doesn't exist in either policies or composites."
+  [policy period policies composites]
+  (if (contains? policies policy)
+    (policies policy)
+    (if (contains? composites [policy period])
+      (composites [policy period])
+      (throw (Exception. (str [:policy policy] "does not exist in the PolicyRecords or CompositePolicyRecords"))))))
+
+(defn policies-by-period
+  "Given the path to a Marathon audit trail, returns a map of [compo period] to the policy record for
   the AC and RC for each period."
   [path & {:keys [policyinfo periods active-policies]}]
   (let [active-policies (if active-policies active-policies (get-policies path))
         {:keys [composites policies]} (if policyinfo policyinfo
-                                          (policy-info path :active-policies active-policies))
+                                          (policy-info path))
         periods (if periods periods (util/load-periods path))]
     (into {} (for [[compo policy] active-policies
                    {nm :Name} periods]
-               [[compo nm] (discount-from-policies policy nm policies composites)]))))
-                        
+               [[compo nm] (policy-record policy nm policies composites)]))))
+
+(defn discounts-by-period
+  "Given the path to a Marathon audit trail, compute the rotational discount for
+  the AC and RC for each period."
+  [path]
+  (into {}
+        (map (fn [[[compo nm] policyrec]] [[compo nm] (compute-discount policyrec)]) (policies-by-period path))))
+
 (defn capacities
   "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
   [path & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
-  (let [active-policies (get-policies path)
-        {:keys [composites policies] :as policyinfo} (policy-info path :active-policies active-policies)
-        periods (util/load-periods path)
-        discount (discounts-by-period path :policyinfo policyinfo :periods periods :active-policies active-policies)
+  (let [discounts (discounts-by-period path)
         supprecs (->> (tbl/tabdelimited->table (slurp (str path "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
                       (tbl/table-records)
                       (filter supply-filter)
                                         ;multiple policies for one src will still exist after merging
                       (merged-quantities))]
     (for [{:keys [Policy Quantity Component SRC] :as r} supprecs
-          {nm :Name} periods]
-      {:src SRC :period nm :capacity (* Quantity (discount-from-policies Policy nm policies composites
-                                                                :default (discount [Component nm])))})))
-
+          {nm :Name} (util/load-periods path)]
+      {:src SRC :period nm :capacity (* Quantity (discounts [Component nm]))})))
 
 (defn capacity-by
   "Given a path to a Marathon audit trail, compute the theoretical capacity by period for each group
