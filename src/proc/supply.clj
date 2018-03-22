@@ -179,22 +179,6 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                           (if (= t "0") o x)))]
       (str (round (/ bog 365)) ":" (round (/ StartDeployable 365)))))
 
-(defn policy-string
-  "given the path to a marathon audit trail, compute the policy string in the form of
-  RABOG:RAStartDeployable/RCBOG:RCStartDeployable for each period separated by ->.
-  Assumes that NG and RC follow the same policies."
-  [path]
-  (let [policies (policies-by-period path)]
-    (assert (->> (remove (fn [[[compo period] v]] (= compo "AC")) policies)
-                 (group-by (fn [[[compo period] v]] period))
-                 (every? (fn [[period xs]] (apply = (map (fn [[[compo period] v]] (:PolicyName v)) xs)))))
-            "Assume that NG and RC follow the same policies.")
-                                        ;reduce over period recs,
-                                        ;for ac and rc make this joined by ->
-    (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->") (policy-name (policies ["AC" Name]) "AC") "/"
-                                            (policy-name (policies ["NG" Name]) "NG")))
-            "" (util/load-periods path))))
-
 (defn policy-info
   "given the path to a Marathon audit trail, return a map of {:composites {...} :policies {...}} where the composites map
   is a map of [CompitePolicyName Period] to the policy record and the policies map is a map of PolicyName to the policy record."
@@ -210,7 +194,6 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                                 
                                   (assoc acc [CompositeName Period] (policy-map Policy))) {} composites)]
     {:composites composite-map :policies policy-map}))
-
 
 (defn policy-record
   "given a policy name, period name, and the policies and composites maps from policy-info, return the period
@@ -233,6 +216,22 @@ of all units as records at time t.  Can also provide a substring of the unit nam
     (into {} (for [[compo policy] active-policies
                    {nm :Name} periods]
                [[compo nm] (policy-record policy nm policies composites)]))))
+
+(defn policy-string
+  "given the path to a marathon audit trail, compute the policy string in the form of
+  RABOG:RAStartDeployable/RCBOG:RCStartDeployable for each period separated by ->.
+  Assumes that NG and RC follow the same policies."
+  [path]
+  (let [policies (policies-by-period path)]
+    (assert (->> (remove (fn [[[compo period] v]] (= compo "AC")) policies)
+                 (group-by (fn [[[compo period] v]] period))
+                 (every? (fn [[period xs]] (apply = (map (fn [[[compo period] v]] (:PolicyName v)) xs)))))
+            "Assume that NG and RC follow the same policies.")
+                                        ;reduce over period recs,
+                                        ;for ac and rc make this joined by ->
+    (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->") (policy-name (policies ["AC" Name]) "AC") "/"
+                                            (policy-name (policies ["NG" Name]) "NG")))
+            "" (util/load-periods path))))
 
 (defn discounts-by-period
   "Given the path to a Marathon audit trail, compute the rotational discount for
