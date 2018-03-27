@@ -386,6 +386,27 @@
                  m)))
   ([m] (zero-trends m 0 identity)))
 
+(defn end-at-zero 
+  "If demsampler is sampling demandtrends, we need to account for the fact that the a DemandName becomes inactive 
+(all quantities go back to 0) after the last record."
+  [demsampler]
+  (reduce-kv (fn [acc k v]
+               (let [[t r] (last v)]
+                 (assoc acc k (assoc v (+ t 1) (merge r {:t 0 
+                                                         :TotalRequired 0
+                                                         :TotalFilled 0
+                                                         :Overlapping 0 
+                                                         :Deployed 0
+                                                         :ACFilled 0 
+                                                         :RCFilled 0
+                                                         :NGFilled  0
+                                                         :GhostFilled 0	
+                                                         :OtherFilled 0
+                                                         :Unfilled 0})))))
+             {} demsampler))
+
+;;prob want to call end-at-zero on this sampler see comp below
+
 ;This one goes by demandname
 (defn sample-demand-trends   [xs]     
   ;we want to add zeroed trends, so that we always have a demand.
@@ -402,6 +423,11 @@
                                        :OtherFilled 0
                                        :Unfilled 0})))))
 
+(defn sample-demand-trends-correct
+  "includes end-at-zero."
+  [xs]
+  (end-at-zero (sample-demand-trends xs)))
+  
 ;;unfilled-trends are stop-stop trends....
 ;;so, we have a series of demands that constitute concurrent 
 ;;fill histories, based on demandname.  From there, we create demand
@@ -703,24 +729,7 @@
         (fn [idx r]
           (expand-misses (second r) t idx)))))
          
-(defn end-at-zero 
-  "If demsampler is sampling demandtrends, we need to account for the fact that the a DemandName becomes inactive 
-(all quantities go back to 0) after the last record."
-  [demsampler]
-  (reduce-kv (fn [acc k v]
-               (let [[t r] (last v)]
-                 (assoc acc k (assoc v (+ t 1) (merge r {:t 0 
-                                                         :TotalRequired 0
-                                                         :TotalFilled 0
-                                                         :Overlapping 0 
-                                                         :Deployed 0
-                                                         :ACFilled 0 
-                                                         :RCFilled 0
-                                                         :NGFilled  0
-                                                         :GhostFilled 0	
-                                                         :OtherFilled 0
-                                                         :Unfilled 0})))))
-             {} demsampler))
+
   
   
 (defn sample-sand-trends [samples locsampler demsampler]  ;returns all loc and dmdtrend samples for every t in samples concatenated into one seq

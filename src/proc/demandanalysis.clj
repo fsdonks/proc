@@ -69,7 +69,12 @@ and highest time"
                                     groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
   (->> (filtered-demand root :pred pred)
        (group-by groupf)))
-  
+
+(defn demand-quantities
+  "calls this on a sequence of demand records, returns the result of quant-by-time."
+  [recs]
+  ((comp quant-by-time add-deltas) recs))
+
 (defn get-peak-demands 
   "tds is a dataset.  Defaults to enabled is true and false.  try :enabled true for only enabled records
 Returns a map where {:SRC SRC :DemandGroup DemandGroup} are keys and value are integers.
@@ -77,7 +82,7 @@ group-bys is an alternative vector of column labels for grouping.   "
   [root & {:keys [pred groupf] :or {pred (fn [{:keys [Enabled]}] (= (str/upper-case Enabled) "TRUE"))
                                        groupf (fn [{:keys [SRC DemandGroup]}] [SRC DemandGroup])}}]
   (let [bigmap (load-time-map root :pred pred :groupf groupf)]
-    (reduce-kv (fn [acc k v] (assoc acc k (apply max (second (quant-by-time (add-deltas v)))))) {} bigmap)))
+    (reduce-kv (fn [acc k v] (assoc acc k (apply max (second (demand-quantities v))))) {} bigmap)))
  
 (defn build-samples [[times quants]]
   (for [i (range (count times))]
@@ -149,10 +154,15 @@ group-bys is an alternative vector of column labels for grouping.   "
        (map (fn [parts] (map (fn [[left right]] left) parts)))
        ))
 
-(defn satisfaction
+(defn percent-satisfaction
   "compute the demand satisfaction from a sequence of demantrend records."
+  [recs]
+  (* 100 (/ (reduce + (map :filled recs)) (reduce + (map :req recs)))))
+  
+(defn satisfaction
+  "compute a map of demand satisfaction, deltat, and time. "
   [[{:keys [deltat t] } :as part]]
-  {:percent (* 100 (/ (reduce + (map :filled part)) (reduce + (map :req part))))
+  {:percent (percent-satisfaction part)
    :deltat deltat
    :t t})
 
@@ -183,24 +193,38 @@ group-bys is an alternative vector of column labels for grouping.   "
           (recur (rest trends) (conj gapped-trends current) [(satisfaction trend)])
           )))))
 
-;;deltat = duration
-(defn met-by-time
-  "Demand satisfaction by group-fn and time from demandtrends.txt. xs is the path to a marathon audit trail directory or
-  the demandtrend records.
-  group-fn operates on the SRC string and can be (src->int interests), identity for by src, or (fn [s] 'All') for everything.
-  Demand satistfaction is partitioned each time there is no demand."
+(defn condense-trends
+  "Shrink each demandtrend record to the information we really need.  Adds overlapping to totalrequired."
+  [trends]
+  (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled deltaT]}]
+         {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled :deltat deltaT}) trends))
+
+(defn satisfaction-with-overlap
+  "use demantrend records to get the percent demand satisfied."
+  [recs]
+  ((comp percent-satisfaction condense-trends) recs))
+
+(defn simple-trends
+  "compute a subset of demand trend information and group the records acording to a group-fn.
+  group-fn operates on the SRC string and can be (src->int interests), identity for by src, or (fn [s] 'All') for everything."
   [xs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (let [recs (if (coll? xs) xs (util/load-trends xs))]
     (->> (into [] recs)
-         (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled deltaT]}]
-                    {:SRC SRC :t t :req (+ TotalRequired Overlapping) :filled TotalFilled :deltat deltaT}))
-         (util/separate-by (fn [r] (group-fn (:SRC r))))
-         (map (fn [[interest v]]
-                (let [parts (into (sorted-map) (group-by :t v))
-                      partitions (part-trends parts)]
-                        [interest
-                         (map (fn [part] (map :t part)) partitions)
-                         (map (fn [part] (map :percent part)) partitions)]))))))
+         (condense-trends)
+         (util/separate-by (fn [r] (group-fn (:SRC r)))))))
+
+;;deltat = duration
+(defn met-by-time
+  "Demand satisfaction by group-fn and time from demandtrends.txt. xs is the path to a marathon audit trail directory or
+  the demandtrend records.  Demand satistfaction is partitioned each time there is no demand."
+  [xs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (->> (simple-trends xs :group-fn group-fn)
+       (map (fn [[interest v]]
+              (let [parts (into (sorted-map) (group-by :t v))
+                    partitions (part-trends parts)]
+                [interest
+                 (map (fn [part] (map :t part)) partitions)
+                 (map (fn [part] (map :percent part)) partitions)])))))
 
 
 (defn smooth
@@ -452,3 +476,58 @@ Defaults to the number of active records in an activity sample as the peak."
 ;(view (xy-plot [1 2 3 4 5] [5 8 2 9 5]))
 
 ;(add-polygon ap [[15 225] [35 225]])
+
+
+;;___________________________________________________
+;;comparing demand run statistics
+;;there are differences between multiple marathon runs. we would like to know
+;;whether the difference is cause by demand or supply
+;;there is a similar namespace collected stats from runs in proc.stats, but instead of figuring out
+;;how to re-use that, I'm writing this with that I've used here recently.
+
+;this doesn't account for deltat
+(defn demand-sat-by
+  "returns a map of {group percentmet} given a path to a marathon audit trail. Use group-fn to define the group as a function
+  of the src string"
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (->> (simple-trends (util/load-trends path) :group-fn group-fn)
+       (map (fn [[group recs]] [group (percent-satisfaction recs)]))
+       (into {})))
+
+;was working on this when went to higher level.
+(defn demand-sat-by-period
+ "returns a map of {group percentmet} given a path to a marathon audit trail. Use group-fn to define the group as a function
+  of the src string.  Use filter-fn to filter out demandtrend records. Supply a map of {Periodname [tstart tfinal]}, and
+  results will be returned in a map of {[group Periodname] demandsat}."
+  [path & {:keys [group-fn periods] :or {group-fn (fn [s] "All")}}]
+  (let [trends (util/separate-by (fn [r] (group-fn (:SRC r))) (util/load-trends path))]
+    ;;mapcat fn returns a seq of [periodname dematsat] or ["totaltime" demandsat] 
+    (mapcat (fn [[group xs]]
+              (if periods
+                (let [samples (proc.core/sample-demand-trends-correct xs)]
+                  (for [[p [tstart tfinal]] periods]
+                    [[group p]
+                     (satisfaction-with-overlap (mapcat (fn [t] (map second (c/samples-at samples t))
+                                                                     ) (range tstart (+ tfinal 1))))]
+                    ))
+               [[[group "alltimes"] (satisfaction-with-overlap xs)]]
+                )) trends)))
+
+(defn demand-sat-from
+ "given the path to a marathon audit trail, returns a map of the groups defined by group-fn to the percent of demand
+satisfied.  "
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (demand-sat-by-period path :group-fn group-fn :periods (util/period-map-from path)))
+
+(defn stats-from
+  "for each SRC in the supply, returns a map with keys src, percentmet, 'demandays, ac, rc, ng.  If the SRC is out of scope,
+  percentmet and demandays values will be 'outofscope'"
+  [path {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (let [supp (supply/by-compo-supply-map-groupf path :group-fn group-fn)
+        sat (demand-sat-by path :group-fn group-fn)]
+    (for [[group quants] supp]
+      (assoc supp :percentmet (get sat group "outofscope")
+             ;:demanddays "placeholder"
+             ))
+  ))
+ 

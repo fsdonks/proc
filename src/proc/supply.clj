@@ -45,7 +45,7 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                    (tbl/table-records)
                    (filter supply-filter)
                    (merged-quantities))]
-    (reduce (fn [map r] (assoc map (:SRC r) (assoc (map (:SRC r)) (:Component r) (:Quantity r)))) {} supprecs)))
+    (reduce (fn [m r] (assoc map (:SRC r) (assoc (m (:SRC r)) (:Component r) (:Quantity r)))) {} supprecs)))
 
 (defn merge-ints
   "For one interest, combine the quantities into one map keyed by the name in interest. Returns the complete quantity map

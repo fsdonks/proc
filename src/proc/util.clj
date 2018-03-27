@@ -494,9 +494,17 @@
 ;;while .lz4 may require a separate lib (dunno).
 ;;Going forward, we may just ditch the fills folder and rip out what we need
 ;;from a compressed allfills.txt.gz|lz4 file.  Not sure yet.
-  
-(defn last-day 
-  "Returns the last-day of the simulations as an integer."
+
+(defn last-deactivation
+  "Returns the day of the last inscope demand deactivation."
+  [root]
+  (let [inscopes (proc.core/inscope-srcs (str root "AUDIT_InScope.txt"))]
+  (->> (proc.dynamicbars/enabled-demand root)
+       (filter (fn [r] (contains? inscopes (:SRC r))))
+       (reduce (fn [acc {:keys [StartDay Duration]}] (max acc (+ StartDay Duration))) 0))))
+
+(defn last-day-default 
+  "Returns last day default from Parameters."
   [root]
   (with-rdrs [rdr (str root "AUDIT_Parameters.txt")]
     (-> (nth (line-seq rdr) 2)
@@ -504,7 +512,10 @@
       (second)
       (Integer/parseInt))))
  
-
+(defn last-day
+  "Returns the last processed day of the simulation as computed by m4."
+  [root]
+  (inc (min (last-day-default root) (last-deactivation root))))
 
 ;;Incanter patches.....
 (in-ns 'incanter.io)
@@ -553,6 +564,19 @@
        (into [])
        (filter (fn [r] (not (= (:Name r) "Initialization"))))))
 
+(defn period-map
+  "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
+ [recs]
+  (reduce (fn [acc {:keys [Name FromDay ToDay]}] (conj acc [Name [FromDay ToDay]])) [] recs))
+
+(defn period-map-from
+  "load a period map from a marathon audit trail. Compute last-day instead of using ToDay from period records."
+  [root]
+  (let [keyvals (period-map (load-periods root))
+        [nm [from to]] (last keyvals)
+        lastperiod [nm [from (last-day root)]]]
+  (into {} (conj (pop keyvals) lastperiod))))
+
 (defn load-supply
   [root]
   (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs))
@@ -561,3 +585,4 @@
   [root]
   (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
        (into [])))
+ 
