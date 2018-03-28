@@ -494,7 +494,6 @@ Defaults to the number of active records in an activity sample as the peak."
        (map (fn [[group recs]] [group (percent-satisfaction recs)]))
        (into {})))
 
-;was working on this when went to higher level.
 (defn demand-sat-by-period
  "returns a map of {group percentmet} given a path to a marathon audit trail. Use group-fn to define the group as a function
   of the src string.  Use filter-fn to filter out demandtrend records. Supply a map of {Periodname [tstart tfinal]}, and
@@ -519,18 +518,6 @@ satisfied.  "
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (demand-sat-by-period path :group-fn group-fn :periods (util/period-map-from path)))
 
-(defn stats-from
-  "for each SRC in the supply, returns a map with keys src, percentmet, 'demandays, ac, rc, ng.  If the SRC is out of scope,
-  percentmet and demandays values will be 'outofscope'"
-  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  (let [supp (supply/by-compo-supply-map-groupf path :group-fn group-fn)
-        sat (demand-sat-from path :group-fn (fn [s] s))]
-    (for [[group quants] supp]
-      (assoc supp :percentmet (get sat group "outofscope")
-             ;:demanddays "placeholder"
-             ))
-  ))
-
 (defn demand-sats-for
   "demand-sat-from wrapper for audit-stats. Returns surge period only"
   [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
@@ -538,7 +525,7 @@ satisfied.  "
        (filter (fn [[[group period] _]] (= period "Surge")))
        (map (fn [[[group period] res]] [group (java.lang.Math/round (float res))]))
        (into {}))
-          :fname "%met")])
+          :fname "%surgemet")])
 
 (defn inventories-for
   "by-compo-supply-map-groupf wrapper for audit-stats."
@@ -549,6 +536,10 @@ satisfied.  "
        (group-by :fname)
        (map (fn [[fnm recs]] (reduce merge recs)))))
 
+;;when we add fns for audit-stats.  Keep track of the name of the statistics here.
+(def statfs
+  {demand-sats-for ["%surgemet"]
+   inventories-for ["ACsupply" "NGsupply" "RCsupply"]})
 
 (defn audit-stats
   "Compute statistics given a sequences of data functions called datafs. datafs operate on marathon audit trail directories. this fn returns records of {:data {'group1' 'datafres1'} :path 'blah' :dataname 'blah'}. dataf returns a seq of records like {group datafres :fname '%met'} where fname is a string name for the type of data. Each dataf should also accept the same group-fn" 
@@ -588,8 +579,71 @@ satisfied.  "
                
   {} acc)) (zipmap (keys (:data (first xs))) (repeat (count (:data (first xs))) {})) xs)))
 
+(defn compute-deltas
+  "given the results of stats-from and the same inputs path-pairs and datafs, compute the dataf difference between the last path and the first path and assoc the deltas into the records
+  with keys like 'datafstring_delta'."
+  [statsfrom path-pairs datafs]
+  (let [statnames (mapcat statfs datafs)
+        firstpath (second (first path-pairs))
+        lastpath (second (last path-pairs))]
+  (for [[group r] statsfrom]
+    (assoc (reduce (fn [acc sname] 
+                     (assoc acc (str sname "_delta") (- (acc (str sname "_" lastpath))
+                                                        (acc (str sname "_" firstpath)))))
+                   r statnames) "group" group))))
+
+(defn stat-order
+  "given path-pairs and datafs, compute an ordered sequence of header names in order to write these records to a text file."
+  [path-pairs datafs]
+  (let [pathnames (map second path-pairs)]
+    (reduce concat (for [s (mapcat statfs datafs)
+                         p pathnames
+                         :let [header (str s "_" p)]]
+                     (if (= p (last pathnames))
+                       [header (str s "_delta")]
+                       [header])))))
+
+(defn supply-delta-string
+  "given a computed-delta record, compute a string which contains the delta for each component."
+  [r]
+  (reduce (fn [acc k] (let [res (r k)
+                            write-delta (fn [sign] (str acc (if (= acc "") "" ", ") sign res " " (subs k 0 2)))]
+                        (if (= res 0)
+                          acc
+                          (if (pos? res)
+                            (write-delta "+")
+                            (write-delta "")))))
+          ""
+          ["ACsupply_delta" "NGsupply_delta" "RCsupply_delta"]))
+  
+(defn farb-comparison-2125
+  "given the results of compute-deltas using inventories-for and demand-sats-for, generate
+  the same records of data Jim used for requirements analysis. SRCs only for the group here since mapping SRC
+  to oi title."
+  [computedeltas oititles]
+  (for [{src "group" taa2024 "%surgemet_taa2024" taa2125 "%surgemet_taa2125" delta "%surgemet_delta" :as r}  computedeltas
+        :let [deltas (supply-delta-string r)]]
+      {"High Interest Force Element" (str (oititles src) (if (= deltas "") "" " ") deltas )
+       "m4 TAA 20-24 % Surge Demand Met" taa2024
+       "m4 TAA 21-25 % Surge Demand Met" taa2125
+       "change" delta}))
+
+(defn spit-2125-comparison
+  "spit a 2125-farb-comparison table to out."
+  [out path-pairs datafs]
+  (-> (stats-from path-pairs splus :group-fn (fn [s] s))
+      (compute-deltas path-pairs datafs)
+      (farb-comparison-2125 (supply/oi-titles (first (last path-pairs))))
+      (tbl/records->file out :field-order ["High Interest Force Element"  "m4 TAA 20-24 % Surge Demand Met" "m4 TAA 21-25 % Surge Demand Met"
+                                           "change"])))
+;;testing
+(comment
 (def p [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "early"]])
 (def s [demand-sats-for])
 
-(def pplus [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6\\" "orig"] ["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "early"]])
+(def pplus [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6\\" "taa2024"] ["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "taa2125"]])
 (def splus [demand-sats-for inventories-for])
+
+(def out "C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\taa_comparison.txt")
+(spit-2125-comparison out pplus splus)
+)

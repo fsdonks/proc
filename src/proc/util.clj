@@ -497,7 +497,8 @@
 
 (defn load-supply
   [root]
-  (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs))
+  (->> (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
+       (into [])))
 
 (defn load-trends
   [root]

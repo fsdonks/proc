@@ -264,3 +264,11 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                              [[grp period] recs])))
        (map (fn [[[interest period] recs]] [[interest period] (reduce + (map :capacity recs))]))
        (into {})))
+
+(defn oi-titles
+  "given a path to a marathon audit trail, return a map of src to OI title. This data is pulled from
+  audit supply records. Uses only enabled supply for now."
+  [path]
+  (->> (util/load-supply path)
+       (filter (fn [{:keys [Enabled]}] Enabled))
+       (reduce (fn [a {:keys [SRC OITitle]}] (assoc a SRC OITitle)) {})))
