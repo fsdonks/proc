@@ -292,18 +292,10 @@
 (defn demand-name [d]
   (clojure.string/join "_" [(:Priority d) (:Vignette d) (:SRC d) (str "[" (:StartDay d) "..." 
                                                                        (+ (:StartDay d) (:Duration d)) "]")]))
-;;Changed 
-;this is a hack to ensure we are generating demand names just like Marathon (without Out-ofscope)
-(defn inscope-srcs [path]
-   (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/inscope-schema path))
-       (tbl/table-records)
-       (map :SRC)
-       (set)))
-  
 ;what if I changed the sourcing rules back to normal?
 (defn load-demand-map [path] ;load up out of scope (set of those that are out of scope
   (let [scope-path (clojure.string/replace path "AUDIT_DemandRecords" "AUDIT_InScope")
-        inscope (inscope-srcs scope-path)
+        inscope (util/inscope-srcs scope-path)
         unique-name (fn [m r] (let [nm (demand-name r)] (if (contains? m nm) (str nm "_" (inc (count m))) nm))) ]          
     (->> (tbl/tabdelimited->table (slurp path) :schema (util/fit-schema schemas/drecordschema path))
          (tbl/table-records)       

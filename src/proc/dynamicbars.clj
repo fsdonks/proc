@@ -5,7 +5,8 @@
             [proc.interests :as ints]
             [proc.schemas :as schemas]
             [clojure.string :as str]
-            [spork.util.temporal :as temp])
+            [spork.util.temporal :as temp]
+            [proc.util :as util])
   (:use [incanter.charts]))
 
 
@@ -14,19 +15,10 @@
   [ints] ;still expecting the SRCS to be unique in the interests here.
   (reduce-kv (fn [m k [name srcs]] (merge m (apply assoc {} (concat (interpose k srcs) [k])))) {} ints))
 
-(defn enabled-demand
-  "Return enabled DemandRecords as a sequence of records given a path to an audit trail dir."
-  [root]
-  (->> 
-                (tbl/tabdelimited->table (slurp (str root "AUDIT_DemandRecords.txt")) :parsemode :noscience 
-                                         :schema schemas/drecordschema)
-                (tbl/table-records)
-                (filter (fn [{:keys [Enabled]}] Enabled))))
-
 (defn peaks-by-interest 
   "Returns the last max peak found for each interest"
   [root interests & {:keys [groupfn]}]
-  (let [drecs (enabled-demand root)
+  (let [drecs (util/enabled-demand root)
         rev-ints (srcs-ints interests)
         groupfn  (if groupfn groupfn (fn [{:keys [SRC DemandGroup]}] (rev-ints SRC)))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]

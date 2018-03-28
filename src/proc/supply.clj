@@ -45,7 +45,7 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                    (tbl/table-records)
                    (filter supply-filter)
                    (merged-quantities))]
-    (reduce (fn [m r] (assoc map (:SRC r) (assoc (m (:SRC r)) (:Component r) (:Quantity r)))) {} supprecs)))
+    (reduce (fn [m r] (assoc m (:SRC r) (assoc (m (:SRC r)) (:Component r) (:Quantity r)))) {} supprecs)))
 
 (defn merge-ints
   "For one interest, combine the quantities into one map keyed by the name in interest. Returns the complete quantity map
@@ -174,10 +174,10 @@ of all units as records at time t.  Can also provide a substring of the unit nam
    component]
   (let [;for mobilization (only seen 95 recently)
         bog (if (or (= component "RC") (= component "NG")) (+ MaxBOG 95) MaxBOG)
-        round (fn [num] (let [x (format "%.1f" (float num))
+        vba-round (fn [num] (let [x (format "%.1f" (float num))
                               [o t] (clojure.string/split x #"\.")]
                           (if (= t "0") o x)))]
-      (str (round (/ bog 365)) ":" (round (/ StartDeployable 365)))))
+      (str (vba-round (/ bog 365)) ":" (vba-round (/ StartDeployable 365)))))
 
 (defn policy-info
   "given the path to a Marathon audit trail, return a map of {:composites {...} :policies {...}} where the composites map

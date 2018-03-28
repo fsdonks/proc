@@ -495,11 +495,49 @@
 ;;Going forward, we may just ditch the fills folder and rip out what we need
 ;;from a compressed allfills.txt.gz|lz4 file.  Not sure yet.
 
+(defn load-supply
+  [root]
+  (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs))
+
+(defn load-trends
+  [root]
+  (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
+       (into [])))
+
+(defn enabled-demand
+  "Return enabled DemandRecords as a sequence of records given a path to an audit trail dir."
+  [root]
+  (->> 
+                (tbl/tabdelimited->table (slurp (str root "AUDIT_DemandRecords.txt")) :parsemode :noscience 
+                                         :schema schemas/drecordschema)
+                (tbl/table-records)
+                (filter (fn [{:keys [Enabled]}] Enabled))))
+
+(defn load-periods
+  "Returns the records of AUDIT_PeriodRecords.txt in the root dir."
+  [root]
+  (->> (tbl/tabdelimited->records (str root "AUDIT_PeriodRecords.txt") :parsemode :noscience :schema schemas/periodrecs)
+       (into [])
+       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
+
+(defn period-map
+  "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
+ [recs]
+  (reduce (fn [acc {:keys [Name FromDay ToDay]}] (conj acc [Name [FromDay ToDay]])) [] recs))
+
+;;Changed 
+;this is a hack to ensure we are generating demand names just like Marathon (without Out-ofscope)
+(defn inscope-srcs [path]
+   (->> (tbl/tabdelimited->table (slurp path) :schema (fit-schema schemas/inscope-schema path))
+       (tbl/table-records)
+       (map :SRC)
+       (set)))
+
 (defn last-deactivation
   "Returns the day of the last inscope demand deactivation."
   [root]
-  (let [inscopes (proc.core/inscope-srcs (str root "AUDIT_InScope.txt"))]
-  (->> (proc.dynamicbars/enabled-demand root)
+  (let [inscopes (inscope-srcs (str root "AUDIT_InScope.txt"))]
+  (->> (enabled-demand root)
        (filter (fn [r] (contains? inscopes (:SRC r))))
        (reduce (fn [acc {:keys [StartDay Duration]}] (max acc (+ StartDay Duration))) 0))))
 
@@ -516,6 +554,14 @@
   "Returns the last processed day of the simulation as computed by m4."
   [root]
   (inc (min (last-day-default root) (last-deactivation root))))
+
+(defn period-map-from
+  "load a period map from a marathon audit trail. Compute last-day instead of using ToDay from period records."
+  [root]
+  (let [keyvals (period-map (load-periods root))
+        [nm [from to]] (last keyvals)
+        lastperiod [nm [from (last-day root)]]]
+    (into {} (conj (pop keyvals) lastperiod))))
 
 ;;Incanter patches.....
 (in-ns 'incanter.io)
@@ -557,32 +603,3 @@
    :DemandType :text
    :Period :text})
 
-(defn load-periods
-  "Returns the records of AUDIT_PeriodRecords.txt in the root dir."
-  [root]
-  (->> (tbl/tabdelimited->records (str root "AUDIT_PeriodRecords.txt") :parsemode :noscience :schema schemas/periodrecs)
-       (into [])
-       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
-
-(defn period-map
-  "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
- [recs]
-  (reduce (fn [acc {:keys [Name FromDay ToDay]}] (conj acc [Name [FromDay ToDay]])) [] recs))
-
-(defn period-map-from
-  "load a period map from a marathon audit trail. Compute last-day instead of using ToDay from period records."
-  [root]
-  (let [keyvals (period-map (load-periods root))
-        [nm [from to]] (last keyvals)
-        lastperiod [nm [from (last-day root)]]]
-  (into {} (conj (pop keyvals) lastperiod))))
-
-(defn load-supply
-  [root]
-  (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs))
-
-(defn load-trends
-  [root]
-  (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
-       (into [])))
- 

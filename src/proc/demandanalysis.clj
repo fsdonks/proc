@@ -9,7 +9,6 @@
             [clojure.string :as str]
             [spork.util.table :as tbl]
             [spork.util.temporal :as temp]
-            [proc.dynamicbars :refer [enabled-demand]]
             [proc.core :as c]
             [proc.supply :as supply]
             [proc.stacked :as stacked]
@@ -18,7 +17,8 @@
         [incanter.charts])
   (:import [org.jfree.chart.annotations XYLineAnnotation]
            [org.jfree.chart LegendItemCollection]
-           [ java.awt.Color]))
+           [ java.awt.Color]
+           [java.lang.Math]))
 
 
 ;Idea was to compute the deltas in the demand signal by computing a net gain of demand quantity each time we have events starting
@@ -291,7 +291,7 @@ Defaults to the number of active records in an activity sample as the peak."
   "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled
   demand records. Supply an optional demand-filter for the demand records."
   [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All") demand-filter (fn [r] true)}}]
-  (let [demands (->> (enabled-demand path)
+  (let [demands (->> (util/enabled-demand path)
                      (filter demand-filter))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))
         periods (util/load-periods path)]
@@ -421,7 +421,7 @@ Defaults to the number of active records in an activity sample as the peak."
   based on these bounds."
   [path & {:keys [group-fn show-charts? phase-lines? bounds] :or {group-fn (fn [s] "All") show-charts? false phase-lines? true
                                                                   bounds nil}}]
-  (let [inscopes (c/inscope-srcs (str path "AUDIT_InScope.txt"))
+  (let [inscopes (util/inscope-srcs (str path "AUDIT_InScope.txt"))
         inscope? (fn [src] (not (nil? (inscopes src))))
         lines (peak-lines path :group-fn group-fn :demand-filter (fn [r] (inscope? (:SRC r))))
         drecs (util/load-trends path)
@@ -522,12 +522,74 @@ satisfied.  "
 (defn stats-from
   "for each SRC in the supply, returns a map with keys src, percentmet, 'demandays, ac, rc, ng.  If the SRC is out of scope,
   percentmet and demandays values will be 'outofscope'"
-  [path {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (let [supp (supply/by-compo-supply-map-groupf path :group-fn group-fn)
-        sat (demand-sat-by path :group-fn group-fn)]
+        sat (demand-sat-from path :group-fn (fn [s] s))]
     (for [[group quants] supp]
       (assoc supp :percentmet (get sat group "outofscope")
              ;:demanddays "placeholder"
              ))
   ))
- 
+
+(defn demand-sats-for
+  "demand-sat-from wrapper for audit-stats. Returns surge period only"
+  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  [(assoc (->> (demand-sat-from root :group-fn group-fn)
+       (filter (fn [[[group period] _]] (= period "Surge")))
+       (map (fn [[[group period] res]] [group (java.lang.Math/round (float res))]))
+       (into {}))
+          :fname "%met")])
+
+(defn inventories-for
+  "by-compo-supply-map-groupf wrapper for audit-stats."
+  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (->> (for [[group {ac "AC" ng "NG" rc "RC"  :or {ac 0 ng 0 rc 0} :as invs}] (supply/by-compo-supply-map-groupf root :group-fn group-fn)
+        [compo inv] {"AC" ac "NG" ng "RC" rc}]
+         {group inv :fname (str compo "supply")})
+       (group-by :fname)
+       (map (fn [[fnm recs]] (reduce merge recs)))))
+
+
+(defn audit-stats
+  "Compute statistics given a sequences of data functions called datafs. datafs operate on marathon audit trail directories. this fn returns records of {:data {'group1' 'datafres1'} :path 'blah' :dataname 'blah'}. dataf returns a seq of records like {group datafres :fname '%met'} where fname is a string name for the type of data. Each dataf should also accept the same group-fn" 
+  [root datafs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (for [dataf datafs
+        {:keys [fname] :as d} (dataf root :group-fn group-fn)]
+    
+    {:data (dissoc d :fname)
+     :path root
+     :dataname fname}))
+
+(defn stats-from
+  "Given a sequence of dataf functions and a sequence of m4 [path pathname] pairs, compute each dataf for each path and return a sequence of records like {'group' 'blah' 'dataheader_pathname' 'blah'}."
+  [path-pairs datafs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (reduce (fn [acc [p pathname]]
+            
+            (let [{:keys [data path dataname]} (audit-stats p datafs :group-fn group-fn)]
+              (reduce (fn [a group r]
+                        (assoc a
+                                   group (assoc r (str dataname "_" pathname) (get data group "datanotfound"))))
+                   
+            
+                      {} 
+                      ))) {} path-pairs))
+
+(defn stats-from
+  "Given a sequence of dataf functions and a sequence of m4 [path pathname] pairs, compute each dataf for each path and return a sequence of records like {'group' 'blah' 'dataheader_pathname' 'blah'}. Only groups that exist in each result of dataf
+  will be kept."
+  [path-pairs datafs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (let [xs (for [[p pathname] path-pairs
+                   stats (audit-stats p datafs :group-fn group-fn)]
+               (assoc stats :pathname pathname))]
+    (reduce (fn [acc {:keys [data path dataname pathname]}]
+              (reduce-kv (fn [a g r]
+              (assoc a
+                                        g (assoc r (str dataname "_" pathname) (get data g "datanotfound"))))
+               
+  {} acc)) (zipmap (keys (:data (first xs))) (repeat (count (:data (first xs))) {})) xs)))
+
+(def p [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "early"]])
+(def s [demand-sats-for])
+
+(def pplus [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6\\" "orig"] ["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "early"]])
+(def splus [demand-sats-for inventories-for])
