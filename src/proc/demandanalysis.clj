@@ -157,7 +157,9 @@ group-bys is an alternative vector of column labels for grouping.   "
 (defn percent-satisfaction
   "compute the demand satisfaction from a sequence of demantrend records."
   [recs]
-  (* 100 (/ (reduce + (map :filled recs)) (reduce + (map :req recs)))))
+  (let [denominator (reduce + (map :req recs))]
+    (if (= denominator 0) 0
+        (* 100 (/ (reduce + (map :filled recs)) denominator)))))
   
 (defn satisfaction
   "compute a map of demand satisfaction, deltat, and time. "
@@ -551,32 +553,35 @@ satisfied.  "
      :path root
      :dataname fname}))
 
-(defn stats-from
-  "Given a sequence of dataf functions and a sequence of m4 [path pathname] pairs, compute each dataf for each path and return a sequence of records like {'group' 'blah' 'dataheader_pathname' 'blah'}."
-  [path-pairs datafs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  (reduce (fn [acc [p pathname]]
-            
-            (let [{:keys [data path dataname]} (audit-stats p datafs :group-fn group-fn)]
-              (reduce (fn [a group r]
-                        (assoc a
-                                   group (assoc r (str dataname "_" pathname) (get data group "datanotfound"))))
-                   
-            
-                      {} 
-                      ))) {} path-pairs))
+(defn search-evolutions
+  "The group (or SRC) might have changed over time.  Track changes from one SRC to another in a map of {oldGroup newGroup}, but we should continue searching the map for multiple evolutions.  Searches until a matching group is found in the data or there are no more evolutions.  Arguments are the evolution map, the initial group, and a data map containing the keys of the groups.  Returns the first val found in the data map or nil if no matches were found."
+  [group evolutions data]
+  (loop [grp group]
+    (if-let [res (data grp)]
+      res
+      (when-let [newgroup (evolutions grp)]
+        (recur newgroup)))))
+
+(comment
+  (def e {:a 1 :b 2 :c 3 3 2})
+  (def d {:a 3 3 "a"})
+  (search-evolutions :c e d)
+  "a"
+  (search-evolutions :a e d)
+  3)
 
 (defn stats-from
-  "Given a sequence of dataf functions and a sequence of m4 [path pathname] pairs, compute each dataf for each path and return a sequence of records like {'group' 'blah' 'dataheader_pathname' 'blah'}. Only groups that exist in each result of dataf
-  will be kept."
-  [path-pairs datafs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  "Given a sequence of dataf functions and a sequence of m4 [path pathname] pairs, compute each dataf for each path and return a sequence of records like {'group' 'blah' 'dataheader_pathname' 'blah'}. Only groups that exist in each result of dataf will be kept.
+  In the case of SRC/group evolutions, you can also supply a map of {oldgroup newgroup}."
+  [path-pairs datafs & {:keys [group-fn evolutions] :or {group-fn (fn [s] "All") evolutions {}}}]
   (let [xs (for [[p pathname] path-pairs
                    stats (audit-stats p datafs :group-fn group-fn)]
                (assoc stats :pathname pathname))]
     (reduce (fn [acc {:keys [data path dataname pathname]}]
               (reduce-kv (fn [a g r]
-              (assoc a
-                                        g (assoc r (str dataname "_" pathname) (get data g "datanotfound"))))
-               
+                           (if-let [foundata (search-evolutions g evolutions data)]
+                             (assoc a g (assoc r (str dataname "_" pathname) foundata))
+                             (dissoc a g)))
   {} acc)) (zipmap (keys (:data (first xs))) (repeat (count (:data (first xs))) {})) xs)))
 
 (defn compute-deltas
@@ -628,12 +633,15 @@ satisfied.  "
        "m4 TAA 21-25 % Surge Demand Met" taa2125
        "change" delta}))
 
+(def splus [demand-sats-for inventories-for])
+
 (defn spit-2125-comparison
   "spit a 2125-farb-comparison table to out."
-  [out path-pairs datafs]
-  (-> (stats-from path-pairs splus :group-fn (fn [s] s))
-      (compute-deltas path-pairs datafs)
-      (farb-comparison-2125 (supply/oi-titles (first (last path-pairs))))
+  [out path-pairs & {:keys [evolutions]}]
+  (-> (stats-from path-pairs splus :group-fn (fn [s] s) :evolutions evolutions)
+      (compute-deltas path-pairs splus)
+      ;use the first path instead of last path since that will be the src we're keeping if there are evolutions.
+      (farb-comparison-2125 (supply/oi-titles (first (first path-pairs))))
       (tbl/records->file out :field-order ["High Interest Force Element"  "m4 TAA 20-24 % Surge Demand Met" "m4 TAA 21-25 % Surge Demand Met"
                                            "change"])))
 ;;testing
@@ -642,7 +650,8 @@ satisfied.  "
 (def s [demand-sats-for])
 
 (def pplus [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6\\" "taa2024"] ["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "taa2125"]])
-(def splus [demand-sats-for inventories-for])
+
+(def evolutions-example {"77302R000" "77202K000"})
 
 (def out "C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\taa_comparison.txt")
 (spit-2125-comparison out pplus splus)
