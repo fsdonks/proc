@@ -168,13 +168,16 @@ of all units as records at time t.  Can also provide a substring of the unit nam
       (when (restricted-static-policy? MaxBOG policy)
              (staticf MaxBOG))))))
 
+(defn round-to "rounds a number, n to an integer number of (num) decimals" [num n]
+  (read-string (format (str "%." num "f") (float n))))
+  
 (defn policy-name
   "given a policy record and component, creates a name for the policy in terms of BOG:Dwell"
   [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}
    component]
   (let [;for mobilization (only seen 95 recently)
         bog (if (or (= component "RC") (= component "NG")) (+ MaxBOG 95) MaxBOG)
-        vba-round (fn [num] (let [x (format "%.1f" (float num))
+        vba-round (fn [num] (let [x (str (round-to 1 num))
                               [o t] (clojure.string/split x #"\.")]
                           (if (= t "0") o x)))]
       (str (vba-round (/ bog 365)) ":" (vba-round (/ StartDeployable 365)))))

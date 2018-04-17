@@ -465,6 +465,9 @@ Defaults to the number of active records in an activity sample as the peak."
     (clojure.java.io/make-parents (str out "."))
     (charts/simple-save-jfree-chart (f chart) (str out group ".png"))))
 
+;;For now, removing srcs that aren't found across runs and data functions.  If you wanted to include those,
+;;every time you hit new run data, add all srcs, and then later, add missing data string values.  When computing
+;;delta's, if either value isn't numeric, you can make an olddata->newdata string instead.
 (defn dump-sparks-for
   "Save the spark charts for the period named by period"
   [in out period group-fn]

@@ -505,14 +505,37 @@
   (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
        (into [])))
 
+;;sparkcharts and activity profile: if the entire demand record is the same as another, only one of the records will
+;;remain in the activities
+;;m4: only one of the duplicate demand records is kept (they all have the same demand name"
+;;vba TADMUDI: duplicate demand records are counted
+;;demand builder: not sure, but guess is that multiple vignette consolidated records create two demandrecords that are
+;;exactly the same.  -the user should be notified in this case since duplicate demand records are not handled in m4 anymore.
+(defn duplicate-demands
+  "returns a sequence of demand names for which there are duplicate demand records. A demand name is a string defined like
+  priority_vignette_SRC_[startday...endday]. Input is demand records."
+  [drecs]
+  (->> drecs
+       (group-by (fn [{:keys [Priority Vignette SRC StartDay Duration]}]
+              (str Priority "_"
+                   Vignette "_"
+                   SRC "_["
+                   StartDay "..."
+                   (+ StartDay Duration) "]")))
+       (filter (fn [[dname recs]] (> (count recs) 1)))
+       (map (fn [[dname recs]] dname))))
+
 (defn enabled-demand
   "Return enabled DemandRecords as a sequence of records given a path to an audit trail dir."
   [root]
-  (->> 
+  (let [drecs (->> 
                 (tbl/tabdelimited->table (slurp (str root "AUDIT_DemandRecords.txt")) :parsemode :noscience 
                                          :schema schemas/drecordschema)
                 (tbl/table-records)
-                (filter (fn [{:keys [Enabled]}] Enabled))))
+                (filter (fn [{:keys [Enabled]}] Enabled)))
+        dupes (duplicate-demands drecs)]
+    (println "There are"(count dupes) "demand names with multiple demand records.")
+    drecs))
 
 (defn load-periods
   "Returns the records of AUDIT_PeriodRecords.txt in the root dir."
