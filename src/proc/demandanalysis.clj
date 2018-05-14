@@ -659,3 +659,10 @@ satisfied.  "
 (def out "C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\taa_comparison.txt")
 (spit-2125-comparison out pplus splus)
 )
+
+
+;;_______________________________
+;;quickturn stacked area chart of met demand
+
+(defn stacked-xyarea-chart []
+  )

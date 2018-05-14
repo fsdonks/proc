@@ -64,15 +64,10 @@
   "To compare to charts we've already done"
   [peakmap]
   (reduce-kv (fn [m k [fill dmd]] (assoc m k (/ (float fill) dmd))) {} peakmap))
-
-(defn next-last [xs]
-  (if (> (count xs) 1)
-    (nth xs (- (count xs) 2))
-    (throw (Exception. "(count xs) must be >1!"))))
   
 ;groupnames should be ordered the same way as roots
 (defn dyn-suff-chart [ints roots & {:keys [groupnames] :or {groupnames (map (fn [root] 
-                                                                              (next-last (str/split root #"/"))) roots)}}]
+                                                                              (util/next-last (str/split root #"/"))) roots)}}]
   (let [interests (into (sorted-map-by (fn [key1 key2] (compare (str key1) (str key2)))) ints) ;order ints alphabetically
         peakmaps (map (fn [root] (peak-info-by-int root interests)) roots)
         categories (mapcat (fn [int] (repeat (count roots) (subs (str int) 1))) (keys interests))

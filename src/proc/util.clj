@@ -201,6 +201,13 @@
   [n coll]
   (general/drop-nth n coll))
 
+(defn next-last
+  "return the next to last item in xs."
+  [xs]
+  (if (> (count xs) 1)
+    (nth xs (- (count xs) 2))
+    (throw (Exception. "(count xs) must be >1!"))))
+
 ;;make it easy to get at the state in our charts..
 ;;note, this only really works well if we have ;;compatible charts, specifically if there's nothing weird in the ;;plot, like having multiple trends, or axes.  I'm assuming a simple ;;set of axes and coords here.
 (defprotocol IState  (state [obj]))
