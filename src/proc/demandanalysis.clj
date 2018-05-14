@@ -116,7 +116,18 @@ group-bys is an alternative vector of column labels for grouping.   "
   [root & {:keys [pred] :or {pred ($fn [SRC DemandGroup] true)}}]
   (let [recs (filtered-demand root :pred pred)
         [times quants] (quant-by-time (add-deltas recs))]
-       (view (xy-plot times quants))))
+    (xy-plot times quants)))
+
+(defn graph-demand-for
+  "Given a sequence of srcs, graph-demand for each. Set xlow and xmax for the x axis."
+  [root srcs xlow xmax]
+  (let [cs (for [s srcs] (doto (graph-demand root :pred ($fn [SRC Enabled] (and (= (clojure.string/upper-case Enabled) "TRUE") (= SRC s))))
+                           (.setTitle (str s " Demand vs Time"))
+                           (util/set-bounds :x-axis :lower xlow :upper xmax)))
+        _ (doseq [c cs] (.setLabel (.getDomainAxis (.getPlot c)) "Time (days)")
+                 (.setLabel (.getRangeAxis (.getPlot c)) "Number of Units Required"))]
+    (util/sync-scales cs)
+    (doseq [c cs] (view c) cs)))
         
 
 ;;___________________________________
