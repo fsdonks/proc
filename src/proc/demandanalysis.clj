@@ -303,11 +303,12 @@ Defaults to the number of active records in an activity sample as the peak."
 (defn peaks-from
   "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled
   demand records. Supply an optional demand-filter for the demand records."
-  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All") demand-filter (fn [r] true)}}]
+  [path & {:keys [group-fn demand-filter periods] :or {group-fn (fn [s] "All")
+                                                       demand-filter (fn [r] true)
+                                                       periods (util/load-periods path)}}]
   (let [demands (->> (util/enabled-demand path)
                      (filter demand-filter))
-        peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))
-        periods (util/load-periods path)]
+        peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
     (peak-times-by-period (fn [r] (group-fn (:SRC r))) demands periods :StartDay :Duration peakfn)))
 
 (defn peak-lines
@@ -552,17 +553,29 @@ satisfied.  "
        (group-by :fname)
        (map (fn [[fnm recs]] (reduce merge recs)))))
 
+;peak ;intervals ;group ;period
+(defn surge-peaks
+  "Uses peaks-from to return the surge period peaks."
+  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  [(assoc (->> (peaks-from root :periods (filter (fn [r] (= "Surge" (:Name r))) (util/load-periods root)) :group-fn group-fn)
+       (map (fn [r] [(:group r) (:peak r)]))
+       (into {}))
+       :fname "surge_peak"
+  )])
+  
 ;;when we add fns for audit-stats.  Keep track of the name of the statistics here.
 (def statfs
   {demand-sats-for ["%surgemet"]
-   inventories-for ["ACsupply" "NGsupply" "RCsupply"]})
+   inventories-for ["ACsupply" "NGsupply" "RCsupply"]
+   surge-peaks ["surge_peak"]})
+
+(def tatom (atom nil))
 
 (defn audit-stats
   "Compute statistics given a sequences of data functions called datafs. datafs operate on marathon audit trail directories. this fn returns records of {:data {'group1' 'datafres1'} :path 'blah' :dataname 'blah'}. dataf returns a seq of records like {group datafres :fname '%met'} where fname is a string name for the type of data. Each dataf should also accept the same group-fn" 
   [root datafs & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (for [dataf datafs
         {:keys [fname] :as d} (dataf root :group-fn group-fn)]
-    
     {:data (dissoc d :fname)
      :path root
      :dataname fname}))
@@ -588,7 +601,8 @@ satisfied.  "
   "Given a sequence of dataf functions and a sequence of m4 [path pathname] pairs, compute each dataf for each path and return a sequence of records like {'group' 'blah' 'dataheader_pathname' 'blah'}. Only groups that exist in each result of dataf will be kept.
   In the case of SRC/group evolutions, you can also supply a map of {oldgroup newgroup}."
   [path-pairs datafs & {:keys [group-fn evolutions] :or {group-fn (fn [s] "All") evolutions {}}}]
-  (let [xs (for [[p pathname] path-pairs
+  (let [evolutions (if (nil? evolutions) {} evolutions)
+        xs (for [[p pathname] path-pairs
                    stats (audit-stats p datafs :group-fn group-fn)]
                (assoc stats :pathname pathname))]
     (reduce (fn [acc {:keys [data path dataname pathname]}]
@@ -649,15 +663,28 @@ satisfied.  "
 
 (def splus [demand-sats-for inventories-for])
 
+(def peaks-only [surge-peaks])
+
+(defn stats-with-deltas
+  "returns a sequence of statistics with deltas."
+  [path-pairs & {:keys [evolutions fns group-fn] :or {fns splus group-fn (fn [s] "All")}}]
+  (-> (stats-from path-pairs fns :group-fn group-fn :evolutions evolutions)
+      (compute-deltas path-pairs fns)))
+
 (defn spit-2125-comparison
   "spit a 2125-farb-comparison table to out."
-  [out path-pairs & {:keys [evolutions]}]
-  (-> (stats-from path-pairs splus :group-fn (fn [s] s) :evolutions evolutions)
-      (compute-deltas path-pairs splus)
+  [out path-pairs & {:keys [evolutions fns] :or {fns splus}}]
+  (-> (stats-with-deltas path-pairs :evolutions evolutions :fns fns)
       ;use the first path instead of last path since that will be the src we're keeping if there are evolutions.
       (farb-comparison-2125 (supply/oi-titles (first (first path-pairs))))
       (tbl/records->file out :field-order ["High Interest Force Element"  "m4 TAA 20-24 % Surge Demand Met" "m4 TAA 21-25 % Surge Demand Met"
                                            "change"])))
+
+(defn spit-stats
+  "spits the stats table to out."
+  [out path-pairs & {:keys [evolutions fns group-fn] :or {fns splus group-fn (fn [s] "All")}}]
+  (tbl/records->file (stats-with-deltas path-pairs :evolutions evolutions :fns fns :group-fn group-fn) out))
+
 ;;testing
 (comment
 (def p [["C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\testdata-v6early\\" "early"]])
@@ -669,6 +696,10 @@ satisfied.  "
 
 (def out "C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\taa_comparison.txt")
 (spit-2125-comparison out pplus splus)
+
+(spit-stats "C:\\Users\\craig.j.flewelling\\Desktop\\snapchart\\med-stats.txt"
+            pplus :fns peaks-only)
+
 )
 
 
