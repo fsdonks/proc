@@ -5,9 +5,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.jfree/jfreechart "1.5.0"]
+                 #_[org.jfree/jfreechart "1.5.0"]
                  [spork "0.2.0.9-SNAPSHOT"]
-                 [joinr/incanter "1.9.1-SNAPSHOT"]
+                 [joinr/incanter "1.9.3-SNAPSHOT"]
                  ;;Note: the current release of incanter/incanter 1.9.1
                  ;;has a jacked dependency via swingrepl to an ancient clojure.
                  ;;This breaks the build process.  Fortunately, we don't need it.
