@@ -20,6 +20,8 @@
                            (println "Switching to post processor namespace")
                            (ns proc.example))
                  :init-ns proc.example}
+  :source-paths ["src" "../spork/src" "../incanter/modules/incanter-charts/src"
+                 ]
   :profiles {:order {:aot [proc.example]}}
   ;;jvm-opts ^:replace ["-Xmx1g" "-XX:NewSize=197000"] ;200000 loads and runs run-sample! but 195000 won't load
   ;;jvm-opts ^:replace ["-Xmx2g"] ;1G did run-sample! okay. 500 gave a heap error.  700 says 
