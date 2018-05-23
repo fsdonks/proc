@@ -292,22 +292,22 @@
     :point-size 10.0}])
 
 (def trend-styles
-  {"Growth (x+1/y+1/z+1), AC1:0"  {:series-label "Growth (x+1/y+1/z+1), AC1:0"
-                                   :points true
-                                   :width 5.0
-                                   :color :blue
-                                   :point-size 10.0}
-   "Current Structure (x/y/z), AC1:0"   {:series-label "Current Structure (x/y/z), AC1:0" 
-                                         :points true
-                                         :width 5.0
-                                         :dash 10.0
-                                         :color :black
-                                         :point-size 10.0}
-   "Current Structure (x/y/z), AC1:2" {:series-label "Current Structure (x/y/z), AC1:2"
-                                       :points true
-                                       :width 5.0                         
-                                       :color :dark-blue
-                                       :point-size 10.0}})
+  {:growth  {:series-label "Growth (x+1/y+1/z+1), AC1:0"
+             :points true
+             :width 5.0
+             :color :blue
+             :point-size 10.0}
+   :current   {:series-label "Current Structure (x/y/z), AC1:0" 
+               :points true
+               :width 5.0
+               :dash 10.0
+               :color :black
+               :point-size 10.0}
+   :current-12 {:series-label "Current Structure (x/y/z), AC1:2"
+                :points true
+                :width 5.0                         
+                :color :dark-blue
+                :point-size 10.0}})
 
 (defn add-trend [chart trend]
   (let [{:keys [x  y]} trend]
@@ -404,7 +404,7 @@
   (take-while (fn [m]
                 (>= (/ (:bog m) (:cyclelength m)) 1/8)) 
               (iterate (fn [{:keys [bog cyclelength overlap mob] :as seed}]
-                         (assoc seed :cyclelength (+ cyclelength 1)
+                         (assoc seed :cyclelength (+ cyclelength 2 #_1)
                                 :overlap 1))
                        rc10)))
                 
@@ -413,30 +413,47 @@
    of 1:8 down to 1:0."
   [demand ac-supply ac-policy rc-supply rc-policies]
   (for [rc-policy rc-policies]
-    (let [bdr (/ (:bog rc-policy)
-                 (:cyclelength rc-policy))
+    (let [dwell (- (:cyclelength rc-policy) (:bog rc-policy))
+          bdr   (if (pos? dwell) (/ 1.0 (/ (:bog rc-policy)
+                                       dwell)
+                                    )
+                    0)
           perf (performance demand ac-supply  ac-policy rc-supply rc-policy)]
       {:bdr bdr
-       :fill (:fill perf)})))
+       :fill (min (* (:fill perf) 100) 100)})))
 
+(defn get-styling [label]
+  (or (get trend-styles label)
+      (throw (ex-info "unknown style!" {:label label
+                                        :expected (keys trend-styles)}))))
 
-(defn experiment->trend [label xs]
-  (reduce (fn [acc {:keys [bdr fill]}]
-            (-> acc
-                (update :x conj (double bdr))
-                (update :y conj (double fill))))
-          {:series-label label
-           :x []
-           :y []} xs))
+(defn experiment->trend [label  xs]
+  (let [styling (get-styling label)]
+    (reduce (fn [acc {:keys [bdr fill]}]
+              (-> acc
+                  (update :y conj (double bdr))
+                  (update :x conj (double fill))))
+            (assoc styling :x [] :y [] :label label) xs)))
 
+(defn custom-label [label {:keys [ac rc ng]}]
+  (let [lbl (:series-label (get-styling label)) ]
+    (clojure.string/replace lbl
+                            #"x|y|z" {"x" (str ac) "y" (str rc) "z" (str ng)})))
 
+(defn add-label [inventory tr]
+  (assoc tr :series-label (custom-label (:label tr) inventory)))
+  
 (defn plot-experiment []
-  (let [trends (->> (rc-experiment 10 5 ac10 5 rc-policies) (experiment->trend  "Growth (x+1/y+1/z+1), AC1:0"))]
-    {:x [10 30 55 80]
-     :y [8 4 2 0]
-     :series-label "Growth (x+1/y+1/z+1), AC1:0"
-     :points true
-     :width 5.0
-     :color :blue
-     :point-size 10.0}
-  )
+  (let [demand    10
+        supply {:ac 5 :rc 0 :ng 5}
+        current   (->> (rc-experiment demand 5 ac10 5  rc-policies)
+                       (experiment->trend  :current)
+                       (add-label supply))
+        growth    (->> (rc-experiment demand 6 ac10 7  rc-policies)
+                       (experiment->trend  :growth)
+                       (add-label supply))
+        current12 (->> (rc-experiment demand 5 ac12 5  rc-policies)
+                       (experiment->trend  :current-12)
+                       (add-label supply))]
+    (simple-response [current growth current12]
+                     :title (str "Risk to Mission (Demand = " demand ")" ))))
