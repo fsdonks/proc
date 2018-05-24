@@ -144,10 +144,19 @@
 ;;normalized dwell...
 (defn arf-risk
   ([b f]
-   [(bdr b)
-    (fill f)])
+   (with-meta 
+     [(bdr b)
+      (fill f)]
+     {:raw [b f]}))
   ([bf] (arf-risk (first bf) (second bf))))
 
+#_(defn smooth-risk [[b f :as v]]
+  (let [[braw fraw] (:raw (meta v))
+        bspan (get bdr-ranges b)
+        fspan (get fill-ranges f)
+       ]
+        [b (scores b) braw bspan
+         f (scores f) fraw fspan]))
 ;;projects our 2d coordinate onto a 1d ordinal value using
 ;;a weighted average of the ordinal values + rounding.
 (defn normalized-arf-risk [[b f]]
@@ -155,16 +164,8 @@
         y (scores f)
         ]
     #_(assert (and (number? x) (number? y)) (str [b f x y]))
-    (max x y))
-  #_(/ (+ x y) 2.0))
-
-;;example
-#_(map (comp normalized-arf-risk arf-risk)(for [f (range 0 100 10) b (range 0 9)] [b f]))
-#_(3 3 2 2 2 2 2 2 2 3 3 2 2 2 2 2 2 2 3 3 2 2 2 2 2 2 2 3 3 2 2 2 2 2
-     2 2 3 3 2 2 2 2 2 2 2 3 3 2 2 2 2 2 2 2 3 2 1 1 1 1 1 1 1 3 2 1 1 1
-     1 1 1 1 2 2 1 1 1 1 1 1 1 2 1 0 0 0 0 0 0 0)
-
-;;so we can generate a heatmap for said values
+    (max x y)
+    #_(Math/round (/ (+ x y) 2.0))))
 
 (def ryg4
   (assoc (zipmap
@@ -176,30 +177,6 @@
 (def color-scale (let [scores (invert scores)]
                    (into {} (for [[w color] ryg4]
                               [w {:text (get scores w "undefined") :color color}]))))
-
-;;have multiple things for datasets...
-;;datasets act like layers.
-;;datasets have renderers.
-;(defn get-datasets [c]
-;  (for [i (range (.getDatasetCount c))]
-;    (
-;  )
-
-;;bypassing incanter's add-lines.
-;(defn add-lines [c d]
-;  (let [di (.get
-;  )
-
-;; (defn discrete-paint-scale [chart colors]
-;;   (let [c (count colors)
-;;         scl (-> chart .getPlot .getRenderer .getPaintScale)]
-;;     (.set
-;;   )
-;; (in-ns 'proc.risk)
-
-;; (defn add-line-series [chart name xs ys color]
-;;   (let [res (c/add-lines chart xs ys)
-;;         n   (
 
 (defn line-datasets [p]
   (vec (for [i (range 1 (.getDatasetCount p))] (.getDataset p i))))
@@ -249,7 +226,6 @@
          :or {series 0
               dataset n
               series-label (str "series-" n)}} (apply hash-map options)
-        _ (println [n series-label])
         chart    (c/add-lines chart xs ys :series-label series-label :points (or points point-size))
         _        (when color
                    (c/set-stroke-color chart color
