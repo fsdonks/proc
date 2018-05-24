@@ -375,13 +375,22 @@
    (let [{:keys [bog cyclelength overlap mob]} policy]
      (algebraic-supply supply bog cyclelength overlap mob))))
 
-(defn performance [demand ac-supply  ac-policy rc-supply rc-policy]
+(defn performance
+  [demand {:keys [ac-supply  ac-policy rc-supply rc-policy ng-supply ng-policy]
+           :or {ac-supply 0
+                rc-supply 0
+                ng-supply 0}}]
   (let [ac (algebraic-supply ac-supply ac-policy)
         rc (algebraic-supply rc-supply rc-policy)
-        total-supply ( + (:expected-supply ac) (:expected-supply  rc))
+        ng (algebraic-supply ng-supply ng-policy)
+        total-supply ( + (:expected-supply ac) (:expected-supply  rc) (:expected-supply ng))
         fill (double (/ total-supply demand))]
-    {:ac ac
-     :rc rc
+    {:ac ac-supply
+     :rc rc-supply
+     :ng ng-supply
+     :ac-available ac
+     :rc-available rc
+     :ng-available ng
      :total-supply total-supply
      :fill fill}))
 
@@ -400,27 +409,56 @@
            :overlap 1
            :mob 0})
 
-(def rc-policies
+(defn policy-range [seed & {:keys [step bound]
+                            :or {step 2 bound 1/8}}]
   (take-while (fn [m]
-                (>= (/ (:bog m) (:cyclelength m)) 1/8)) 
+                (>= (/ (:bog m) (:cyclelength m)) bound)) 
               (iterate (fn [{:keys [bog cyclelength overlap mob] :as seed}]
-                         (assoc seed :cyclelength (+ cyclelength 2 #_1)
+                         (assoc seed :cyclelength (+ cyclelength step)
                                 :overlap 1))
-                       rc10)))
-                
-(defn rc-experiment
+                       seed)))
+
+(def rc-policies  (policy-range rc10 :step 2 :bound 1/8))
+
+(defn modify-policy [base compo new]
+  (assoc base (case compo
+                :ac :ac-policy 
+                :rc :rc-policy
+                :ng :ng-policy)  new))
+
+(defn grow-by [{:keys [ac-supply rc-supply ng-supply] :as case}
+               {:keys [ac rc ng] :or {ac 0 rc 0 ng 0}}]
+  (assoc case :ac-supply (+ ac-supply ac)
+              :rc-supply (+ rc-supply rc)
+              :ng-supply (+ ng-supply ng)))
+
+#_(defn bdr [dwell bog]
+  (if (pos? dwell)
+    (/ 1.0 (/ bog dwell))
+    0))
+
+(defn policy-experiment
   "Let's examine various rc access policies, going from a spectrum
    of 1:8 down to 1:0."
-  [demand ac-supply ac-policy rc-supply rc-policies]
-  (for [rc-policy rc-policies]
-    (let [dwell (- (:cyclelength rc-policy) (:bog rc-policy))
-          bdr   (if (pos? dwell) (/ 1.0 (/ (:bog rc-policy)
-                                       dwell)
-                                    )
-                    0)
-          perf (performance demand ac-supply  ac-policy rc-supply rc-policy)]
-      {:bdr bdr
-       :fill (min (* (:fill perf) 100) 100)})))
+  [compo {:keys [demand
+                 ac-supply ac-policy
+                 ng-supply ng-policy
+                 rc-supply rc-policy] :as base} policies]
+  (for [policy policies]
+    (let [dwell (- (:cyclelength policy) (:bog policy))
+          bdr   (if (pos? dwell)
+                    (/ 1.0 (/ (:bog policy) dwell))
+                  0)]
+          (-> (performance demand (modify-policy base compo policy))
+              (assoc :bdr bdr)))))
+
+(defn normalize-fields [xs]
+  (map (fn [{:keys [fill] :as r}]
+         (assoc r :fill
+                (if (> (:fill r) 1)
+                  100
+                  (* (:fill r) 100))))
+       xs))
 
 (defn get-styling [label]
   (or (get trend-styles label)
@@ -429,31 +467,44 @@
 
 (defn experiment->trend [label  xs]
   (let [styling (get-styling label)]
-    (reduce (fn [acc {:keys [bdr fill]}]
-              (-> acc
-                  (update :y conj (double bdr))
-                  (update :x conj (double fill))))
-            (assoc styling :x [] :y [] :label label) xs)))
+    (->> xs
+         normalize-fields
+         (reduce (fn [acc {:keys [bdr fill]}]
+                   (-> acc
+                       (update :y conj (double bdr))
+                       (update :x conj (double fill))))
+                 (assoc styling :x [] :y [] :label label)))))
 
-(defn custom-label [label {:keys [ac rc ng]}]
+(defn custom-label [label {:keys [ac-supply rc-supply ng-supply]}]
   (let [lbl (:series-label (get-styling label)) ]
     (clojure.string/replace lbl
-                            #"x|y|z" {"x" (str ac) "y" (str rc) "z" (str ng)})))
+                            #"x|y|z" {"x" (str ac-supply) "y" (str rc-supply) "z" (str ng-supply)})))
 
 (defn add-label [inventory tr]
   (assoc tr :series-label (custom-label (:label tr) inventory)))
-  
+
+(def +base+  {:demand 10
+              :ac-policy ac10  :rc-policy rc10    :ng-policy rc10 
+              :ac-supply 5     :rc-supply 0       :ng-supply 5})
+
 (defn plot-experiment []
   (let [demand    10
-        supply {:ac 5 :rc 0 :ng 5}
-        current   (->> (rc-experiment demand 5 ac10 5  rc-policies)
+        base      {:demand demand
+                   :ac-policy ac10  :rc-policy rc10    :ng-policy rc10 
+                   :ac-supply 5     :rc-supply 0       :ng-supply 5}
+        base+     (grow-by base {:ac 1 :rc 1 :ng 1})
+        base12    (modify-policy base :ac ac12)
+        current   (->> rc-policies
+                       (policy-experiment :ng  base)
                        (experiment->trend  :current)
-                       (add-label supply))
-        growth    (->> (rc-experiment demand 6 ac10 7  rc-policies)
+                       (add-label base))
+        growth    (->> rc-policies
+                       (policy-experiment :ng base+)
                        (experiment->trend  :growth)
-                       (add-label supply))
-        current12 (->> (rc-experiment demand 5 ac12 5  rc-policies)
-                       (experiment->trend  :current-12)
-                       (add-label supply))]
+                       (add-label base+))
+        current12 (->>  rc-policies
+                        (policy-experiment :ng base12)
+                        (experiment->trend  :current-12)
+                        (add-label base12))]
     (simple-response [current growth current12]
                      :title (str "Risk to Mission (Demand = " demand ")" ))))
