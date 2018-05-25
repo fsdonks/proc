@@ -302,7 +302,8 @@ Defaults to the number of active records in an activity sample as the peak."
 
 (defn peaks-from
   "Given the path to a Marathon audit trail, compute peak-times-by-period for the enabled
-  demand records. Supply an optional demand-filter for the demand records."
+  demand records. Supply an optional demand-filter for the demand records. group-fn accepts
+  an SRC string as the argument and groups the records by this function in addition to by period."
   [path & {:keys [group-fn demand-filter periods] :or {group-fn (fn [s] "All")
                                                        demand-filter (fn [r] true)
                                                        periods (util/load-periods path)}}]
@@ -311,6 +312,71 @@ Defaults to the number of active records in an activity sample as the peak."
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
     (peak-times-by-period (fn [r] (group-fn (:SRC r))) demands periods :StartDay :Duration peakfn)))
 
+;;if there are no intervals, remove that record because there was no demand.
+(defn first-peak-day
+  "given the result of peaks-from, returns a sequence of records containing :peak :group :firstday :period"
+  [p-from]
+  (->> (remove (fn [{:keys [intervals] :as r}] (empty? intervals)) p-from)
+       (map (fn [{:keys [intervals] :as r}]
+              (let [first-day (ffirst intervals)]
+                (assoc (dissoc r :intervals) :firstday first-day))))))
+
+(defn activity-at
+  "given an activity profile, returns the active records at time t."
+  [activities t]
+  (last (take-while (fn [[day m]] (<= day t)) activities)))
+
+(defn quantities-by-demandgroup
+  "given a map of {:actives [] :count}, where actives is a sequence of demand records, returns a map
+  of :demandgroup to quantity."
+[m]
+  (->> (:actives m)
+       (group-by (fn [{:keys [DemandGroup]}] DemandGroup) )
+       (map (fn [[g xs]]  [g (reduce + (map :Quantity xs))]))
+       (into {})))
+
+(defn peak-parts
+  "For each group of demand records defined by group-fn, returns a map of :group :period :peak
+  :demandgroup1 :demandgroup2 etc. for the first day of peak demand in each period ."
+  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All")
+                                               demand-filter (fn [r] true)}}]
+  (let [sample-days (first-peak-day (peaks-from path :group-fn group-fn :demand-filter demand-filter))
+        
+        drecs (util/enabled-demand path)
+        activity-map (->> (util/separate-by (fn [{:keys [SRC]}] (group-fn SRC)) drecs)
+                          (map (fn [[g xs]] [g (temp/activity-profile xs :start-func :StartDay)]))
+                          (into {}))]
+    (for [{:keys [peak group firstday period] :as r} sample-days]
+      (merge (->> firstday
+           (activity-at (activity-map group))
+           ((fn [x] (quantities-by-demandgroup (second x))))) r))))
+
+(defn get-strength
+  "retrns a map of the group defined by group-fn to total strength or number of personnel.  Pull strength
+  from a column in Audit_SupplyRecords called Strength. If no Strength is present, return 'nostrength'
+  Assume strenth is the same for every src."
+  [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (let [groups (->> (util/enabled-supply path)
+                    (map (fn [r] (select-keys r [:SRC :Strength])))
+                    (set)
+                   (util/separate-by (fn [r] (group-fn (:SRC r)))))]
+    (into {} (for [[g recs] groups]
+               [g (if (:Strength (first recs)) (reduce + (map :Strength recs))
+                      "nostrength")]))))
+  
+(defn peak-records
+  "returns data used to generate charts in Excel for static analysis.
+  fields are SRC, RA, NG, AR (inventories), PAX, demandgroup1, demandgroup2, etc. (quantity of units
+  demanded on the first day of peak demand), policy1, policy2, etc. (% demand met given total peak), peak"
+  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All")
+                                               demand-filter (fn [r] true)}}]
+  (let [inventory (supply/by-compo-supply-map-groupf path :group-fn group-fn)
+        recs (->> (peak-parts path :group-fn group-fn :demand-filter demand-filter)
+                  (filter (fn [{:keys [period]}] (= period "Surge"))))
+        strengths (get-strength path :group-fn group-fn)]
+    (for [{:keys [group] :as r} recs] (assoc (merge r (inventory group)) :pax (strengths group)) 
+    )))
+  
 (defn peak-lines
   "given the path to a marathon audit trail, compute a sequence of [[x1 y1] [x2 y2]] vectors for each interest in order to draw
   horizontal lines whenever there is peak demand."
@@ -704,7 +770,30 @@ satisfied.  "
 
 
 ;;_______________________________
-;;quickturn stacked area chart of met demand
+;;src risk charts (this was pre-tom's work.  He's already done.  Use his stuff instead."
 
-(defn stacked-xyarea-chart []
-  )
+(comment
+;;bog and dwell for each policy
+(def rc-policies [;;max utilization
+               [365 365]
+               [365 730]
+               [365 (* 4 365)]
+               [90 (* 2 365)]])
+
+(defn rotational-discount
+  "given a [bog dwell] pair, compute the rotational discount for the supply. FM wanted no mob/demob for static analysis."
+  [[bog dwell]]
+  (/ (- bog 30) dwell))
+
+;;additional field of low (1), moderate (2) , sig (3), high risk (4) to follow.
+;;Thoughts:  demand met- 0-24 (high) 25-49 (sig) 50-74 (moderate) 75-100 (low/1)
+;;stress on RC - <=  (- 365 30) / (* 4 365) (high), etc
+;; total risk (take the avg of stress on RC (1, 2, 3, or 4) and the demand met (1, 2 , 3, or 4).
+;;round up if .5
+
+(defn risk-table 
+  "compute a table of SRC, %met, rc rotational discount. group-fn takes the src string as an argument and groups supply
+  records accordingly."
+  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  ;by-compo-supply-map-groupf
+  ))

@@ -507,6 +507,10 @@
   (->> (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
        (into [])))
 
+(defn enabled-supply
+  [root]
+  (filter (fn [r] (:Enabled r)) (load-supply root)))
+
 (defn load-trends
   [root]
   (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
