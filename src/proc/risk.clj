@@ -375,6 +375,17 @@
            :overlap 0
            :mob 0})
 
+(def c10 {:bog 12
+           :cyclelength 12
+           :overlap 1
+          :mob 0})
+
+(def c12 (assoc c10 :cyclelength 36))
+  
+  
+(def c18 (assoc c10 :cyclelenth 108))
+
+
 (def ac10 {:bog 9
            :cyclelength 9
            :overlap 0

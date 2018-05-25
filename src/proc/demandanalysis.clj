@@ -12,7 +12,8 @@
             [proc.core :as c]
             [proc.supply :as supply]
             [proc.stacked :as stacked]
-            [proc.charts :as charts])
+            [proc.charts :as charts]
+            [proc.risk :as risk])
   (:use [incanter.core]
         [incanter.charts])
   (:import [org.jfree.chart.annotations XYLineAnnotation]
@@ -363,7 +364,28 @@ Defaults to the number of active records in an activity sample as the peak."
     (into {} (for [[g recs] groups]
                [g (if (:Strength (first recs)) (reduce + (map :Strength recs))
                       "nostrength")]))))
-  
+
+(def policies
+  {"1:0" risk/c10
+   "1:2" risk/c12
+   "1:8" risk/c18})
+
+(defn policy-map
+  "given a map of string names to policy definitions from proc.risk for both the rc and ac
+  along with a map of comonent inventories, and a demand value returns a map of the concatentated
+  string names for ac and rc to the % demand met."
+  [acpolicies rcpolicies {ac "AC" ng "NG" rc "RC"} demand]
+  (into {} (for [[anm apolicy] acpolicies
+        [rnm rpolicy] rcpolicies]
+             [(str anm "/" rnm) (supply/round-to 0 (* 100
+                                   (:fill
+                                    (risk/performance demand
+                                                      {:ac-supply (if ac ac 0)
+                                                       :ac-policy apolicy
+                                                       :ng-supply (if ng ng 0)
+                                                       :ng-policy rpolicy
+                                                       :rc-supply (if rc rc 0)
+                                                       :rc-policy rpolicy}))))])))
 (defn peak-records
   "returns data used to generate charts in Excel for static analysis.
   fields are SRC, RA, NG, AR (inventories), PAX, demandgroup1, demandgroup2, etc. (quantity of units
@@ -374,7 +396,11 @@ Defaults to the number of active records in an activity sample as the peak."
         recs (->> (peak-parts path :group-fn group-fn :demand-filter demand-filter)
                   (filter (fn [{:keys [period]}] (= period "Surge"))))
         strengths (get-strength path :group-fn group-fn)]
-    (for [{:keys [group] :as r} recs] (assoc (merge r (inventory group)) :pax (strengths group)) 
+    (for [{:keys [group peak] :as r} recs] (assoc (merge r (inventory group)
+                                                    (policy-map {"1:0" risk/c10}
+                                                                policies
+                                                                (inventory group)
+                                                                peak)) :pax (strengths group)) 
     )))
   
 (defn peak-lines
@@ -634,8 +660,6 @@ satisfied.  "
   {demand-sats-for ["%surgemet"]
    inventories-for ["ACsupply" "NGsupply" "RCsupply"]
    surge-peaks ["surge_peak"]})
-
-(def tatom (atom nil))
 
 (defn audit-stats
   "Compute statistics given a sequences of data functions called datafs. datafs operate on marathon audit trail directories. this fn returns records of {:data {'group1' 'datafres1'} :path 'blah' :dataname 'blah'}. dataf returns a seq of records like {group datafres :fname '%met'} where fname is a string name for the type of data. Each dataf should also accept the same group-fn" 
