@@ -267,7 +267,7 @@
     :color :dark-blue
     :point-size 10.0}])
 
-(def trend-styles
+(def default-trend-styles
   {:growth  {:series-label "Growth (x+1/y+1/z+1), AC1:0"
              :points true
              :width 5.0
@@ -279,11 +279,18 @@
                :dash 10.0
                :color :black
                :point-size 10.0}
+   :current-11 {:series-label "Current Structure (x/y/z), AC1:1"
+                :points true
+                :width 5.0                         
+                :color :dark-blue
+                :point-size 10.0}
    :current-12 {:series-label "Current Structure (x/y/z), AC1:2"
                 :points true
                 :width 5.0                         
                 :color :dark-blue
                 :point-size 10.0}})
+
+(def ^:dynamic *trend-styles* default-trend-styles)
 
 (defn add-trend [chart trend]
   (let [{:keys [x  y]} trend]
@@ -328,8 +335,7 @@
            :position :top
            )
         _ (reset! surface c)]
-    (i/view
-      (add-performance-trends c trends))))
+    (add-performance-trends c trends)))
 
 (defn rotational-discount
   "Computes the resulting supply given
@@ -376,8 +382,8 @@
            :mob 0})
 
 (def c10 {:bog 12
-           :cyclelength 12
-           :overlap 1
+          :cyclelength 12
+          :overlap 1
           :mob 0})
 
 (def c12 (assoc c10 :cyclelength 36))
@@ -391,8 +397,14 @@
            :overlap 0
            :mob 0})
 
-(def ac12 {:bog 9
+;;note: this is not ac12....
+(def ac11 {:bog 9
            :cyclelength 18
+           :overlap 1
+           :mob 0})
+
+(def ac12 {:bog 9
+           :cyclelength 27
            :overlap 1
            :mob 0})
 
@@ -447,10 +459,13 @@
                   (* (:fill r) 100))))
        xs))
 
-(defn get-styling [label]
-  (or (get trend-styles label)
-      (throw (ex-info "unknown style!" {:label label
-                                        :expected (keys trend-styles)}))))
+;;using dynamic var here...
+(defn get-styling
+  ([styles label]
+   (or (get styles label)
+       (throw (ex-info "unknown style!" {:label label
+                                         :expected (keys styles)}))))
+  ([label] (get-styling *trend-styles* label)))
 
 (defn experiment->trend [label  xs]
   (let [styling (get-styling label)]
@@ -464,8 +479,8 @@
 
 (defn custom-label [label {:keys [ac-supply rc-supply ng-supply]}]
   (let [lbl (:series-label (get-styling label)) ]
-    (clojure.string/replace lbl
-                            #"x|y|z" {"x" (str ac-supply) "y" (str rc-supply) "z" (str ng-supply)})))
+    (clojure.string/replace lbl #"x|y|z"
+       {"x" (str ac-supply) "y" (str rc-supply) "z" (str ng-supply)})))
 
 (defn add-label [inventory tr]
   (assoc tr :series-label (custom-label (:label tr) inventory)))
@@ -493,5 +508,6 @@
                         (policy-experiment :ng base12)
                         (experiment->trend  :current-12)
                         (add-label base12))]
-    (simple-response [current growth current12]
-                     :title (str "Risk to Mission (Demand = " demand ")" ))))
+    (i/view
+       (simple-response [current growth current12]
+                        :title (str "Risk to Mission (Demand = " demand ")" )))))
