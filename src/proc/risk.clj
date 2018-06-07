@@ -471,6 +471,8 @@
   (let [styling (get-styling label)]
     (->> xs
          normalize-fields
+         ;;ensures we get decreasing lines
+         (sort-by (juxt (comp - :bdr) :fill))
          (reduce (fn [acc {:keys [bdr fill]}]
                    (-> acc
                        (update :y conj (double bdr))
