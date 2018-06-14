@@ -509,7 +509,10 @@
 
 (defn enabled-supply
   [root]
-  (filter (fn [r] (:Enabled r)) (load-supply root)))
+  (->> (slurp (str root "AUDIT_SupplyRecords.txt"))
+       (tbl/tabdelimited->records)
+       (r/filter (fn [r] (:Enabled r)))
+       (into [])))
 
 (defn load-trends
   [root]
