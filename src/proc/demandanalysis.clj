@@ -743,6 +743,27 @@ satisfied.  "
            (activity-at (activity-map group))
            ((fn [x] (quantities-by-demandgroup (second x))))) r))))
 
+(defn columns->records
+  "Given a sequence of records, keep all fields specified by a flds sequence and put remaining
+  field values into a new column name by k and each remaining field key into a column named by fld.
+  Asume that each record has the same fields."
+  [recs flds k fld]
+  (mapcat (fn [r] (let [baser (select-keys r flds)
+                        nfs (apply dissoc r (keys baser))]
+                    (if (> (count nfs) 0)
+                      (for [[key v] nfs]
+                        (assoc baser k v
+                               fld (name key)))
+                      [r]))) recs))
+
+(defn peak-parts-less-fields
+  "Returns records of peak-parts where the three fields are :group :period :peak :demandgroup."
+  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All")
+                                               demand-filter (fn [r] true)}}]
+  (columns->records (map (fn [r] (dissoc r :firstday))
+                         (peak-parts path :group-fn group-fn :demand-filter demand-filter))
+                    [:group :period] :peak :demandgroup))
+
 (defn get-strength
   "retrns a map of the group defined by group-fn to total strength or number of personnel.  Pull strength
   from a column in Audit_SupplyRecords called Strength. If no Strength is present, return 'nostrength'

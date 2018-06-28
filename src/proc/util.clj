@@ -539,14 +539,24 @@
        (filter (fn [[dname recs]] (> (count recs) 1)))
        (map (fn [[dname recs]] dname))))
 
+(defn demand-records
+  "returns enabled demand records from an audit trail root dir."
+  [root]
+  (->> 
+   (tbl/tabdelimited->table (slurp (str root "AUDIT_DemandRecords.txt")) :parsemode :noscience 
+                            :schema schemas/drecordschema)
+   (tbl/table-records)
+   (filter (fn [{:keys [Enabled]}] Enabled))))
+  
+(defn dups-from
+  "returns duplicate demands from an audit trail root dir"
+  [root]
+  (duplicate-demands (demand-records root)))
+
 (defn enabled-demand
   "Return enabled DemandRecords as a sequence of records given a path to an audit trail dir."
   [root]
-  (let [drecs (->> 
-                (tbl/tabdelimited->table (slurp (str root "AUDIT_DemandRecords.txt")) :parsemode :noscience 
-                                         :schema schemas/drecordschema)
-                (tbl/table-records)
-                (filter (fn [{:keys [Enabled]}] Enabled)))
+  (let [drecs (demand-records root)
         dupes (duplicate-demands drecs)]
     (println "There are"(count dupes) "demand names with multiple demand records.")
     drecs))
