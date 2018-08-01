@@ -15,7 +15,7 @@
 
 ;;TODO: Fix reflection warnings.
 ;; Added wrapper functions to fix reflection warnings
-(set! *warn-on-reflection* true)
+(set! *warn-on-reflection* false)
 ;;constants and such.
 ;;==================
 ;;A map of typename to PictureData enumerated type values (ints),
@@ -217,16 +217,17 @@
                  "Bottom Left" 43
                  "Bottom Right" 44})
 
-(defn set-positions [^clojure.lang.LazySeq images] ;; Sets the positions of the images (at this point images are already linked to slide)
+(defn set-positions [^clojure.lang.LazySeq images & {:keys [layout-map] :or {layout-map layout-map}}] ;; Sets the positions of the images (at this point images are already linked to slide)
   (doseq [^XSLFPictureShape i images :let [index (.indexOf images i)]]
     (.setAnchor i  (nth (get layout-map (count images)) index))))
 
 ;; Adds picture to power point at position pos, where pos is a rectangle object
-(defn add-image-to-ppt [ppt slide filename pos & {:keys [format] :or {format "PNG"}}]
-  (let [data (^XSLFPictureData .addPicture ^XMLSlideShow ppt (picture->data filename) (get-picturedata-type format))
+(defn add-image-to-ppt [ppt slide filename pos & {:keys [format tslide] :or {format "PNG" tslide nil}}]
+  (let [_ (when tslide (.importContent ^XSLFSlide slide ^XSLFSlide tslide))
+        data (^XSLFPictureData .addPicture ^XMLSlideShow ppt (picture->data filename) (get-picturedata-type format))
         pic-shape (.createPicture ^XSLFSlide slide data)]
     (.setAnchor pic-shape pos)
-    pic-shape))
+    pic-shape)) 
 
 (comment
   (defn prep-images
@@ -239,20 +240,20 @@
 ;;layout is seq of rectangle objects
 ;;if filenames is not divisible by layout, will leave out remainder of filenames
 ;;returns ppt, need to reduce into to force for seq to evaluate, otherwise will result in empty file if never evaluated
-(defn add-images-to-ppt [ppt filenames layout]
+(defn add-images-to-ppt [ppt filenames layout & {:keys [tslide] :or {tslide nil}}]
   (let [part-imgs (map #(zipmap % layout) (partition (count layout) filenames))
         slides (for [n (range (count part-imgs))] (->slide ppt))
         args (zipmap part-imgs slides)]
-    (reduce into [] (for [a (keys args)] (map #(add-image-to-ppt ppt (get args a) % (get a %)) (keys a))))
+    (reduce into [] (for [a (keys args)] (map #(add-image-to-ppt ppt (get args a) % (get a %) tslide) (keys a))))
     ppt))
-    
-    
+  
  
 ;; Adds a new slide with images in the correct layout
-(defn slide-with-images [ppt filenames & {:keys [format] :or {format "PNG"}}]
+(defn slide-with-images [ppt filenames & {:keys [format tslide layout] :or {format "PNG" tslide nil layout layout-map}}]
   (let [slide (->slide ppt)
+        _ (when tslide (.importContent ^XSLFSlide slide ^XSLFSlide tslide)) 
         imgs (for [i filenames] (get-image-shape ppt slide i))]
-    (reduce into [] (set-positions imgs)) slide)) ;; returns new slide with formatted images
+    (reduce into [] (set-positions imgs :layout-map layout)) slide)) ;; returns new slide with formatted images
 
 ;; given a filepath for a .png file, this should make a powerpoint with 5 slides containg with 0 - 4 images on each 
 (defn test-slide-layout [filename & ppt] ;; Used to test if functions work
@@ -261,6 +262,32 @@
       (slide-with-images ppt (take x files)))
     (save-ppt ppt "test-output.pptx")))
 
+;;outfile is the filepath for the output (./some-dir/powerpoint.pptx)
+;;files are the list of image filepaths
+;;temp is the location of the template file
+;;   the contents of the template slides will be used for the output file
+;;layouts is a nested sequences or rectangles 
+;;ex: [[r1 r2] [r3] [] [r4 r5 r6]] (where ri is a rectangle object
+;; ->results in ppt with 2 images on first slide with content from first slide of template
+;;                       1 image on second slide "..."
+;;                       No image on third slide but contentent from template slide 3 coppied
+;;                       3 images on fourth slide "..." (layouts and template content repeated if #files > #layouts)
+(defn ->format-pptx [outfile files temp layouts]
+  (let [temp-slides (vec (.getSlides (->pptx temp)))
+        pptx (->pptx temp)]
+    (doall (take-while #(not (empty? (:files %))) 
+             (iterate (fn [x]
+                        (let [n (count (first (:layouts x)))
+                              q (count (:files x))]
+                          (if (< q n)
+                            (slide-with-images pptx (take n (:files x)) :tslide (first (:tslide x)) 
+                              :layout {q (drop (- n q) (first (:layouts x)))})
+                            (slide-with-images pptx (take n (:files x)) :tslide (first (:tslide x)) :layout {n (first (:layouts x))}))
+                          (-> (assoc x :files (drop n (:files x)))
+                              (assoc :tslide (drop 1 (:tslide x)))
+                              (assoc :layouts (drop 1 (:layouts x))))))
+               {:files files :tslide (flatten (repeat (count files) temp-slides)) :layouts (apply concat (repeat (count files) layouts))})))
+    (save-ppt pptx outfile)))
 
-    
-        
+
+
