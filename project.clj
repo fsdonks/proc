@@ -15,7 +15,7 @@
                  ;;This breaks the build process.  Fortunately, we don't need it.
                  ;;We just specify the individual modules and we're good to go.
                                         ;                 [incanter "1.5.8"]
-                 ;[iota "1.1.2"]
+                 [iota "1.1.2"]
                  ]
   :repl-options {:init (do (println "Loading post processor")
                            (require 'proc.example)
