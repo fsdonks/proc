@@ -9,6 +9,7 @@
                  [joinr/incanter-core "1.9.3-SNAPSHOT"]
                  [joinr/incanter-charts "1.9.3-SNAPSHOT"]
                  [joinr/incanter-io "1.9.3-SNAPSHOT"]
+                 [joinr/incanter-excel "1.9.3-SNAPSHOT"]
                  ;;Note: the current release of incanter/incanter 1.9.1
                  ;;has a jacked dependency via swingrepl to an ancient clojure.
                  ;;This breaks the build process.  Fortunately, we don't need it.
