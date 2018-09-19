@@ -74,14 +74,14 @@
   [^XMLSlideShow ppt ^XSLFSlide slide filename &
    {:keys [format] :or {format "PNG"}}]
   (let [data (.addPicture ppt
-                          (picture->data filename)
+                          ^bytes (picture->data filename)
                           (get-picturedata-type format))]
     (doto slide (.createPicture data)))) ;; returns slide
 
 ;; Will have to change order in things are done in when adding a picture and setting its location on the slide ...
 (defn get-image-shape [ppt slide filename & {:keys [format] :or {format "PNG"}}]
   (let [data (^XSLFPictureData .addPicture ^XMLSlideShow ppt
-                          (picture->data filename)
+                          ^bytes (picture->data filename)
                           (get-picturedata-type format))]
     (.createPicture ^XSLFSlide slide data)))
 
@@ -224,10 +224,11 @@
 ;; Adds picture to power point at position pos, where pos is a rectangle object
 (defn add-image-to-ppt [ppt slide filename pos & {:keys [format tslide] :or {format "PNG" tslide nil}}]
   (let [_ (when tslide (.importContent ^XSLFSlide slide ^XSLFSlide tslide))
-        data (^XSLFPictureData .addPicture ^XMLSlideShow ppt (picture->data filename) (get-picturedata-type format))
+        data (^XSLFPictureData .addPicture ^XMLSlideShow ppt
+              ^bytes (picture->data filename) (get-picturedata-type format))
         pic-shape (.createPicture ^XSLFSlide slide data)]
     (.setAnchor pic-shape pos)
-    pic-shape)) 
+    pic-shape))
 
 (comment
   (defn prep-images
