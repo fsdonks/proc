@@ -516,7 +516,7 @@
 
 (defn load-trends
   [root]
-  (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :pasemode :noscience :schema (assoc schemas/dschema :deltaT :int))
+  (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :parsemode :noscience :schema (assoc schemas/dschema :deltaT :int))
        (into [])))
 
 ;;sparkcharts and activity profile: if the entire demand record is the same as another, only one of the records will
