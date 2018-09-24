@@ -10,46 +10,65 @@
             [clojure.string :as str])
   (:use [proc.core]))
 
-
-
-(defn units-locs-at 
-  "Given a time, t, and the root directory to the marathon run, this function will return the location
-of all units as records at time t.  Can also provide a substring of the unit names you want returned as :unitpart."
+;;Generic
+(defn units-locs-at
+  "Given a time, t, and the root directory to the marathon run, this function will
+  return the location of all units as records at time t. Can also provide a
+  substring of the unit names you want returned as :unitpart."
   [time root & {:keys [unitpart] :or {unitpart ""}}]
   (let [samples (-> (tbl/table-records (tbl/tabdelimited->table (slurp (str root "locations.txt"))))
                   (sample-trends #(get % :EntityFrom) #(get % :T))
                   (samples-at time))]
     (filter (fn [r] (.contains (:EntityFrom r) unitpart)) (map second samples))))
 
-(def supply-order [:Type :Enabled :Quantity :SRC :Component :OITitle :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position])
-(def key-fields [:Type :SRC :Component :Name :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position] )
+(def supply-order
+  [:Type :Enabled :Quantity :SRC :Component :OITitle :Name
+   :Behavior :CycleTime :Policy :Tags :Spawntime :Location :Position])
+
+(def key-fields [:Type :SRC :Component :Name :Behavior :CycleTime :Policy
+                 :Tags :Spawntime :Location :Position])
 
 (defn merged-quantities
-  "Given records of Marathon AUDIT_SupplyRecords and if there are duplicates (same compo and SRC) in the records, this is meant to merge the quantities into one record and return a new sequence of supply records.  The OI title of the record will be the last one found"
+  "Given records of Marathon AUDIT_SupplyRecords and if there are duplicates (same
+  compo and SRC) in the records, this is meant to merge the quantities into one
+  record and return a new sequence of supply records. The OI title of the record
+  will be the last one found"
   [recs]
     (->> (group-by #(map % key-fields) recs)
-         (reduce-kv (fn [a k v] (conj a (assoc (last v) :Quantity (reduce + (map :Quantity v))))) [])))
-
+         (reduce-kv (fn [a k v]
+                      (conj a (assoc (last v)
+                                     :Quantity (reduce + (map :Quantity v))))) [])))
+;;Maybe Unnecessary....Generic?
 (defn merge-quants
-  "Given the path to Marathon supply records and if there are duplicates (same compo and SRC) in supply records, this is meant to merge the quantities into one record and write a table to the same directory.  The OI title of the record will be the last one found"
+  "Given the path to Marathon supply records and if there are duplicates (same
+   compo and SRC) in supply records, this is meant to merge the quantities into
+   one record and write a table to the same directory. The OI title of the record
+   will be the last one found"
   [path]
-  (let [recs (merged-quantities (tbl/tabdelimited->records (slurp path) :parsemode :noscience))
-        out (clojure.string/replace path "AUDIT_SupplyRecords.txt" "AUDIT_SupplyRecords_merged.txt")]
+  (let [recs (merged-quantities (tbl/tabdelimited->records (slurp path)
+                 :parsemode :noscience))
+        out (clojure.string/replace path "AUDIT_SupplyRecords.txt"
+                                         "AUDIT_SupplyRecords_merged.txt")]
     (tbl/records->file recs out :field-order supply-order)))
 
 
 (defn quants-by-compo
-  "Given a path to a Marathon audit trail, returns a map where the keys are srcs and the values are nested maps where the keys are components and the values are quantities.  Merges supply records according to merged-quantities."
-  [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
-  (let [supprecs (->> (tbl/tabdelimited->table (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
-                   (tbl/table-records)
-                   (filter supply-filter)
-                   (merged-quantities))]
-    (reduce (fn [m r] (assoc m (:SRC r) (assoc (m (:SRC r)) (:Component r) (:Quantity r)))) {} supprecs)))
+  "Given a path to a Marathon audit trail, returns a map where the keys are srcs
+  and the values are nested maps where the keys are components and the values
+  are quantities. Merges supply records according to merged-quantities."
+  [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}]
+  (let [supprecs (->> (tbl/tabdelimited->table (slurp (str root "AUDIT_SupplyRecords.txt"))
+                                               :schema proc.schemas/supply-recs)
+                      (tbl/table-records)
+                      (filter supply-filter)
+                      (merged-quantities))]
+    (reduce (fn [m r] (assoc m (:SRC r) (assoc (m (:SRC r)) (:Component r) (:Quantity r))))
+            {} supprecs)))
 
 (defn merge-ints
-  "For one interest, combine the quantities into one map keyed by the name in interest. Returns the complete quantity map
-  with the changes made for one interest. Removes srcs that are included in the interest."
+  "For one interest, combine the quantities into one map keyed by the name in
+   interest.  Returns the complete quantity map with the changes made for one
+   interest. Removes srcs that are included in the interest."
   [m [name srcs]]
   (let [quant-map (apply merge-with + (map m srcs))
         new-map (reduce #(dissoc %1 %2) m srcs)]
@@ -61,38 +80,45 @@ of all units as records at time t.  Can also provide a substring of the unit nam
 (defn print-inventory
   [total ng rc ac] (cl-format nil "~A/~A/~A//~A" ac ng rc total))
 
-(defn print-inv 
+(defn print-inv
   "take one inventory and return a string"
   [inv] ;inv is one inventory map
-  (let [{:keys [total NG RC AC] :or {total 0 NG 0 RC 0 AC 0}} (reduce-kv (fn [m k v] (assoc m (keyword k) v)) {} inv)] 
+  (let [{:keys [total NG RC AC] :or {total 0 NG 0 RC 0 AC 0}}
+        (reduce-kv (fn [m k v] (assoc m (keyword k) v)) {} inv)]
     (print-inventory total NG RC AC)))
 
 (defn print-all-invs [invs]
   (reduce-kv (fn [m k v] (assoc m k (print-inv v))) {} invs))
 
 (defn by-compo-supply-map
-  "returns a map where the interests and/or SRCs are keywords and the values are maps of components
-  and a total to the supply quantities."
-  [root & {:keys [interests supply-filter] :or {supply-filter (fn [r] (:Enabled r)) interests nil}}]
+  "returns a map where the interests and/or SRCs are keywords and the values are
+  maps of components and a total to the supply quantities."
+  [root & {:keys [interests supply-filter]
+           :or {supply-filter :Enabled interests nil}}]
   (let [quants (quants-by-compo root :supply-filter supply-filter)]
-    (if interests 
+    (if interests
       (add-totals (reduce merge-ints quants (vals interests)))
       (add-totals quants))))
 
 (defn by-compo-supply-map-groupf
   "like by-compo-supply-map but groups the srcs according to groupfn"
-  [root & {:keys [supply-filter group-fn] :or {supply-filter (fn [r] (:Enabled r)) group-fn (fn [s] s)}}]
+  [root & {:keys [supply-filter group-fn]
+           :or {supply-filter :Enabled group-fn (fn [s] s)}}]
   (let [quants (quants-by-compo root :supply-filter supply-filter)]
     (reduce (fn [acc [group quants]]
-              (assoc acc group (apply merge-with + (map second quants)))) {} 
+              (assoc acc group (apply merge-with + (map second quants)))) {}
             (group-by (fn [[src quantmap]] (group-fn src)) quants))))
 
-(defn supply-by-compo 
-  "returns a map where the interests and/or SRCs are keywords and the values are the strings computed
- from print-inventory."
-  [root & {:keys [interests supply-filter] :or {supply-filter (fn [r] (:Enabled r)) interests nil}}]
-  (print-all-invs (by-compo-supply-map root :interests interests :supply-filter supply-filter)))
+;;Generic.
+(defn supply-by-compo
+  "returns a map where the interests and/or SRCs are keywords and the values are
+  the strings computed from print-inventory."
+  [root & {:keys [interests supply-filter]
+           :or {supply-filter :Enabled interests nil}}]
+  (print-all-invs
+   (by-compo-supply-map root :interests interests :supply-filter supply-filter)))
 
+;;Generic?
 (defn wbpath-from-auditpath
   "Returns the path of the marathon workbook if given the path of the audit trail."
   [auditpath]
@@ -100,6 +126,7 @@ of all units as records at time t.  Can also provide a substring of the unit nam
         run-name (get-run-name auditpath)]
     (str mpath "/" run-name ".xlsx")))
 
+;;Generic?
 (defn get-policies
   "Returns a map of compo to policy name for each component given the path to the audit trail"
   [path]
@@ -125,29 +152,36 @@ of all units as records at time t.  Can also provide a substring of the unit nam
             "AC"
             (throw (Exception. (str "Unknown template " template))))))))
 
+;;Predicate
 (defn restricted-static-policy?
-  "Throw an exception if the policy violates static analysis assumptions. Otherwise, return true. These cases would probably
-  be when static analysis is most valid, but a lot of our policies violate these assumptions so I rewrote this fn below to
-  be more liberal."
-  [bog {:keys [MaxBOG MaxDwell MinDwell StopDeployable StartDeployable PolicyName]}]
+  "Throw an exception if the policy violates static analysis assumptions.
+  Otherwise, return true. These cases would probably be when static analysis is
+  most valid, but a lot of our policies violate these assumptions so I rewrote
+  this fn below to be more liberal."
+  [bog {:keys [MaxBOG MaxDwell MinDwell StopDeployable StartDeployable PolicyName]
+        :as policy}]
   (if (or (not= (- StopDeployable StartDeployable) bog) ;violates static analysis assumption
           (< StartDeployable (- StopDeployable bog)) ;lifecycle shortened when deployed
           (< StopDeployable MaxDwell)
           (not= MaxDwell (+ MinDwell bog)))
-    (throw (Exception. (str "The " PolicyName " policy might violate static analysis assumptions.")))
+    (throw (ex-info (str "The " PolicyName " policy might violate static analysis assumptions.")
+                    {:policy policy}))
     true))
 
+;;Predicate
 (defn static-policy?
   "In this case, we can assume that a unit always bogs at the end of his lifecycle."
-  [bog {:keys [MaxDwell StopDeployable StartDeployable PolicyName]}]
-                                        ;make sure they're deployable at the end of the lifecycle
-  (if (and (<= (- MaxDwell bog) StopDeployable) (<= StartDeployable (- MaxDwell bog))) 
-    true                            
-    (throw (Exception. (str "The " PolicyName " policy might violate static analysis assumptions.")))))
+  [bog {:keys [MaxDwell StopDeployable StartDeployable PolicyName] :as policy}]
+  ;;make sure they're deployable at the end of the lifecycle
+  (or (and (<= (- MaxDwell bog) StopDeployable) (<= StartDeployable (- MaxDwell bog)))
+      (throw (ex-info (str "The " PolicyName
+                           " policy might violate static analysis assumptions.")
+                      {:policy policy}))))
 
 (defn compute-discount
   "given a policy record, compute the static analysis rotational discount."
-  [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}]
+  [{:keys [MaxBOG MaxDwell MinDwell Overlap Template
+           StopDeployable StartDeployable PolicyName] :as policy}]
   (let [;;this might have made more sense sometimes
         staticf (fn [bog] (/ (- bog Overlap) MaxDwell))
         ;;this will be useful for a couple use cases below
@@ -162,51 +196,61 @@ of all units as records at time t.  Can also provide a substring of the unit nam
              ;;deployable, we can probably just use
              "TAA21-25_RC_1:2" (deployablef (+ 95 MaxBOG))
       (when (restricted-static-policy? (+ MaxBOG 95) policy)
-             (staticf (+ MaxBOG 95))))    
+             (staticf (+ MaxBOG 95))))
       "AC" (case PolicyName
              "ReqAnalysis_MaxUtilization_FullSurge_AC" (deployablef MaxBOG)
       (when (restricted-static-policy? MaxBOG policy)
              (staticf MaxBOG))))))
 
-(defn round-to "rounds a number, n to an integer number of (num) decimals" [num n]
+(defn round-to
+  "rounds a number, n to an integer number of (num) decimals"
+  [num n]
   (read-string (format (str "%." num "f") (float n))))
-  
+
 (defn policy-name
   "given a policy record and component, creates a name for the policy in terms of BOG:Dwell"
-  [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}
-   component]
+  [{:keys [MaxBOG MaxDwell MinDwell Overlap Template
+           StopDeployable StartDeployable PolicyName] :as policy} component]
   (let [;for mobilization (only seen 95 recently)
         bog (if (or (= component "RC") (= component "NG")) (+ MaxBOG 95) MaxBOG)
+        ;;TODO Check this....
         vba-round (fn [num] (let [x (str (round-to 1 num))
                               [o t] (clojure.string/split x #"\.")]
                           (if (= t "0") o x)))]
       (str (vba-round (/ bog 365)) ":" (vba-round (/ StartDeployable 365)))))
 
+;;Generic.
 (defn policy-info
-  "given the path to a Marathon audit trail, return a map of {:composites {...} :policies {...}} where the composites map
-  is a map of [CompitePolicyName Period] to the policy record and the policies map is a map of PolicyName to the policy record."
+  "given the path to a Marathon audit trail, return a map of {:composites
+  {...} :policies {...}} where the composites map is a map of [CompitePolicyName
+  Period] to the policy record and the policies map is a map of PolicyName to
+  the policy record."
   [path]
   (let [{composites "CompositePolicyRecords"
-         policies "PolicyRecords"} (->> (xl/wb->tables (xl/as-workbook (wbpath-from-auditpath path))
-                                                       :sheetnames ["CompositePolicyRecords" "PolicyRecords"])
-                                        (reduce-kv (fn [acc k v] (assoc acc k
-                                                                        (tbl/table-records (tbl/keywordize-field-names v))))
-                                                   {}))
-        policy-map (reduce (fn [acc {:keys [PolicyName] :as r}] (assoc acc PolicyName r)) {} policies)
+         policies   "PolicyRecords"}
+        (->> (xl/wb->tables (xl/as-workbook (wbpath-from-auditpath path))
+                            :sheetnames ["CompositePolicyRecords" "PolicyRecords"])
+             (reduce-kv (fn [acc k v] (assoc acc k
+                                        (tbl/table-records (tbl/keywordize-field-names v))))
+                        {}))
+        policy-map (reduce (fn [acc {:keys [PolicyName] :as r}]
+                             (assoc acc PolicyName r)) {} policies)
         composite-map (reduce (fn [acc {:keys [CompositeName Period Policy] :as r}]
-                                
-                                  (assoc acc [CompositeName Period] (policy-map Policy))) {} composites)]
+                                (assoc acc [CompositeName Period] (policy-map Policy)))
+                              {} composites)]
     {:composites composite-map :policies policy-map}))
 
 (defn policy-record
-  "given a policy name, period name, and the policies and composites maps from policy-info, return the period
-  record for the period.  An exception is thrown if the policy doesn't exist in either policies or composites."
+  "given a policy name, period name, and the policies and composites maps from
+   policy-info, return the period record for the period.
+   An exception is thrown if the policy doesn't exist in either policies or composites."
   [policy period policies composites]
   (if (contains? policies policy)
     (policies policy)
     (if (contains? composites [policy period])
       (composites [policy period])
-      (throw (Exception. (str [:policy policy] "does not exist in the PolicyRecords or CompositePolicyRecords"))))))
+      (throw (ex-info "does not exist in the PolicyRecords or CompositePolicyRecords"
+                      {:policy policy})))))
 
 (defn policies-by-period
   "Given the path to a Marathon audit trail, returns a map of [compo period] to the policy record for
@@ -228,38 +272,48 @@ of all units as records at time t.  Can also provide a substring of the unit nam
   (let [policies (policies-by-period path)]
     (assert (->> (remove (fn [[[compo period] v]] (= compo "AC")) policies)
                  (group-by (fn [[[compo period] v]] period))
-                 (every? (fn [[period xs]] (apply = (map (fn [[[compo period] v]] (:PolicyName v)) xs)))))
+                 (every? (fn [[period xs]]
+                           (apply = (map (fn [[[compo period] v]]
+                                           (:PolicyName v)) xs)))))
             "Assume that NG and RC follow the same policies.")
-                                        ;reduce over period recs,
-                                        ;for ac and rc make this joined by ->
-    (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->") (policy-name (policies ["AC" Name]) "AC") "/"
-                                            (policy-name (policies ["NG" Name]) "NG")))
+             ;;reduce over period recs,
+             ;;for ac and rc make this joined by ->
+    (reduce (fn [acc {:keys [Name]}]
+              (str acc (if (= acc "") "" "->")
+                   (policy-name (policies ["AC" Name]) "AC") "/"
+                   (policy-name (policies ["NG" Name]) "NG")))
             "" (util/load-periods path))))
 
+;;Generic
 (defn discounts-by-period
   "Given the path to a Marathon audit trail, compute the rotational discount for
   the AC and RC for each period."
   [path]
   (into {}
-        (map (fn [[[compo nm] policyrec]] [[compo nm] (compute-discount policyrec)]) (policies-by-period path))))
+        (map (fn [[[compo nm] policyrec]] [[compo nm] (compute-discount policyrec)])
+             (policies-by-period path))))
 
+;;Generic.
 (defn capacities
-  "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
-  [path & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
+  "Given the root directory to a Marathon audit trail, returns a map of [int
+  period] to theoretical capacity."
+  [path & {:keys [supply-filter] :or {supply-filter :Enabled}}]
   (let [discounts (discounts-by-period path)
-        supprecs (->> (tbl/tabdelimited->table (slurp (str path "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
+        supprecs (->> (tbl/tabdelimited->table (slurp (str path "AUDIT_SupplyRecords.txt"))
+                                               :schema proc.schemas/supply-recs)
                       (tbl/table-records)
                       (filter supply-filter)
-                                        ;multiple policies for one src will still exist after merging
+                      ;;multiple policies for one src will still exist after merging
                       (merged-quantities))]
     (for [{:keys [Policy Quantity Component SRC] :as r} supprecs
           {nm :Name} (util/load-periods path)]
       {:src SRC :period nm :capacity (* Quantity (discounts [Component nm]))})))
 
+;;Generic.
 (defn capacity-by
-  "Given a path to a Marathon audit trail, compute the theoretical capacity by period for each group
-  of supply records defined by group-fn."
-  [path & {:keys [group-fn supply-filter] :or {group-fn (fn [s] "All") supply-filter (fn [r] (:Enabled r))}}]
+  "Given a path to a Marathon audit trail, compute the theoretical capacity by
+  period for each group of supply records defined by group-fn."
+  [path & {:keys [group-fn supply-filter] :or {group-fn (fn [s] "All") supply-filter :Enabled}}]
   (->> (capacities path :supply-filter supply-filter)
                                         ;(group-by (juxt (fn [{:keys [src]}] (group-fn src)) :period))
        (util/separate-by (fn [{:keys [src]}] (group-fn src)))
@@ -268,9 +322,10 @@ of all units as records at time t.  Can also provide a substring of the unit nam
        (map (fn [[[interest period] recs]] [[interest period] (reduce + (map :capacity recs))]))
        (into {})))
 
+;;Generic.
 (defn oi-titles
-  "given a path to a marathon audit trail, return a map of src to OI title. This data is pulled from
-  audit supply records. Uses only enabled supply for now."
+  "given a path to a marathon audit trail, return a map of src to OI title.
+   This data is pulled from audit supply records. Uses only enabled supply for now."
   [path]
   (->> (util/load-supply path)
        (filter (fn [{:keys [Enabled]}] Enabled))

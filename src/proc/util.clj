@@ -502,11 +502,14 @@
 ;;Going forward, we may just ditch the fills folder and rip out what we need
 ;;from a compressed allfills.txt.gz|lz4 file.  Not sure yet.
 
+;;generic
 (defn load-supply
   [root]
-  (->> (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
+  (->> (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt"))
+           :schema proc.schemas/supply-recs)
        (into [])))
 
+;;generic
 (defn enabled-supply
   [root]
   (->> (slurp (str root "AUDIT_SupplyRecords.txt"))
@@ -514,9 +517,11 @@
        (r/filter (fn [r] (:Enabled r)))
        (into [])))
 
+;;generic
 (defn load-trends
   [root]
-  (->> (tbl/tabdelimited->records (str root "DemandTrends.txt") :parsemode :noscience :schema (assoc schemas/dschema :deltaT :int))
+  (->> (tbl/tabdelimited->records (str root "DemandTrends.txt")
+         :parsemode :noscience :schema (assoc schemas/dschema :deltaT :int))
        (into [])))
 
 ;;sparkcharts and activity profile: if the entire demand record is the same as another, only one of the records will
