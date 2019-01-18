@@ -1,0 +1,998 @@
+Type	Enabled	SRC	OITitle	Quantity	StartDay	Duration	Phase	Category	Title 10_32	Vignette	DemandGroup	Operation	DemandIndex	SourceFirst	Overlap	Priority
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	1	1	1	Competition		0				1		0	0
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	1	2	1	War		0				2		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	1	1	1	Competition		0				3		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	1	2	1	War		0				4		0	0
+DemandRecord	TRUE	01285K000	ATK/RECON BN (24x AH-64)	1	1	1	Competition		0				5		0	0
+DemandRecord	TRUE	01285K000	ATK/RECON BN (24x AH-64)	1	2	1	War		0				6		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	1	1	1	Competition		0				7		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	1	2	1	War		0				8		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	1	1	1	Competition		0				9		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	1	2	1	War		0				10		0	0
+DemandRecord	TRUE	01605K200	THTR AVN BN (FW) (RECAP)	1	1	1	Competition		0				11		0	0
+DemandRecord	TRUE	01605K200	THTR AVN BN (FW) (RECAP)	1	2	1	War		0				12		0	0
+DemandRecord	TRUE	01707K000	GRAY EAGLE UAS CO  (MQ-1C) (SEP)	2	1	1	Competition		0				13		0	0
+DemandRecord	TRUE	01707K000	GRAY EAGLE UAS CO  (MQ-1C) (SEP)	2	2	1	War		0				14		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	1	1	1	Competition		0				15		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	1	2	1	War		0				16		0	0
+DemandRecord	TRUE	05330K300	CLEARANCE CO (RECAP)	4	1	1	Competition		0				17		0	0
+DemandRecord	TRUE	05330K300	CLEARANCE CO (RECAP)	4	2	1	War		0				18		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	3	1	1	Competition		0				19		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	3	2	1	War		0				20		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	1	1	1	Competition		0				21		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	1	2	1	War		0				22		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	2	1	1	Competition		0				23		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	2	2	1	War		0				24		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	1	1	1	Competition		0				25		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	1	2	1	War		0				26		0	0
+DemandRecord	TRUE	05473K000	MULTIROLE BRIDGE CO	1	1	1	Competition		0				27		0	0
+DemandRecord	TRUE	05473K000	MULTIROLE BRIDGE CO	1	2	1	War		0				28		0	0
+DemandRecord	TRUE	05413K000	ENG UTILITIES DET	1	1	1	Competition		0				29		0	0
+DemandRecord	TRUE	05413K000	ENG UTILITIES DET	1	2	1	War		0				30		0	0
+DemandRecord	TRUE	05611KD00	FWD ENG SPT TM ADV (FEST-A)	1	1	1	Competition		0				31		0	0
+DemandRecord	TRUE	05611KD00	FWD ENG SPT TM ADV (FEST-A)	1	2	1	War		0				32		0	0
+DemandRecord	TRUE	05601KA00	ENGR FFTG TM - FFTG HQ	4	1	1	Competition		0				33		0	0
+DemandRecord	TRUE	05601KA00	ENGR FFTG TM - FFTG HQ	4	2	1	War		0				34		0	0
+DemandRecord	TRUE	05601KB00	ENGR FFTG TM - FIRE TRUCK	4	1	1	Competition		0				35		0	0
+DemandRecord	TRUE	05601KB00	ENGR FFTG TM - FIRE TRUCK	4	2	1	War		0				36		0	0
+DemandRecord	TRUE	05613K000	ENGR FACILITY DET	3	1	1	Competition		0				37		0	0
+DemandRecord	TRUE	05613K000	ENGR FACILITY DET	3	2	1	War		0				38		0	0
+DemandRecord	TRUE	06333K000	HHB DIVISION ARTILLERY	1	1	1	Competition		0				39		0	0
+DemandRecord	TRUE	06333K000	HHB DIVISION ARTILLERY	1	2	1	War		0				40		0	0
+DemandRecord	TRUE	06475K000	HIMARS BN (WO/FSC)(RECAP)	1	1	1	Competition		0				41		0	0
+DemandRecord	TRUE	06475K000	HIMARS BN (WO/FSC)(RECAP)	1	2	1	War		0				42		0	0
+DemandRecord	TRUE	06602K000	BFLD Coord Det	1	1	1	Competition		0				43		0	0
+DemandRecord	TRUE	06602K000	BFLD Coord Det	1	2	1	War		0				44		0	0
+DemandRecord	TRUE	06603K000	LNO Det (RECON)	2	1	1	Competition		0				45		0	0
+DemandRecord	TRUE	06603K000	LNO Det (RECON)	2	2	1	War		0				46		0	0
+DemandRecord	TRUE	06604K000	GROUND LNO SPT DET	6	1	1	Competition		0				47		0	0
+DemandRecord	TRUE	06604K000	GROUND LNO SPT DET	6	2	1	War		0				48		0	0
+DemandRecord	TRUE	07802K000	HHC Ranger Regimen	1	1	1	Competition		0				49		0	0
+DemandRecord	TRUE	07802K000	HHC Ranger Regimen	1	2	1	War		0				50		0	0
+DemandRecord	TRUE	07815K000	RANGER BN XXI	1	1	1	Competition		0				51		0	0
+DemandRecord	TRUE	07815K000	RANGER BN XXI	1	2	1	War		0				52		0	0
+DemandRecord	TRUE	07805K000	Ranger Special TRO	1	1	1	Competition		0				53		0	0
+DemandRecord	TRUE	07805K000	Ranger Special TRO	1	2	1	War		0				54		0	0
+DemandRecord	TRUE	08300K000	"MED DET, VET SVC (RECAP)"	1	1	1	Competition		0				55		0	0
+DemandRecord	TRUE	08300K000	"MED DET, VET SVC (RECAP)"	1	2	1	War		0				56		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	2	1	1	Competition		0				57		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	2	2	1	War		0				58		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	1	1	1	Competition		0				59		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	1	2	1	War		0				60		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	2	1	1	Competition		0				61		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	2	2	1	War		0				62		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	1	1	1	Competition		0				63		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	1	2	1	War		0				64		0	0
+DemandRecord	TRUE	08527KA00	"HOSP AUG TM, HEAD & NECK"	1	1	1	Competition		0				65		0	0
+DemandRecord	TRUE	08527KA00	"HOSP AUG TM, HEAD & NECK"	1	2	1	War		0				66		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	7	1	1	Competition		0				67		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	7	2	1	War		0				68		0	0
+DemandRecord	TRUE	08988K000	FIELD HOSPITAL (32 BED)	1	1	1	Competition		0				69		0	0
+DemandRecord	TRUE	08988K000	FIELD HOSPITAL (32 BED)	1	2	1	War		0				70		0	0
+DemandRecord	TRUE	09436K000	"HHD, ORD BN (EOD)"	1	1	1	Competition		0				71		0	0
+DemandRecord	TRUE	09436K000	"HHD, ORD BN (EOD)"	1	2	1	War		0				72		0	0
+DemandRecord	TRUE	09513KB00	MOD AMMO PLT	1	1	1	Competition		0				73		0	0
+DemandRecord	TRUE	09513KB00	MOD AMMO PLT	1	2	1	War		0				74		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	6	1	1	Competition		0				75		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	6	2	1	War		0				76		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	25	1	1	Competition		0				77		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	25	2	1	War		0				78		0	0
+DemandRecord	TRUE	10233K000	BDE AERIAL DELIVERY SPT CO	1	1	1	Competition		0				79		0	0
+DemandRecord	TRUE	10233K000	BDE AERIAL DELIVERY SPT CO	1	2	1	War		0				80		0	0
+DemandRecord	TRUE	10579KA00	QM SUPPLY CO (RECAP)	1	1	1	Competition		0				81		0	0
+DemandRecord	TRUE	10579KA00	QM SUPPLY CO (RECAP)	1	2	1	War		0				82		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	2	1	1	Competition		0				83		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	2	2	1	War		0				84		0	0
+DemandRecord	TRUE	10527KM00	QM PETRL LIAISON TM	1	1	1	Competition		0				85		0	0
+DemandRecord	TRUE	10527KM00	QM PETRL LIAISON TM	1	2	1	War		0				86		0	0
+DemandRecord	TRUE	10557KB00	"HQ, FIELD FEEDING PLT (RECAP)"	1	1	1	Competition		0				87		0	0
+DemandRecord	TRUE	10557KB00	"HQ, FIELD FEEDING PLT (RECAP)"	1	2	1	War		0				88		0	0
+DemandRecord	TRUE	11623K000	TACT INSTL/NETWKNG CO	1	1	1	Competition		0				89		0	0
+DemandRecord	TRUE	11623K000	TACT INSTL/NETWKNG CO	1	2	1	War		0				90		0	0
+DemandRecord	TRUE	12413K000	HUMAN RESOURCES CO HQ	1	1	1	Competition		0				91		0	0
+DemandRecord	TRUE	12413K000	HUMAN RESOURCES CO HQ	1	2	1	War		0				92		0	0
+DemandRecord	TRUE	12567KE00	POSTAL PLT	1	1	1	Competition		0				93		0	0
+DemandRecord	TRUE	12567KE00	POSTAL PLT	1	2	1	War		0				94		0	0
+DemandRecord	TRUE	12682K000	HUMAN RESOURCES SUST CTR	1	1	1	Competition		0				95		0	0
+DemandRecord	TRUE	12682K000	HUMAN RESOURCES SUST CTR	1	2	1	War		0				96		0	0
+DemandRecord	TRUE	14527KB00	FINANCE MGT DET	5	1	1	Competition		0				97		0	0
+DemandRecord	TRUE	14527KB00	FINANCE MGT DET	5	2	1	War		0				98		0	0
+DemandRecord	TRUE	16503KB00	CHAPLAIN DET B	2	1	1	Competition		0				99		0	0
+DemandRecord	TRUE	16503KB00	CHAPLAIN DET B	2	2	1	War		0				100		0	0
+DemandRecord	TRUE	19436KA00	MWD HQS TM	1	1	1	Competition		0				101		0	0
+DemandRecord	TRUE	19436KA00	MWD HQS TM	1	2	1	War		0				102		0	0
+DemandRecord	TRUE	19436KB00	MWD SQUAD	2	1	1	Competition		0				103		0	0
+DemandRecord	TRUE	19436KB00	MWD SQUAD	2	2	1	War		0				104		0	0
+DemandRecord	TRUE	19436KC00	MWD PDDD TRACKING TM	1	1	1	Competition		0				105		0	0
+DemandRecord	TRUE	19436KC00	MWD PDDD TRACKING TM	1	2	1	War		0				106		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	1	1	1	Competition		0				107		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	1	2	1	War		0				108		0	0
+DemandRecord	TRUE	19646K000	"HHC, MP DETENTION BN"	1	1	1	Competition		0				109		0	0
+DemandRecord	TRUE	19646K000	"HHC, MP DETENTION BN"	1	2	1	War		0				110		0	0
+DemandRecord	TRUE	19713K000	MP LAW ENFORCEMENT DET	2	1	1	Competition		0				111		0	0
+DemandRecord	TRUE	19713K000	MP LAW ENFORCEMENT DET	2	2	1	War		0				112		0	0
+DemandRecord	TRUE	20518KA00	MIL HISTORY DET TM A	1	1	1	Competition		0				113		0	0
+DemandRecord	TRUE	20518KA00	MIL HISTORY DET TM A	1	2	1	War		0				114		0	0
+DemandRecord	TRUE	20518KB00	MIL HISTORY DET TM B	1	1	1	Competition		0				115		0	0
+DemandRecord	TRUE	20518KB00	MIL HISTORY DET TM B	1	2	1	War		0				116		0	0
+DemandRecord	TRUE	30702K000	Theater MI Brigade	3	1	1	Competition		0				117		0	0
+DemandRecord	TRUE	30702K000	Theater MI Brigade	3	2	1	War		0				118		0	0
+DemandRecord	TRUE	30705R200	MI Ops BN	3	1	1	Competition		0				119		0	0
+DemandRecord	TRUE	30705R200	MI Ops BN	3	2	1	War		0				120		0	0
+DemandRecord	TRUE	30715K200	MI BN Forward Collect	2	1	1	Competition		0				121		0	0
+DemandRecord	TRUE	30715K200	MI BN Forward Collect	2	2	1	War		0				122		0	0
+DemandRecord	TRUE	30832K000	AE Brigade	1	1	1	Competition		0				123		0	0
+DemandRecord	TRUE	30832K000	AE Brigade	1	2	1	War		0				124		0	0
+DemandRecord	TRUE	30815R300	MIB AE	2	1	1	Competition		0				125		0	0
+DemandRecord	TRUE	30815R300	MIB AE	2	2	1	War		0				126		0	0
+DemandRecord	TRUE	30875K100	MI BN Theatre Support	3	1	1	Competition		0				127		0	0
+DemandRecord	TRUE	30875K100	MI BN Theatre Support	3	2	1	War		0				128		0	0
+DemandRecord	TRUE	31715K000	SF 4th Battalion	2	1	1	Competition		0				129		0	0
+DemandRecord	TRUE	31715K000	SF 4th Battalion	2	2	1	War		0				130		0	0
+DemandRecord	TRUE	31812K000	"HHC, SF GPS (ABN)"	2	1	1	Competition		0				131		0	0
+DemandRecord	TRUE	31812K000	"HHC, SF GPS (ABN)"	2	2	1	War		0				132		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	6	1	1	Competition		0				133		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	6	2	1	War		0				134		0	0
+DemandRecord	TRUE	31825K000	SF GRP SPT BN	2	1	1	Competition		0				135		0	0
+DemandRecord	TRUE	31825K000	SF GRP SPT BN	2	2	1	War		0				136		0	0
+DemandRecord	TRUE	33712K200	"HQ & HQ CO, MIL IN"	1	1	1	Competition		0				137		0	0
+DemandRecord	TRUE	33712K200	"HQ & HQ CO, MIL IN"	1	2	1	War		0				138		0	0
+DemandRecord	TRUE	33757K100	PSYOP DISSEM BN (ABN) (RECAP)	1	1	1	Competition		0				139		0	0
+DemandRecord	TRUE	33757K100	PSYOP DISSEM BN (ABN) (RECAP)	1	2	1	War		0				140		0	0
+DemandRecord	TRUE	33725K200	PSYOP REGIONAL BN (ABN)	1	1	1	Competition		0				141		0	0
+DemandRecord	TRUE	33725K200	PSYOP REGIONAL BN (ABN)	1	2	1	War		0				142		0	0
+DemandRecord	TRUE	33737K100	TAC PSYOP CO (RECAP) (USAR)	1	1	1	Competition		0				143		0	0
+DemandRecord	TRUE	33737K100	TAC PSYOP CO (RECAP) (USAR)	1	2	1	War		0				144		0	0
+DemandRecord	TRUE	34402K000	"HHC, EXPEDITIONARY MI BDE"	2	1	1	Competition		0				145		0	0
+DemandRecord	TRUE	34402K000	"HHC, EXPEDITIONARY MI BDE"	2	2	1	War		0				146		0	0
+DemandRecord	TRUE	34425K000	EXPEDITIONARY MI BN	1	1	1	Competition		0				147		0	0
+DemandRecord	TRUE	34425K000	EXPEDITIONARY MI BN	1	2	1	War		0				148		0	0
+DemandRecord	TRUE	41702K100	"HHC, CIVIL AFFAIRS BDE (ABN)"	1	1	1	Competition		0				149		0	0
+DemandRecord	TRUE	41702K100	"HHC, CIVIL AFFAIRS BDE (ABN)"	1	2	1	War		0				150		0	0
+DemandRecord	TRUE	41736K100	HHC CA Battalion (SOF)	2	1	1	Competition		0				151		0	0
+DemandRecord	TRUE	41736K100	HHC CA Battalion (SOF)	2	2	1	War		0				152		0	0
+DemandRecord	TRUE	41737K100	CA Co (SOF)	7	1	1	Competition		0				153		0	0
+DemandRecord	TRUE	41737K100	CA Co (SOF)	7	2	1	War		0				154		0	0
+DemandRecord	TRUE	41740K000	"HHC, CA BN (TAC)(USAR) (RECAP)"	1	1	1	Competition		0				155		0	0
+DemandRecord	TRUE	41740K000	"HHC, CA BN (TAC)(USAR) (RECAP)"	1	2	1	War		0				156		0	0
+DemandRecord	TRUE	41750K000	CIVIL AFFAIRS CO (USAR) (RECAP)	1	1	1	Competition		0				157		0	0
+DemandRecord	TRUE	41750K000	CIVIL AFFAIRS CO (USAR) (RECAP)	1	2	1	War		0				158		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO HQ  	2	1	1	Competition		0				159		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO HQ  	2	2	1	War		0				160		0	0
+DemandRecord	TRUE	43547RA00	AREA TMDE SPT TM	2	1	1	Competition		0				161		0	0
+DemandRecord	TRUE	43547RA00	AREA TMDE SPT TM	2	2	1	War		0				162		0	0
+DemandRecord	TRUE	44655K000	ADA BN (IFPC/AVENGER)	1	1	1	Competition		0				163		0	0
+DemandRecord	TRUE	44655K000	ADA BN (IFPC/AVENGER)	1	2	1	War		0				164		0	0
+DemandRecord	TRUE	44693K000	ADA BTRY (THAAD)(SEPARATE)	1	1	1	Competition		0				165		0	0
+DemandRecord	TRUE	44693K000	ADA BTRY (THAAD)(SEPARATE)	1	2	1	War		0				166		0	0
+DemandRecord	TRUE	45413K000	MOBILE PUBLIC AFF DET	1	1	1	Competition		0				167		0	0
+DemandRecord	TRUE	45413K000	MOBILE PUBLIC AFF DET	1	2	1	War		0				168		0	0
+DemandRecord	TRUE	45423K000	THTR PUBLIC AFF SPT ELMT	1	1	1	Competition		0				169		0	0
+DemandRecord	TRUE	45423K000	THTR PUBLIC AFF SPT ELMT	1	2	1	War		0				170		0	0
+DemandRecord	TRUE	51632K000	"HHD, REGIONAL SPT GRP"	3	1	1	Competition		0				171		0	0
+DemandRecord	TRUE	51632K000	"HHD, REGIONAL SPT GRP"	3	2	1	War		0				172		0	0
+DemandRecord	TRUE	52400K300	CORPS HQ	1	1	1	Competition		0				173		0	0
+DemandRecord	TRUE	52400K300	CORPS HQ	1	2	1	War		0				174		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	6	1	1	Competition		0				175		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	6	2	1	War		0				176		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	1	1	1	Competition		0				177		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	1	2	1	War		0				178		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	2	1	1	Competition		0				179		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	2	2	1	War		0				180		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	1	1	1	Competition		0				181		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	1	2	1	War		0				182		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	7	1	1	Competition		0				183		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	7	2	1	War		0				184		0	0
+DemandRecord	TRUE	63447K000	FWD SPT CO HIMARS	1	1	1	Competition		0				185		0	0
+DemandRecord	TRUE	63447K000	FWD SPT CO HIMARS	1	2	1	War		0				186		0	0
+DemandRecord	TRUE	77250K000	SFAB	4	1	1	Competition		0				187		0	0
+DemandRecord	TRUE	77250K000	SFAB	4	2	1	War		0				188		0	0
+DemandRecord	TRUE	77202K000	"HQ, INF BDE COMBAT TM (IBCT)"	4	1	1	Competition		0				189		0	0
+DemandRecord	TRUE	77202K000	"HQ, INF BDE COMBAT TM (IBCT)"	4	2	1	War		0				190		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	2	1	1	Competition		0				191		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	2	2	1	War		0				192		0	0
+DemandRecord	TRUE	90588KA00	CONTRACTING TM	3	1	1	Competition		0				193		0	0
+DemandRecord	TRUE	90588KA00	CONTRACTING TM	3	2	1	War		0				194		0	0
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	0	1	1	Competition		0				195		0	0
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	2	2	1	War		0				196		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	0	1	1	Competition		0				197		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	2	2	1	War		0				198		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	0	1	1	Competition		0				199		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	1	2	1	War		0				200		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	0	1	1	Competition		0				201		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	2	2	1	War		0				202		0	0
+DemandRecord	TRUE	01655X000	S & S Bn	0	1	1	Competition		0				203		0	0
+DemandRecord	TRUE	01655X000	S & S Bn	6	2	1	War		0				204		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	0	1	1	Competition		0				205		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	1	2	1	War		0				206		0	0
+DemandRecord	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	0	1	1	Competition		0				207		0	0
+DemandRecord	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	1	2	1	War		0				208		0	0
+DemandRecord	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	0	1	1	Competition		0				209		0	0
+DemandRecord	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	1	2	1	War		0				210		0	0
+DemandRecord	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	0	1	1	Competition		0				211		0	0
+DemandRecord	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	1	2	1	War		0				212		0	0
+DemandRecord	TRUE	02543KA00	HQ OF MPU A4	0	1	1	Competition		0				213		0	0
+DemandRecord	TRUE	02543KA00	HQ OF MPU A4	1	2	1	War		0				214		0	0
+DemandRecord	TRUE	03315K000	CBRN CO (HAZARD RESPONSE)	0	1	1	Competition		0				215		0	0
+DemandRecord	TRUE	03315K000	CBRN CO (HAZARD RESPONSE)	7	2	1	War		0				216		0	0
+DemandRecord	TRUE	03396K000	"HHC, CBRN BN"	0	1	1	Competition		0				217		0	0
+DemandRecord	TRUE	03396K000	"HHC, CBRN BN"	2	2	1	War		0				218		0	0
+DemandRecord	TRUE	03413K000	CBRN AS CO (RECAP)	0	1	1	Competition		0				219		0	0
+DemandRecord	TRUE	03413K000	CBRN AS CO (RECAP)	2	2	1	War		0				220		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	0	1	1	Competition		0				221		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	5	2	1	War		0				222		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	0	1	1	Competition		0				223		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	1	2	1	War		0				224		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	0	1	1	Competition		0				225		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	1	2	1	War		0				226		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	0	1	1	Competition		0				227		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	1	2	1	War		0				228		0	0
+DemandRecord	TRUE	05601KA00	ENGR FFTG TM - FFTG HQ	0	1	1	Competition		0				229		0	0
+DemandRecord	TRUE	05601KA00	ENGR FFTG TM - FFTG HQ	1	2	1	War		0				230		0	0
+DemandRecord	TRUE	05601KB00	ENGR FFTG TM - FIRE TRUCK	0	1	1	Competition		0				231		0	0
+DemandRecord	TRUE	05601KB00	ENGR FFTG TM - FIRE TRUCK	5	2	1	War		0				232		0	0
+DemandRecord	TRUE	05611KA00	GEOSPATIAL PLANNING CELL	0	1	1	Competition		0				233		0	0
+DemandRecord	TRUE	05611KA00	GEOSPATIAL PLANNING CELL	1	2	1	War		0				234		0	0
+DemandRecord	TRUE	05611KE00	EXPLOSIVES HAZARDS COORD CELL	0	1	1	Competition		0				235		0	0
+DemandRecord	TRUE	05611KE00	EXPLOSIVES HAZARDS COORD CELL	2	2	1	War		0				236		0	0
+DemandRecord	TRUE	05631KA00	ENGR DIVING TM	0	1	1	Competition		0				237		0	0
+DemandRecord	TRUE	05631KA00	ENGR DIVING TM	1	2	1	War		0				238		0	0
+DemandRecord	TRUE	08300K000	"HQ, MED DET VET SVC SPT"	0	1	1	Competition		0				239		0	0
+DemandRecord	TRUE	08300K000	"HQ, MED DET VET SVC SPT"	1	2	1	War		0				240		0	0
+DemandRecord	TRUE	08420K000	"HHC, MEDICAL BDE"	0	1	1	Competition		0				241		0	0
+DemandRecord	TRUE	08420K000	"HHC, MEDICAL BDE"	3	2	1	War		0				242		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	0	1	1	Competition		0				243		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	1	2	1	War		0				244		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	0	1	1	Competition		0				245		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	1	2	1	War		0				246		0	0
+DemandRecord	TRUE	08453K000	"MED CO, GROUND AMBL"	0	1	1	Competition		0				247		0	0
+DemandRecord	TRUE	08453K000	"MED CO, GROUND AMBL"	2	2	1	War		0				248		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	0	1	1	Competition		0				249		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	6	2	1	War		0				250		0	0
+DemandRecord	TRUE	08460K000	"MED DET, CMBT STRESS CNTRL"	0	1	1	Competition		0				251		0	0
+DemandRecord	TRUE	08460K000	"MED DET, CMBT STRESS CNTRL"	1	2	1	War		0				252		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	0	1	1	Competition		0				253		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	1	2	1	War		0				254		0	0
+DemandRecord	TRUE	08485K000	MEDICAL BN (MULTIFUNCT)	0	1	1	Competition		0				255		0	0
+DemandRecord	TRUE	08485K000	MEDICAL BN (MULTIFUNCT)	2	2	1	War		0				256		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	0	1	1	Competition		0				257		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	3	2	1	War		0				258		0	0
+DemandRecord	TRUE	08567KA00	"MED TM, OPTOMETRY"	0	1	1	Competition		0				259		0	0
+DemandRecord	TRUE	08567KA00	"MED TM, OPTOMETRY"	1	2	1	War		0				260		0	0
+DemandRecord	TRUE	08670K000	MED LOG MGMNT CEN	0	1	1	Competition		0				261		0	0
+DemandRecord	TRUE	08670K000	MED LOG MGMNT CEN	1	2	1	War		0				262		0	0
+DemandRecord	TRUE	08949K000	"MED DET, MINIMAL CARE"	0	1	1	Competition		0				263		0	0
+DemandRecord	TRUE	08949K000	"MED DET, MINIMAL CARE"	1	2	1	War		0				264		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	0	1	1	Competition		0				265		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	1	2	1	War		0				266		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	0	1	1	Competition		0				267		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	4	2	1	War		0				268		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	0	1	1	Competition		0				269		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	1	2	1	War		0				270		0	0
+DemandRecord	TRUE	10527KA00	QM CO HQ (POL)	0	1	1	Competition		0				271		0	0
+DemandRecord	TRUE	10527KA00	QM CO HQ (POL)	1	2	1	War		0				272		0	0
+DemandRecord	TRUE	10527KC00	QM PETRL SPT PLT	0	1	1	Competition		0				273		0	0
+DemandRecord	TRUE	10527KC00	QM PETRL SPT PLT	3	2	1	War		0				274		0	0
+DemandRecord	TRUE	10527KF00	QM ASLT HOSELINE AUG TM	0	1	1	Competition		0				275		0	0
+DemandRecord	TRUE	10527KF00	QM ASLT HOSELINE AUG TM	1	2	1	War		0				276		0	0
+DemandRecord	TRUE	10567KG00	QM TAC WTR DISTR TM (HOSELINE)	0	1	1	Competition		0				277		0	0
+DemandRecord	TRUE	10567KG00	QM TAC WTR DISTR TM (HOSELINE)	1	2	1	War		0				278		0	0
+DemandRecord	TRUE	10579KA00	"QM CO HQ, (SUPPLY)"	0	1	1	Competition		0				279		0	0
+DemandRecord	TRUE	10579KA00	"QM CO HQ, (SUPPLY)"	2	2	1	War		0				280		0	0
+DemandRecord	TRUE	10579KE00	SUPPLY PLT	0	1	1	Competition		0				281		0	0
+DemandRecord	TRUE	10579KE00	SUPPLY PLT	3	2	1	War		0				282		0	0
+DemandRecord	TRUE	10598KA00	QM CO HQ (MA)	0	1	1	Competition		0				283		0	0
+DemandRecord	TRUE	10598KA00	QM CO HQ (MA)	2	2	1	War		0				284		0	0
+DemandRecord	TRUE	10598KB00	MORTUARY AFFAIRS PLT	0	1	1	Competition		0				285		0	0
+DemandRecord	TRUE	10598KB00	MORTUARY AFFAIRS PLT	10	2	1	War		0				286		0	0
+DemandRecord	TRUE	11975K000	EXPED SIGNAL BN (ESB)(RECAP)	0	1	1	Competition		0				287		0	0
+DemandRecord	TRUE	11975K000	EXPED SIGNAL BN (ESB)(RECAP)	3	2	1	War		0				288		0	0
+DemandRecord	TRUE	12567KB00	THTR GATEWAY PA TM	0	1	1	Competition		0				289		0	0
+DemandRecord	TRUE	12567KB00	THTR GATEWAY PA TM	1	2	1	War		0				290		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	0	1	1	Competition		0				291		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	9	2	1	War		0				292		0	0
+DemandRecord	TRUE	19476K000	HHD MP BN	0	1	1	Competition		0				293		0	0
+DemandRecord	TRUE	19476K000	HHD MP BN	2	2	1	War		0				294		0	0
+DemandRecord	TRUE	27523KA00	"HQ, LEGAL OPS DET - MULTI (LOD-M)"	0	1	1	Competition		0				295		0	0
+DemandRecord	TRUE	27523KA00	"HQ, LEGAL OPS DET - MULTI (LOD-M)"	1	2	1	War		0				296		0	0
+DemandRecord	TRUE	27523KB00	LEGAL OPS TM - SPECIAL (LOT-S)	0	1	1	Competition		0				297		0	0
+DemandRecord	TRUE	27523KB00	LEGAL OPS TM - SPECIAL (LOT-S)	1	2	1	War		0				298		0	0
+DemandRecord	TRUE	27523KC00	LEGAL OPS TM - GENERAL (LOT-G)	0	1	1	Competition		0				299		0	0
+DemandRecord	TRUE	27523KC00	LEGAL OPS TM - GENERAL (LOT-G)	1	2	1	War		0				300		0	0
+DemandRecord	TRUE	30702K000	Theater MI Brigade	0	1	1	Competition		0				301		0	0
+DemandRecord	TRUE	30702K000	Theater MI Brigade	1	2	1	War		0				302		0	0
+DemandRecord	TRUE	30705R200	MI Ops BN	0	1	1	Competition		0				303		0	0
+DemandRecord	TRUE	30705R200	MI Ops BN	1	2	1	War		0				304		0	0
+DemandRecord	TRUE	30875K100	MI BN Theatre Support	0	1	1	Competition		0				305		0	0
+DemandRecord	TRUE	30875K100	MI BN Theatre Support	1	2	1	War		0				306		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	0	1	1	Competition		0				307		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	1	2	1	War		0				308		0	0
+DemandRecord	TRUE	33712K200	"HHC, MI INFO SPT GRP (ABN)"	0	1	1	Competition		0				309		0	0
+DemandRecord	TRUE	33712K200	"HHC, MI INFO SPT GRP (ABN)"	1	2	1	War		0				310		0	0
+DemandRecord	TRUE	33725K200	PSYOP REGIONAL BN (ABN)	0	1	1	Competition		0				311		0	0
+DemandRecord	TRUE	33725K200	PSYOP REGIONAL BN (ABN)	1	2	1	War		0				312		0	0
+DemandRecord	TRUE	33757K100	PSYOP DISSEM BN (ABN) (RECAP)	0	1	1	Competition		0				313		0	0
+DemandRecord	TRUE	33757K100	PSYOP DISSEM BN (ABN) (RECAP)	1	2	1	War		0				314		0	0
+DemandRecord	TRUE	37342R200	"HHC, MAN ENHANCE BDE (MEB)"	0	1	1	Competition		0				315		0	0
+DemandRecord	TRUE	37342R200	"HHC, MAN ENHANCE BDE (MEB)"	3	2	1	War		0				316		0	0
+DemandRecord	TRUE	37800K000	WMD COORD TM-A (CBRNE)	0	1	1	Competition		0				317		0	0
+DemandRecord	TRUE	37800K000	WMD COORD TM-A (CBRNE)	1	2	1	War		0				318		0	0
+DemandRecord	TRUE	40702K000	"HHB, GMD Brigade"	0	1	1	Competition		0				319		0	0
+DemandRecord	TRUE	40702K000	"HHB, GMD Brigade"	1	2	1	War		0				320		0	0
+DemandRecord	TRUE	40802K000	"HHC, Space Brigade"	0	1	1	Competition		0				321		0	0
+DemandRecord	TRUE	40802K000	"HHC, Space Brigade"	1	2	1	War		0				322		0	0
+DemandRecord	TRUE	40795K000	GMD Battalion	0	1	1	Competition		0				323		0	0
+DemandRecord	TRUE	40795K000	GMD Battalion	1	2	1	War		0				324		0	0
+DemandRecord	TRUE	40806K000	"HHC, Space Battalion"	0	1	1	Competition		0				325		0	0
+DemandRecord	TRUE	40806K000	"HHC, Space Battalion"	1	2	1	War		0				326		0	0
+DemandRecord	TRUE	40793K000	FW Based Mode Radar	0	1	1	Competition		0				327		0	0
+DemandRecord	TRUE	40793K000	FW Based Mode Radar	5	2	1	War		0				328		0	0
+DemandRecord	TRUE	40820K000	Theater Missile Warning Co	0	1	1	Competition		0				329		0	0
+DemandRecord	TRUE	40820K000	Theater Missile Warning Co	1	2	1	War		0				330		0	0
+DemandRecord	TRUE	41737K100	CA CO (CA BN) (ABN)	0	1	1	Competition		0				331		0	0
+DemandRecord	TRUE	41737K100	CA CO (CA BN) (ABN)	1	2	1	War		0				332		0	0
+DemandRecord	TRUE	41740K000	"HHC, CIVIL AFFAIRS BN (ABN)"	0	1	1	Competition		0				333		0	0
+DemandRecord	TRUE	41740K000	"HHC, CIVIL AFFAIRS BN (ABN)"	1	2	1	War		0				334		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO	0	1	1	Competition		0				335		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO	3	2	1	War		0				336		0	0
+DemandRecord	TRUE	44601R600	ARMY AIR & MSL DEFENSE CMD HQS	0	1	1	Competition		0				337		0	0
+DemandRecord	TRUE	44601R600	ARMY AIR & MSL DEFENSE CMD HQS	1	2	1	War		0				338		0	0
+DemandRecord	TRUE	44602K000	ADA BDE HQS (THTR)	0	1	1	Competition		0				339		0	0
+DemandRecord	TRUE	44602K000	ADA BDE HQS (THTR)	1	2	1	War		0				340		0	0
+DemandRecord	TRUE	44635K000	ADA BN (PATRIOT)	0	1	1	Competition		0				341		0	0
+DemandRecord	TRUE	44635K000	ADA BN (PATRIOT)	1	2	1	War		0				342		0	0
+DemandRecord	TRUE	44655K000	ADA BN (AVENGER)	1	1	1	Competition		0				343		0	0
+DemandRecord	TRUE	44655K000	ADA BN (AVENGER)	1	2	1	War		0				344		0	0
+DemandRecord	TRUE	45423K000	THTR PUBLIC AFF SPT ELMT	0	1	1	Competition		0				345		0	0
+DemandRecord	TRUE	45423K000	THTR PUBLIC AFF SPT ELMT	1	2	1	War		0				346		0	0
+DemandRecord	TRUE	45503KB00	PUBLIC AFFAIRS DET	0	1	1	Competition		0				347		0	0
+DemandRecord	TRUE	45503KB00	PUBLIC AFFAIRS DET	2	2	1	War		0				348		0	0
+DemandRecord	TRUE	55423K000	COMPOSITE TRK CO LIGHT	0	1	1	Competition		0				349		0	0
+DemandRecord	TRUE	55423K000	COMPOSITE TRK CO LIGHT	2	2	1	War		0				350		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	0	1	1	Competition		0				351		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	4	2	1	War		0				352		0	0
+DemandRecord	TRUE	55643K300	T MDM TRK CO PLS	0	1	1	Competition		0				353		0	0
+DemandRecord	TRUE	55643K300	T MDM TRK CO PLS	2	2	1	War		0				354		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	0	1	1	Competition		0				355		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	3	2	1	War		0				356		0	0
+DemandRecord	TRUE	55763K000	HARBORMASTER  DET	0	1	1	Competition		0				357		0	0
+DemandRecord	TRUE	55763K000	HARBORMASTER  DET	1	2	1	War		0				358		0	0
+DemandRecord	TRUE	55883K000	LOGISTICS SPT VESSEL	0	1	1	Competition		0				359		0	0
+DemandRecord	TRUE	55883K000	LOGISTICS SPT VESSEL	1	2	1	War		0				360		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	0	1	1	Competition		0				361		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	1	2	1	War		0				362		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	0	1	1	Competition		0				363		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	2	2	1	War		0				364		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	0	1	1	Competition		0				365		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	3	2	1	War		0				366		0	0
+DemandRecord	TRUE	77202K000	IBCT	2	1	1	Competition		0				367		0	0
+DemandRecord	TRUE	77202K000	IBCT	14	2	1	War		0				368		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	0	1	1	Competition		0				369		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	4	2	1	War		0				370		0	0
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	4	1	1	Competition		0				371		0	0
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	2	2	1	War		0				372		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	4	1	1	Competition		0				373		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	2	2	1	War		0				374		0	0
+DemandRecord	TRUE	01285K000	ATK/RECON BN (24x AH-64)	3	1	1	Competition		0				375		0	0
+DemandRecord	TRUE	01285K000	ATK/RECON BN (24x AH-64)	1	2	1	War		0				376		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	4	1	1	Competition		0				377		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	2	2	1	War		0				378		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	4	1	1	Competition		0				379		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	2	2	1	War		0				380		0	0
+DemandRecord	TRUE	01605K200	THTR AVN BN (FW) (RECAP)	1	1	1	Competition		0				381		0	0
+DemandRecord	TRUE	01605K200	THTR AVN BN (FW) (RECAP)	1	2	1	War		0				382		0	0
+DemandRecord	TRUE	01623K000	AIRFIELD OPS BN (AOB)	3	1	1	Competition		0				383		0	0
+DemandRecord	TRUE	01623K000	AIRFIELD OPS BN (AOB)	2	2	1	War		0				384		0	0
+DemandRecord	TRUE	01707K000	GRAY EAGLE UAS CO  (MQ-1C) (SEP)	1	1	1	Competition		0				385		0	0
+DemandRecord	TRUE	01707K000	GRAY EAGLE UAS CO  (MQ-1C) (SEP)	1	2	1	War		0				386		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	1	1	1	Competition		0				387		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	1	2	1	War		0				388		0	0
+DemandRecord	TRUE	01980G000	THTR AVN SUST MAINT GRP (TASMG)	1	1	1	Competition		0				389		0	0
+DemandRecord	TRUE	01980G000	THTR AVN SUST MAINT GRP (TASMG)	1	2	1	War		0				390		0	0
+DemandRecord	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	3	1	1	Competition		0				391		0	0
+DemandRecord	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	1	2	1	War		0				392		0	0
+DemandRecord	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	5	1	1	Competition		0				393		0	0
+DemandRecord	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	1	2	1	War		0				394		0	0
+DemandRecord	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	4	1	1	Competition		0				395		0	0
+DemandRecord	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	1	2	1	War		0				396		0	0
+DemandRecord	TRUE	03315K000	CBRN CO (HAZARD RESPONSE)	4	1	1	Competition		0				397		0	0
+DemandRecord	TRUE	03315K000	CBRN CO (HAZARD RESPONSE)	4	2	1	War		0				398		0	0
+DemandRecord	TRUE	03323K000	CBRN CO (TE)	1	1	1	Competition		0				399		0	0
+DemandRecord	TRUE	03323K000	CBRN CO (TE)	1	2	1	War		0				400		0	0
+DemandRecord	TRUE	03396K000	"HHC, CBRN BN"	5	1	1	Competition		0				401		0	0
+DemandRecord	TRUE	03396K000	"HHC, CBRN BN"	2	2	1	War		0				402		0	0
+DemandRecord	TRUE	03453K000	CBRN Coordination Element	2	1	1	Competition		0				403		0	0
+DemandRecord	TRUE	03453K000	CBRN Coordination Element	1	2	1	War		0				404		0	0
+DemandRecord	TRUE	05330K400	MAC	6	1	1	Competition		0				405		0	0
+DemandRecord	TRUE	05330K400	MAC	1	2	1	War		0				406		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	14	1	1	Competition		0				407		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	1	2	1	War		0				408		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	6	1	1	Competition		0				409		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	1	2	1	War		0				410		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	23	1	1	Competition		0				411		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	1	2	1	War		0				412		0	0
+DemandRecord	TRUE	05430K000	Engineer Support Company	1	1	1	Competition		0				413		0	0
+DemandRecord	TRUE	05430K000	Engineer Support Company	1	2	1	War		0				414		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	21	1	1	Competition		0				415		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	2	2	1	War		0				416		0	0
+DemandRecord	TRUE	05473K000	MRBC	4	1	1	Competition		0				417		0	0
+DemandRecord	TRUE	05473K000	MRBC	1	2	1	War		0				418		0	0
+DemandRecord	TRUE	05611KA00	GEOSPATIAL PLANNING CELL	1	1	1	Competition		0				419		0	0
+DemandRecord	TRUE	05611KA00	GEOSPATIAL PLANNING CELL	1	2	1	War		0				420		0	0
+DemandRecord	TRUE	05611KD00	FWD ENG SPT TM ADV (FEST-A)	1	1	1	Competition		0				421		0	0
+DemandRecord	TRUE	05611KD00	FWD ENG SPT TM ADV (FEST-A)	1	2	1	War		0				422		0	0
+DemandRecord	TRUE	05611KF00	CONSTR MGT TM	6	1	1	Competition		0				423		0	0
+DemandRecord	TRUE	05611KF00	CONSTR MGT TM	1	2	1	War		0				424		0	0
+DemandRecord	TRUE	05613K000	ENGR FACILITY DET	3	1	1	Competition		0				425		0	0
+DemandRecord	TRUE	05613K000	ENGR FACILITY DET	1	2	1	War		0				426		0	0
+DemandRecord	TRUE	05631KA00	ENGR DIVING TM	1	1	1	Competition		0				427		0	0
+DemandRecord	TRUE	05631KA00	ENGR DIVING TM	1	2	1	War		0				428		0	0
+DemandRecord	TRUE	06333K000	HHB DIVISION ARTILLERY	2	1	1	Competition		0				429		0	0
+DemandRecord	TRUE	06333K000	HHB DIVISION ARTILLERY	1	2	1	War		0				430		0	0
+DemandRecord	TRUE	06433K000	HHB FIELD ARTILLERY BDE	3	1	1	Competition		0				431		0	0
+DemandRecord	TRUE	06433K000	HHB FIELD ARTILLERY BDE	2	2	1	War		0				432		0	0
+DemandRecord	TRUE	06455K000	"FA BN, EAB 155SP"	3	1	1	Competition		0				433		0	0
+DemandRecord	TRUE	06455K000	"FA BN, EAB 155SP"	2	2	1	War		0				434		0	0
+DemandRecord	TRUE	06465K000	"MLRS BN (FIRES, WO/FSC)(RECAP)"	5	1	1	Competition		0				435		0	0
+DemandRecord	TRUE	06465K000	"MLRS BN (FIRES, WO/FSC)(RECAP)"	3	2	1	War		0				436		0	0
+DemandRecord	TRUE	06475K000	HIMARS BN (WO/FSC)(RECAP)	4	1	1	Competition		0				437		0	0
+DemandRecord	TRUE	06475K000	HIMARS BN (WO/FSC)(RECAP)	1	2	1	War		0				438		0	0
+DemandRecord	TRUE	06602K000	BTL FLD COORD DET	3	1	1	Competition		0				439		0	0
+DemandRecord	TRUE	06602K000	BTL FLD COORD DET	2	2	1	War		0				440		0	0
+DemandRecord	TRUE	06603K000	LNO Det (RECON)	1	1	1	Competition		0				441		0	0
+DemandRecord	TRUE	06603K000	LNO Det (RECON)	1	2	1	War		0				442		0	0
+DemandRecord	TRUE	06604K000	LNO Det (Ground)	7	1	1	Competition		0				443		0	0
+DemandRecord	TRUE	06604K000	LNO Det (Ground)	4	2	1	War		0				444		0	0
+DemandRecord	TRUE	08300K000	Vet Services Det	3	1	1	Competition		0				445		0	0
+DemandRecord	TRUE	08300K000	Vet Services Det	1	2	1	War		0				446		0	0
+DemandRecord	TRUE	08420K000	"HHC, MEDICAL BDE"	3	1	1	Competition		0				447		0	0
+DemandRecord	TRUE	08420K000	"HHC, MEDICAL BDE"	2	2	1	War		0				448		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	7	1	1	Competition		0				449		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	3	2	1	War		0				450		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	2	1	1	Competition		0				451		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	1	2	1	War		0				452		0	0
+DemandRecord	TRUE	08453K000	"MED CO, GROUND AMBL"	3	1	1	Competition		0				453		0	0
+DemandRecord	TRUE	08453K000	"MED CO, GROUND AMBL"	2	2	1	War		0				454		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	8	1	1	Competition		0				455		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	2	2	1	War		0				456		0	0
+DemandRecord	TRUE	08460K000	"MED DET, CMBT STRESS CNTRL"	3	1	1	Competition		0				457		0	0
+DemandRecord	TRUE	08460K000	"MED DET, CMBT STRESS CNTRL"	1	2	1	War		0				458		0	0
+DemandRecord	TRUE	08473K000	DENTAL CO (AREA SPT)	4	1	1	Competition		0				459		0	0
+DemandRecord	TRUE	08473K000	DENTAL CO (AREA SPT)	2	2	1	War		0				460		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	4	1	1	Competition		0				461		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	2	2	1	War		0				462		0	0
+DemandRecord	TRUE	08485K000	MEDICAL BN (MULTIFUNCT)	4	1	1	Competition		0				463		0	0
+DemandRecord	TRUE	08485K000	MEDICAL BN (MULTIFUNCT)	1	2	1	War		0				464		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	4	1	1	Competition		0				465		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	1	2	1	War		0				466		0	0
+DemandRecord	TRUE	08567KA00	"MED TM, OPTOMETRY"	4	1	1	Competition		0				467		0	0
+DemandRecord	TRUE	08567KA00	"MED TM, OPTOMETRY"	2	2	1	War		0				468		0	0
+DemandRecord	TRUE	08668K000	AREA MEDICAL LAB	1	1	1	Competition		0				469		0	0
+DemandRecord	TRUE	08668K000	AREA MEDICAL LAB	1	2	1	War		0				470		0	0
+DemandRecord	TRUE	08976K000	HHD HOSPITAL CTR	3	1	1	Competition		0				471		0	0
+DemandRecord	TRUE	08976K000	HHD HOSPITAL CTR	1	2	1	War		0				472		0	0
+DemandRecord	TRUE	08977K000	HOSPITAL AUG DET (SURG 24 BED)	2	1	1	Competition		0				473		0	0
+DemandRecord	TRUE	08977K000	HOSPITAL AUG DET (SURG 24 BED)	1	2	1	War		0				474		0	0
+DemandRecord	TRUE	08978K000	HOSPITAL AUG DET (MED 32 BED)	4	1	1	Competition		0				475		0	0
+DemandRecord	TRUE	08978K000	HOSPITAL AUG DET (MED 32 BED)	2	2	1	War		0				476		0	0
+DemandRecord	TRUE	08979K000	HOSPITAL AUG DET (ICW 60 BED)	5	1	1	Competition		0				477		0	0
+DemandRecord	TRUE	08979K000	HOSPITAL AUG DET (ICW 60 BED)	2	2	1	War		0				478		0	0
+DemandRecord	TRUE	08988K000	FIELD HOSPITAL (32 BED)	6	1	1	Competition		0				479		0	0
+DemandRecord	TRUE	08988K000	FIELD HOSPITAL (32 BED)	3	2	1	War		0				480		0	0
+DemandRecord	TRUE	09513KB00	MOD AMMO PLT	7	1	1	Competition		0				481		0	0
+DemandRecord	TRUE	09513KB00	MOD AMMO PLT	1	2	1	War		0				482		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	8	1	1	Competition		0				483		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	2	2	1	War		0				484		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	26	1	1	Competition		0				485		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	7	2	1	War		0				486		0	0
+DemandRecord	TRUE	10433K000	CORPS AERIAL DELIVERY CO	1	1	1	Competition		0				487		0	0
+DemandRecord	TRUE	10433K000	CORPS AERIAL DELIVERY CO	1	2	1	War		0				488		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	2	1	1	Competition		0				489		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	1	2	1	War		0				490		0	0
+DemandRecord	TRUE	10527KB00	BASE PETRL LAB TM	2	1	1	Competition		0				491		0	0
+DemandRecord	TRUE	10527KB00	BASE PETRL LAB TM	1	2	1	War		0				492		0	0
+DemandRecord	TRUE	10527KM00	QM PETRL LIAISON TM	3	1	1	Competition		0				493		0	0
+DemandRecord	TRUE	10527KM00	QM PETRL LIAISON TM	1	2	1	War		0				494		0	0
+DemandRecord	TRUE	10579KA00	Supply Co HQ	9	1	1	Competition		0				495		0	0
+DemandRecord	TRUE	10579KA00	Supply Co HQ	1	2	1	War		0				496		0	0
+DemandRecord	TRUE	10579KE00	Supply Plt	32	1	1	Competition		0				497		0	0
+DemandRecord	TRUE	10579KE00	Supply Plt	3	2	1	War		0				498		0	0
+DemandRecord	TRUE	10598KB00	MORTUARY AFFAIRS PLT	2	1	1	Competition		0				499		0	0
+DemandRecord	TRUE	10598KB00	MORTUARY AFFAIRS PLT	1	2	1	War		0				500		0	0
+DemandRecord	TRUE	11623K000	TACT INSTL/NETWKNG CO	1	1	1	Competition		0				501		0	0
+DemandRecord	TRUE	11623K000	TACT INSTL/NETWKNG CO	1	2	1	War		0				502		0	0
+DemandRecord	TRUE	11632K000	"HHC, THEATER TAC SIG BDE"	1	1	1	Competition		0				503		0	0
+DemandRecord	TRUE	11632K000	"HHC, THEATER TAC SIG BDE"	1	2	1	War		0				504		0	0
+DemandRecord	TRUE	11975K000	EXPED SIGNAL BN (ESB)(RECAP)	6	1	1	Competition		0				505		0	0
+DemandRecord	TRUE	11975K000	EXPED SIGNAL BN (ESB)(RECAP)	2	2	1	War		0				506		0	0
+DemandRecord	TRUE	12413K000	HUMAN RESOURCES CO HQ	7	1	1	Competition		0				507		0	0
+DemandRecord	TRUE	12413K000	HUMAN RESOURCES CO HQ	2	2	1	War		0				508		0	0
+DemandRecord	TRUE	12567KB00	THTR GATEWAY PA TM	3	1	1	Competition		0				509		0	0
+DemandRecord	TRUE	12567KB00	THTR GATEWAY PA TM	1	2	1	War		0				510		0	0
+DemandRecord	TRUE	12567KE00	POSTAL PLT	24	1	1	Competition		0				511		0	0
+DemandRecord	TRUE	12567KE00	POSTAL PLT	5	2	1	War		0				512		0	0
+DemandRecord	TRUE	12567KK00	HUMAN RESOURCES PLT	12	1	1	Competition		0				513		0	0
+DemandRecord	TRUE	12567KK00	HUMAN RESOURCES PLT	5	2	1	War		0				514		0	0
+DemandRecord	TRUE	12682K000	HUMAN RESOURCES SUST CTR	2	1	1	Competition		0				515		0	0
+DemandRecord	TRUE	12682K000	HUMAN RESOURCES SUST CTR	1	2	1	War		0				516		0	0
+DemandRecord	TRUE	14423K000	"HQ, FINANCIAL MGT CO"	5	1	1	Competition		0				517		0	0
+DemandRecord	TRUE	14423K000	"HQ, FINANCIAL MGT CO"	2	2	1	War		0				518		0	0
+DemandRecord	TRUE	14527KB00	FINANCE MGT DET	18	1	1	Competition		0				519		0	0
+DemandRecord	TRUE	14527KB00	FINANCE MGT DET	5	2	1	War		0				520		0	0
+DemandRecord	TRUE	14537K000	FINANCIAL MGT CNTR	2	1	1	Competition		0				521		0	0
+DemandRecord	TRUE	14537K000	FINANCIAL MGT CNTR	1	2	1	War		0				522		0	0
+DemandRecord	TRUE	16503KB00	CHAPLAIN DET B	9	1	1	Competition		0				523		0	0
+DemandRecord	TRUE	16503KB00	CHAPLAIN DET B	2	2	1	War		0				524		0	0
+DemandRecord	TRUE	16503KD00	CHAPLAIN DET D	4	1	1	Competition		0				525		0	0
+DemandRecord	TRUE	16503KD00	CHAPLAIN DET D	2	2	1	War		0				526		0	0
+DemandRecord	TRUE	19436KA00	MWD HQS TM	14	1	1	Competition		0				527		0	0
+DemandRecord	TRUE	19436KA00	MWD HQS TM	3	2	1	War		0				528		0	0
+DemandRecord	TRUE	19436KB00	MWD SQUAD	33	1	1	Competition		0				529		0	0
+DemandRecord	TRUE	19436KB00	MWD SQUAD	7	2	1	War		0				530		0	0
+DemandRecord	TRUE	19436KC00	MWD PDDD TRACKING TM	22	1	1	Competition		0				531		0	0
+DemandRecord	TRUE	19436KC00	MWD PDDD TRACKING TM	4	2	1	War		0				532		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	42	1	1	Competition		0				533		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	8	2	1	War		0				534		0	0
+DemandRecord	TRUE	19476K000	HHD MP BN	9	1	1	Competition		0				535		0	0
+DemandRecord	TRUE	19476K000	HHD MP BN	1	2	1	War		0				536		0	0
+DemandRecord	TRUE	19543RE00	Camp Liaison	5	1	1	Competition		0				537		0	0
+DemandRecord	TRUE	19543RE00	Camp Liaison	5	2	1	War		0				538		0	0
+DemandRecord	TRUE	19646K000	"HHC, MP DETENTION BN"	1	1	1	Competition		0				539		0	0
+DemandRecord	TRUE	19646K000	"HHC, MP DETENTION BN"	1	2	1	War		0				540		0	0
+DemandRecord	TRUE	19713K000	MP LAW ENFORCEMENT DET	5	1	1	Competition		0				541		0	0
+DemandRecord	TRUE	19713K000	MP LAW ENFORCEMENT DET	1	2	1	War		0				542		0	0
+DemandRecord	TRUE	19883K000	MP DET CID	13	1	1	Competition		0				543		0	0
+DemandRecord	TRUE	19883K000	MP DET CID	2	2	1	War		0				544		0	0
+DemandRecord	TRUE	27583KB00	SENIOR TRIAL DEFENSE TM (STDT)	7	1	1	Competition		0				545		0	0
+DemandRecord	TRUE	27583KB00	SENIOR TRIAL DEFENSE TM (STDT)	1	2	1	War		0				546		0	0
+DemandRecord	TRUE	27583KC00	FIELD TRIAL DEFENSE TM (FTDT)	7	1	1	Competition		0				547		0	0
+DemandRecord	TRUE	27583KC00	FIELD TRIAL DEFENSE TM (FTDT)	1	2	1	War		0				548		0	0
+DemandRecord	TRUE	30702K000	Theater MI Brigade	2	1	1	Competition		0				549		0	0
+DemandRecord	TRUE	30702K000	Theater MI Brigade	2	2	1	War		0				550		0	0
+DemandRecord	TRUE	30705R200	MI Ops BN	3	1	1	Competition		0				551		0	0
+DemandRecord	TRUE	30705R200	MI Ops BN	2	2	1	War		0				552		0	0
+DemandRecord	TRUE	30715K200	MI BN Forward Collect	2	1	1	Competition		0				553		0	0
+DemandRecord	TRUE	30715K200	MI BN Forward Collect	2	2	1	War		0				554		0	0
+DemandRecord	TRUE	30725K100	MI BN Interrogation	1	1	1	Competition		0				555		0	0
+DemandRecord	TRUE	30725K100	MI BN Interrogation	1	2	1	War		0				556		0	0
+DemandRecord	TRUE	30815R300	MIB AE	1	1	1	Competition		0				557		0	0
+DemandRecord	TRUE	30815R300	MIB AE	1	2	1	War		0				558		0	0
+DemandRecord	TRUE	30875K100	MI BN Theatre Support	3	1	1	Competition		0				559		0	0
+DemandRecord	TRUE	30875K100	MI BN Theatre Support	2	2	1	War		0				560		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	2	1	1	Competition		0				561		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	1	2	1	War		0				562		0	0
+DemandRecord	TRUE	33712K100	"HHC, PSYOP GRP (USAR)"	1	1	1	Competition		0				563		0	0
+DemandRecord	TRUE	33712K100	"HHC, PSYOP GRP (USAR)"	1	2	1	War		0				564		0	0
+DemandRecord	TRUE	33725K200	PSYOP REGIONAL BN (ABN)	1	1	1	Competition		0				565		0	0
+DemandRecord	TRUE	33725K200	PSYOP REGIONAL BN (ABN)	1	2	1	War		0				566		0	0
+DemandRecord	TRUE	33757K100	PSYOP DISSEM BN (ABN) (RECAP)	1	1	1	Competition		0				567		0	0
+DemandRecord	TRUE	33757K100	PSYOP DISSEM BN (ABN) (RECAP)	1	2	1	War		0				568		0	0
+DemandRecord	TRUE	34425K000	EXPEDITIONARY MI BN	1	1	1	Competition		0				569		0	0
+DemandRecord	TRUE	34425K000	EXPEDITIONARY MI BN	1	2	1	War		0				570		0	0
+DemandRecord	TRUE	34645K300	MI BN Linguist	1	1	1	Competition		0				571		0	0
+DemandRecord	TRUE	34645K300	MI BN Linguist	1	2	1	War		0				572		0	0
+DemandRecord	TRUE	37342R200	"HHC, MAN ENHANCE BDE (MEB)"	2	1	1	Competition		0				573		0	0
+DemandRecord	TRUE	37342R200	"HHC, MAN ENHANCE BDE (MEB)"	1	2	1	War		0				574		0	0
+DemandRecord	TRUE	40500KA00	ARMY SPACE SPT TM	6	1	1	Competition		0				575		0	0
+DemandRecord	TRUE	40500KA00	ARMY SPACE SPT TM	1	2	1	War		0				576		0	0
+DemandRecord	TRUE	41737K100	CA CO (CA BN) (ABN)	2	1	1	Competition		0				577		0	0
+DemandRecord	TRUE	41737K100	CA CO (CA BN) (ABN)	1	2	1	War		0				578		0	0
+DemandRecord	TRUE	41750K000	CIVIL AFFAIRS CO (USAR) (RECAP)	11	1	1	Competition		0				579		0	0
+DemandRecord	TRUE	41750K000	CIVIL AFFAIRS CO (USAR) (RECAP)	1	2	1	War		0				580		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO HQ	2	1	1	Competition		0				581		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO HQ	2	2	1	War		0				582		0	0
+DemandRecord	TRUE	43547RA00	AREA TMDE SPT TM	11	1	1	Competition		0				583		0	0
+DemandRecord	TRUE	43547RA00	AREA TMDE SPT TM	4	2	1	War		0				584		0	0
+DemandRecord	TRUE	44601R600	ARMY AIR & MSL DEFENSE CMD HQS	2	1	1	Competition		0				585		0	0
+DemandRecord	TRUE	44601R600	ARMY AIR & MSL DEFENSE CMD HQS	1	2	1	War		0				586		0	0
+DemandRecord	TRUE	44602K000	ADA BDE HQS (THTR)	5	1	1	Competition		0				587		0	0
+DemandRecord	TRUE	44602K000	ADA BDE HQS (THTR)	3	2	1	War		0				588		0	0
+DemandRecord	TRUE	44615K600	M-SHORAD Bn	3	1	1	Competition		0				589		0	0
+DemandRecord	TRUE	44615K600	M-SHORAD Bn	2	2	1	War		0				590		0	0
+DemandRecord	TRUE	44635K000	ADA BN (PATRIOT)	15	1	1	Competition		0				591		0	0
+DemandRecord	TRUE	44635K000	ADA BN (PATRIOT)	7	2	1	War		0				592		0	0
+DemandRecord	TRUE	44693K000	ADA BTRY (THAAD)(SEPARATE)	3	1	1	Competition		0				593		0	0
+DemandRecord	TRUE	44693K000	ADA BTRY (THAAD)(SEPARATE)	3	2	1	War		0				594		0	0
+DemandRecord	TRUE	45503KB00	PUBLIC AFFAIRS DET	7	1	1	Competition		0				595		0	0
+DemandRecord	TRUE	45503KB00	PUBLIC AFFAIRS DET	1	2	1	War		0				596		0	0
+DemandRecord	TRUE	47112K000	SBCT	1	1	1	Competition		0				597		0	0
+DemandRecord	TRUE	47112K000	SBCT	0	2	1	War		0				598		0	0
+DemandRecord	TRUE	51100K100	"HQ AND HQ BN, EIGHTH ARMY"	1	1	1	Competition		0				599		0	0
+DemandRecord	TRUE	51100K100	"HQ AND HQ BN, EIGHTH ARMY"	1	2	1	War		0				600		0	0
+DemandRecord	TRUE	51100KTDA	EIGHTH ARMY TDA AUG +	1	1	1	Competition		0				601		0	0
+DemandRecord	TRUE	51100KTDA	EIGHTH ARMY TDA AUG +	1	2	1	War		0				602		0	0
+DemandRecord	TRUE	51632K000	"HHD, REGIONAL SPT GRP"	8	1	1	Competition		0				603		0	0
+DemandRecord	TRUE	51632K000	"HHD, REGIONAL SPT GRP"	3	2	1	War		0				604		0	0
+DemandRecord	TRUE	51659R000	DIGITAL LIASON DET	3	1	1	Competition		0				605		0	0
+DemandRecord	TRUE	51659R000	DIGITAL LIASON DET	1	2	1	War		0				606		0	0
+DemandRecord	TRUE	52400K300	CORPS HQ	1	1	1	Competition		0				607		0	0
+DemandRecord	TRUE	52400K300	CORPS HQ	0	2	1	War		0				608		0	0
+DemandRecord	TRUE	55433K000	COMPOSITE TRK CO HVY	2	1	1	Competition		0				609		0	0
+DemandRecord	TRUE	55433K000	COMPOSITE TRK CO HVY	1	2	1	War		0				610		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	29	1	1	Competition		0				611		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	7	2	1	War		0				612		0	0
+DemandRecord	TRUE	55509K000	Theater Movement	2	1	1	Competition		0				613		0	0
+DemandRecord	TRUE	55509K000	Theater Movement	1	2	1	War		0				614		0	0
+DemandRecord	TRUE	55606K000	"HHD, MVT CTL BN (EAC)"	5	1	1	Competition		0				615		0	0
+DemandRecord	TRUE	55606K000	"HHD, MVT CTL BN (EAC)"	2	2	1	War		0				616		0	0
+DemandRecord	TRUE	55663K000	CBT HET CO	3	1	1	Competition		0				617		0	0
+DemandRecord	TRUE	55663K000	CBT HET CO	2	2	1	War		0				618		0	0
+DemandRecord	TRUE	55706K000	"HHD, TRANS TERM BN"	2	1	1	Competition		0				619		0	0
+DemandRecord	TRUE	55706K000	"HHD, TRANS TERM BN"	1	2	1	War		0				620		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	7	1	1	Competition		0				621		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	2	2	1	War		0				622		0	0
+DemandRecord	TRUE	55763K000	 HARBORMASTER  DET	3	1	1	Competition		0				623		0	0
+DemandRecord	TRUE	55763K000	 HARBORMASTER  DET	1	2	1	War		0				624		0	0
+DemandRecord	TRUE	55823K000	HEAVY WATERCRAFT CO	3	1	1	Competition		0				625		0	0
+DemandRecord	TRUE	55823K000	HEAVY WATERCRAFT CO	2	2	1	War		0				626		0	0
+DemandRecord	TRUE	55883K000	LOGISTICS SPT VESSEL	2	1	1	Competition		0				627		0	0
+DemandRecord	TRUE	55883K000	LOGISTICS SPT VESSEL	1	2	1	War		0				628		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	8	1	1	Competition		0				629		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	2	2	1	War		0				630		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	4	1	1	Competition		0				631		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	2	2	1	War		0				632		0	0
+DemandRecord	TRUE	63406K000	BSB HQ FA BDE	2	1	1	Competition		0				633		0	0
+DemandRecord	TRUE	63406K000	BSB HQ FA BDE	1	2	1	War		0				634		0	0
+DemandRecord	TRUE	63407K000	"FWD SPT CO, MLRS (2X8)"	5	1	1	Competition		0				635		0	0
+DemandRecord	TRUE	63407K000	"FWD SPT CO, MLRS (2X8)"	3	2	1	War		0				636		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	10	1	1	Competition		0				637		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	3	2	1	War		0				638		0	0
+DemandRecord	TRUE	63472K000	ARMY FIELD SPT BDE (AFSB)	2	1	1	Competition		0				639		0	0
+DemandRecord	TRUE	63472K000	ARMY FIELD SPT BDE (AFSB)	1	2	1	War		0				640		0	0
+DemandRecord	TRUE	63602K000	EXPEDIT SUST CMD	3	1	1	Competition		0				641		0	0
+DemandRecord	TRUE	63602K000	EXPEDIT SUST CMD	2	2	1	War		0				642		0	0
+DemandRecord	TRUE	77202K000	IBCT	6	1	1	Competition		0				643		0	0
+DemandRecord	TRUE	77202K000	IBCT	4	2	1	War		0				644		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	3	1	1	Competition		0				645		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	1	2	1	War		0				646		0	0
+DemandRecord	TRUE	87312K000	ABCT	4	1	1	Competition		0				647		0	0
+DemandRecord	TRUE	87312K000	ABCT	2	2	1	War		0				648		0	0
+DemandRecord	TRUE	90376K000	HQ CONTRACTING BN	6	1	1	Competition		0				649		0	0
+DemandRecord	TRUE	90376K000	HQ CONTRACTING BN	1	2	1	War		0				650		0	0
+DemandRecord	TRUE	90588KA00	CONTRACTING TM	25	1	1	Competition		0				651		0	0
+DemandRecord	TRUE	90588KA00	CONTRACTING TM	9	2	1	War		0				652		0	0
+DemandRecord	TRUE	90873K000	CONTRACTING SPT BDE	2	1	1	Competition		0				653		0	0
+DemandRecord	TRUE	90873K000	CONTRACTING SPT BDE	1	2	1	War		0				654		0	0
+DemandRecord	TRUE	01205K000	ASSAULT BN (30x UH-60) (RECAP)	15	2	1	War		0				655		0	0
+DemandRecord	TRUE	01225K000	GEN SPT AVN BN (GSAB) (RECAP)	19	2	1	War		0				656		0	0
+DemandRecord	TRUE	01225K100	GEN SPT AVN BN (GSAB) (RECAP)	4	2	1	War		0				657		0	0
+DemandRecord	TRUE	01285K000	ATK/RECON BN (24x AH-64)	15	2	1	War		0				658		0	0
+DemandRecord	TRUE	01285K100	HEAVY ATK/RECON SQDRN (RECAP)	15	2	1	War		0				659		0	0
+DemandRecord	TRUE	01302K000	"HHC, CBT AVN BDE"	15	2	1	War		0				660		0	0
+DemandRecord	TRUE	01605K200	"HHC, THTR AVN BN (FW)"	1	2	1	War		0				661		0	0
+DemandRecord	TRUE	01607K000	THTR AVN CO (4x C12 / 4x UC-35)	2	2	1	War		0				662		0	0
+DemandRecord	TRUE	01608K000	THTR AVN CO (8x C-12)	1	2	1	War		0				663		0	0
+DemandRecord	TRUE	01612K000	"HHC, THTR AVN BDE (TAB)"	1	2	1	War		0				664		0	0
+DemandRecord	TRUE	01622K000	"HHC, TAOG"	1	2	1	War		0				665		0	0
+DemandRecord	TRUE	01623K000	AIRFIELD OPS BN (AOB)	5	2	1	War		0				666		0	0
+DemandRecord	TRUE	01707K000	GRAY EAGLE UAS CO  (MQ-1C) (SEP)	12	2	1	War		0				667		0	0
+DemandRecord	TRUE	01808G000	GRAY EAGLE UAS CO	2	2	1	War		0				668		0	0
+DemandRecord	TRUE	01825G000	SPECIAL OPNS AVN BN (RECAP)	1	2	1	War		0				669		0	0
+DemandRecord	TRUE	01980G000	THTR AVN SUST MAINT GRP (TASMG)	1	2	1	War		0				670		0	0
+DemandRecord	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	14	2	1	War		0				671		0	0
+DemandRecord	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	28	2	1	War		0				672		0	0
+DemandRecord	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	14	2	1	War		0				673		0	0
+DemandRecord	TRUE	02543KA00	HQ OF MPU A4	14	2	1	War		0				674		0	0
+DemandRecord	TRUE	02553KA00	HQ OF MPU A5	1	2	1	War		0				675		0	0
+DemandRecord	TRUE	03315K000	CBRN CO (HAZARD RESPONSE)	40	2	1	War		0				676		0	0
+DemandRecord	TRUE	03323K000	CBRN CO (TE)	5	2	1	War		0				677		0	0
+DemandRecord	TRUE	03396K000	"HHC, CBRN BN"	13	2	1	War		0				678		0	0
+DemandRecord	TRUE	03413K000	CBRN AS CO (RECAP)	10	2	1	War		0				679		0	0
+DemandRecord	TRUE	03453K000	CBRN COORD DET	1	2	1	War		0				680		0	0
+DemandRecord	TRUE	03423K000	CBRN CO (BIO) (RECAP)	9	2	1	War		0				681		0	0
+DemandRecord	TRUE	03492K000	"HHC, CBRN BDE"	3	2	1	War		0				682		0	0
+DemandRecord	TRUE	03817K000	CBRN RECON DET SF	3	2	1	War		0				683		0	0
+DemandRecord	TRUE	05315K500	"BDE ENG BN (BEB), ABCT (RECAP)"	15	2	1	War		0				684		0	0
+DemandRecord	TRUE	05315K600	"BDE ENG BN (BEB), IBCT (RECAP)"	4	2	1	War		0				685		0	0
+DemandRecord	TRUE	05315K700	"BDE ENG BN (BEB), SBCT (RECAP)"	9	2	1	War		0				686		0	0
+DemandRecord	TRUE	05315K800	"BDE ENG BN (BEB), IBCT ABN (RECAP)"	2	2	1	War		0				687		0	0
+DemandRecord	TRUE	05330K000	SAPPER CO (RECAP)	66	2	1	War		0				688		0	0
+DemandRecord	TRUE	05330K300	CLEARANCE CO (RECAP)	36	2	1	War		0				689		0	0
+DemandRecord	TRUE	05330K400	MOB AUG CO (MAC) (RECAP)	47	2	1	War		0				690		0	0
+DemandRecord	TRUE	05340K000	ENGR CONST CO (ECC) (RECAP)	51	2	1	War		0				691		0	0
+DemandRecord	TRUE	05402K000	"HHC, EN BDE"	17	2	1	War		0				692		0	0
+DemandRecord	TRUE	05420K000	ENG VERT CONST CO (EVCC)	28	2	1	War		0				693		0	0
+DemandRecord	TRUE	05430K000	ENGR SPT CO (RECAP)	17	2	1	War		0				694		0	0
+DemandRecord	TRUE	05435K000	ENGR BN (RECAP)	68	2	1	War		0				695		0	0
+DemandRecord	TRUE	05473K000	MULTIROLE BRIDGE CO	25	2	1	War		0				696		0	0
+DemandRecord	TRUE	05641KB00	CONCRETE SECT	51	2	1	War		0				697		0	0
+DemandRecord	TRUE	05621KA00	"HQ, WELL DRILLING TM"	1	2	1	War		0				698		0	0
+DemandRecord	TRUE	05621KB00	WELL DRILLING TM	4	2	1	War		0				699		0	0
+DemandRecord	TRUE	05631KA00	ENGR DIVING TM	1	2	1	War		0				700		0	0
+DemandRecord	TRUE	05413K000	ENG UTILITIES DET	46	2	1	War		0				701		0	0
+DemandRecord	TRUE	05611KC00	FWD ENG SPT TM MAIN (FEST-M)	1	2	1	War		0				702		0	0
+DemandRecord	TRUE	05611KD00	FWD ENG SPT TM ADV (FEST-A)	12	2	1	War		0				703		0	0
+DemandRecord	TRUE	05601KA00	ENGR FFTG TM - FFTG HQ	12	2	1	War		0				704		0	0
+DemandRecord	TRUE	05601KB00	ENGR FFTG TM - FIRE TRUCK	59	2	1	War		0				705		0	0
+DemandRecord	TRUE	05611KE00	EXPLOSIVES HAZARDS COORD CELL	1	2	1	War		0				706		0	0
+DemandRecord	TRUE	05611KF00	CONSTR MGT TM	17	2	1	War		0				707		0	0
+DemandRecord	TRUE	05611KA00	GEOSPATIAL PLANNING CELL	1	2	1	War		0				708		0	0
+DemandRecord	TRUE	05613K000	ENGR FACILITY DET	8	2	1	War		0				709		0	0
+DemandRecord	TRUE	05615K000	ENG PRIME POWER CO	1	2	1	War		0				710		0	0
+DemandRecord	TRUE	05633K000	ASPHALT DET	14	2	1	War		0				711		0	0
+DemandRecord	TRUE	05623K000	ENG MINE DOG DET	9	2	1	War		0				712		0	0
+DemandRecord	TRUE	05653K000	QUARRY PLT	13	2	1	War		0				713		0	0
+DemandRecord	TRUE	05663K000	AREA CLEARANCE PLT	16	2	1	War		0				714		0	0
+DemandRecord	TRUE	05600K000	DCP  THTR ENG CMD	1	2	1	War		0				715		0	0
+DemandRecord	TRUE	06235K100	"FA BN, COMP (3X6) (IBCT) (RECAP)"	4	2	1	War		0				716		0	0
+DemandRecord	TRUE	06235K300	"FIRES BN, COMP (IBCT) (ABN)"	2	2	1	War		0				717		0	0
+DemandRecord	TRUE	06325K000	"FIRES BN 155T, SBCT (3X6)(RECAP)"	9	2	1	War		0				718		0	0
+DemandRecord	TRUE	06333K000	HHB DIVISION ARTILLERY	9	2	1	War		0				719		0	0
+DemandRecord	TRUE	06385K000	"FIRES BN, 155SP, ABCT (RECAP)"	15	2	1	War		0				720		0	0
+DemandRecord	TRUE	06425K000	"FA BN 155T (3x4, WO/FSC)(RECAP)"	15	2	1	War		0				721		0	0
+DemandRecord	TRUE	06433K000	HHB FIELD ARTILLERY BDE	6	2	1	War		0				722		0	0
+DemandRecord	TRUE	06455K000	FA BN 155SP (3x4 WO/FSC)(RECAP)	15	2	1	War		0				723		0	0
+DemandRecord	TRUE	06465K000	"MLRS BN (FIRES, WO/FSC)(RECAP)"	27	2	1	War		0				724		0	0
+DemandRecord	TRUE	06475K000	HIMARS BN (WO/FSC)(RECAP)	9	2	1	War		0				725		0	0
+DemandRecord	TRUE	06602K000	BTL FLD COORD DET	1	2	1	War		0				726		0	0
+DemandRecord	TRUE	06603K000	AERIAL RECON LNO SPT DET	1	2	1	War		0				727		0	0
+DemandRecord	TRUE	06604K000	GROUND LNO SPT DET	7	2	1	War		0				728		0	0
+DemandRecord	TRUE	07195K000	"INF BN, SBCT (RECAP)"	27	2	1	War		0				729		0	0
+DemandRecord	TRUE	07215K000	"INF BN, IBCT (RECAP)"	12	2	1	War		0				730		0	0
+DemandRecord	TRUE	07215K100	INF BN (IBCT) (ABNE) (RECAP)	6	2	1	War		0				731		0	0
+DemandRecord	TRUE	07315K000	COMBINED ARMS BN (INF) (ABCT)	15	2	1	War		0				732		0	0
+DemandRecord	TRUE	07315K100	COMBINED ARMS BN (ARMOR) (ABCT)	30	2	1	War		0				733		0	0
+DemandRecord	TRUE	07815K000	RANGER BN XXI	2	2	1	War		0				734		0	0
+DemandRecord	TRUE	08420K000	"HHC, MEDICAL BDE"	7	2	1	War		0				735		0	0
+DemandRecord	TRUE	08429K000	"MED DET, PREVENTIVE MED"	29	2	1	War		0				736		0	0
+DemandRecord	TRUE	08430K000	BLOOD SPT DET	3	2	1	War		0				737		0	0
+DemandRecord	TRUE	08453K000	"MED CO, GROUND AMBL"	14	2	1	War		0				738		0	0
+DemandRecord	TRUE	08457K000	MEDICAL CO (AREA SPT)	36	2	1	War		0				739		0	0
+DemandRecord	TRUE	08460K000	"MED DET, CMBT STRESS CNTRL"	12	2	1	War		0				740		0	0
+DemandRecord	TRUE	08473K000	DENTAL CO (AREA SPT)	12	2	1	War		0				741		0	0
+DemandRecord	TRUE	08480K000	MEDICAL LOG CO	19	2	1	War		0				742		0	0
+DemandRecord	TRUE	08485K000	MEDICAL BN (MULTIFUNCT)	21	2	1	War		0				743		0	0
+DemandRecord	TRUE	08300K000	Vet Services Det	8	2	1	War		0				744		0	0
+DemandRecord	TRUE	08516KB00	FOOD PROC & LAB TM	8	2	1	War		0				745		0	0
+DemandRecord	TRUE	08516KC00	VET MED & SURGICAL TM	8	2	1	War		0				746		0	0
+DemandRecord	TRUE	08516KD00	VET SVC SPT TM	40	2	1	War		0				747		0	0
+DemandRecord	TRUE	08527KA00	"HOSP AUG TM, HEAD & NECK"	4	2	1	War		0				748		0	0
+DemandRecord	TRUE	08528KA00	"MED TM, FWD RESUS & SURG"	32	2	1	War		0				749		0	0
+DemandRecord	TRUE	08567KA00	"MED TM, OPTOMETRY"	13	2	1	War		0				750		0	0
+DemandRecord	TRUE	08640K000	"HHC, MED CMD (DPLY SPT)"	1	2	1	War		0				751		0	0
+DemandRecord	TRUE	08668K000	AREA MEDICAL LAB	1	2	1	War		0				752		0	0
+DemandRecord	TRUE	08670K000	MED LOG MGMNT CEN	1	2	1	War		0				753		0	0
+DemandRecord	TRUE	08949K000	"MED DET, MINIMAL CARE"	5	2	1	War		0				754		0	0
+DemandRecord	TRUE	08976K000	HHD HOSPITAL CTR	12	2	1	War		0				755		0	0
+DemandRecord	TRUE	08977K000	HOSPITAL AUG DET (SURG 24 BED)	20	2	1	War		0				756		0	0
+DemandRecord	TRUE	08978K000	HOSPITAL AUG DET (MED 32 BED)	24	2	1	War		0				757		0	0
+DemandRecord	TRUE	08979K000	HOSPITAL AUG DET (ICW 60 BED)	11	2	1	War		0				758		0	0
+DemandRecord	TRUE	08988K000	FIELD HOSPITAL (32 BED)	24	2	1	War		0				759		0	0
+DemandRecord	TRUE	09436K000	"HHD, ORD BN (EOD)"	10	2	1	War		0				760		0	0
+DemandRecord	TRUE	09513KA00	"HQS, MODULAR AMMO ORD CO"	10	2	1	War		0				761		0	0
+DemandRecord	TRUE	09513KB00	MOD AMMO PLT	50	2	1	War		0				762		0	0
+DemandRecord	TRUE	09537KA00	"HQS CO, EOD"	43	2	1	War		0				763		0	0
+DemandRecord	TRUE	09537KB00	EOD PLT	142	2	1	War		0				764		0	0
+DemandRecord	TRUE	09632K000	"HHD, ORD GRP (EOD)"	1	2	1	War		0				765		0	0
+DemandRecord	TRUE	10233K000	BDE AERIAL DELIVERY SPT CO	2	2	1	War		0				766		0	0
+DemandRecord	TRUE	10237KC00	BDE PARACHUTE OFFICE	2	2	1	War		0				767		0	0
+DemandRecord	TRUE	10283K000	DIV AERIAL DELIVERY CO	1	2	1	War		0				768		0	0
+DemandRecord	TRUE	10333K000	DIV PERSONAL PACK CO	1	2	1	War		0				769		0	0
+DemandRecord	TRUE	10337KB00	DIV PARACHUTE OFFICE	9	2	1	War		0				770		0	0
+DemandRecord	TRUE	10417K000	QM PETRL P/L & TML OP CO	4	2	1	War		0				771		0	0
+DemandRecord	TRUE	10433K000	CORPS AERIAL DELIVERY CO	2	2	1	War		0				772		0	0
+DemandRecord	TRUE	10437KA00	CORPS PARACHUTE OFFICE	2	2	1	War		0				773		0	0
+DemandRecord	TRUE	10447K000	QM FLD SVC CO (MOD)	19	2	1	War		0				774		0	0
+DemandRecord	TRUE	10473K000	QM COMP SPLY CO	12	2	1	War		0				775		0	0
+DemandRecord	TRUE	10504K000	FORCE PROVID CO HQ	1	2	1	War		0				776		0	0
+DemandRecord	TRUE	10504KB00	FORCE PROVID SVC & SPT PLT	1	2	1	War		0				777		0	0
+DemandRecord	TRUE	10504KC00	FORCE PROVID PLT (HVY)	2	2	1	War		0				778		0	0
+DemandRecord	TRUE	10504KD00	FORCE PROVID PLT (LT)	4	2	1	War		0				779		0	0
+DemandRecord	TRUE	10527KA00	QM CO HQ (POL)	30	2	1	War		0				780		0	0
+DemandRecord	TRUE	10527KB00	BASE PETRL LAB TM	1	2	1	War		0				781		0	0
+DemandRecord	TRUE	10527KC00	QM PETRL SPT PLT	88	2	1	War		0				782		0	0
+DemandRecord	TRUE	10527KF00	QM ASLT HOSELINE AUG TM	14	2	1	War		0				783		0	0
+DemandRecord	TRUE	10527KG00	QM PIPELINE OPS PLT	1	2	1	War		0				784		0	0
+DemandRecord	TRUE	10527KM00	QM PETRL LIAISON TM	8	2	1	War		0				785		0	0
+DemandRecord	TRUE	10527KN00	THEATER PETRL CTR	1	2	1	War		0				786		0	0
+DemandRecord	TRUE	10557KA00	"HQ, FIELD FEEDING CO"	41	2	1	War		0				787		0	0
+DemandRecord	TRUE	10557KB00	"HQ, FIELD FEEDING PLT"	129	2	1	War		0				788		0	0
+DemandRecord	TRUE	10557KC00	FIELD FEEDING TM	506	2	1	War		0				789		0	0
+DemandRecord	TRUE	10567KA00	QM CO HQS (WATER)	3	2	1	War		0				790		0	0
+DemandRecord	TRUE	10567KC00	QM WATER SPT PLT	14	2	1	War		0				791		0	0
+DemandRecord	TRUE	10567KG00	QM TAC WTR DISTR TM (HOSELINE)	14	2	1	War		0				792		0	0
+DemandRecord	TRUE	10579KA00	"QM CO HQ, (SUPPLY)"	38	2	1	War		0				793		0	0
+DemandRecord	TRUE	10579KE00	SUPPLY PLT	151	2	1	War		0				794		0	0
+DemandRecord	TRUE	10598KA00	QM CO HQ (MA)	4	2	1	War		0				795		0	0
+DemandRecord	TRUE	10598KB00	MORTUARY AFFAIRS PLT	16	2	1	War		0				796		0	0
+DemandRecord	TRUE	10622K000	"HHC, PETROLEUM GRP"	1	2	1	War		0				797		0	0
+DemandRecord	TRUE	10633K000	THEATER AERIAL DELIVERY CO	1	2	1	War		0				798		0	0
+DemandRecord	TRUE	10926K000	"HHD, QM PETRL SPT BN"	13	2	1	War		0				799		0	0
+DemandRecord	TRUE	11307K500	BDE SIGNAL CO (FIB/BFSB)	6	2	1	War		0				800		0	0
+DemandRecord	TRUE	11307K600	BDE SIGNAL CO (MEB/CAB/SB)	17	2	1	War		0				801		0	0
+DemandRecord	TRUE	11623K000	TACT INSTL/NETWKNG CO	2	2	1	War		0				802		0	0
+DemandRecord	TRUE	11632K000	"HHC, THEATER TAC SIG BDE"	4	2	1	War		0				803		0	0
+DemandRecord	TRUE	11693K000	COMCAM CO	1	2	1	War		0				804		0	0
+DemandRecord	TRUE	11975K000	EXPED SIGNAL BN (ESB)(RECAP)	19	2	1	War		0				805		0	0
+DemandRecord	TRUE	12413K000	HUMAN RESOURCES CO HQ	22	2	1	War		0				806		0	0
+DemandRecord	TRUE	12567KA00	MIL MAIL TERM TM	2	2	1	War		0				807		0	0
+DemandRecord	TRUE	12567KB00	THTR GATEWAY PA TM	2	2	1	War		0				808		0	0
+DemandRecord	TRUE	12567KE00	POSTAL PLT	87	2	1	War		0				809		0	0
+DemandRecord	TRUE	12567KK00	HUMAN RESOURCES PLT	19	2	1	War		0				810		0	0
+DemandRecord	TRUE	12567KL00	HUMAN RESOURCES OPS CTR	12	2	1	War		0				811		0	0
+DemandRecord	TRUE	12682K000	HUMAN RESOURCES SUST CTR	1	2	1	War		0				812		0	0
+DemandRecord	TRUE	14423K000	"HQ, FINANCIAL MGT CO"	19	2	1	War		0				813		0	0
+DemandRecord	TRUE	14527KB00	FINANCE MGT DET	82	2	1	War		0				814		0	0
+DemandRecord	TRUE	14537K000	FINANCIAL MGT CNTR	1	2	1	War		0				815		0	0
+DemandRecord	TRUE	16503KA00	CHAPLAIN DET A	1	2	1	War		0				816		0	0
+DemandRecord	TRUE	16503KB00	CHAPLAIN DET B	38	2	1	War		0				817		0	0
+DemandRecord	TRUE	16503KC00	CHAPLAIN DET C	3	2	1	War		0				818		0	0
+DemandRecord	TRUE	16503KD00	CHAPLAIN DET D	9	2	1	War		0				819		0	0
+DemandRecord	TRUE	17195K000	RECON SQDN (SBCT)	9	2	1	War		0				820		0	0
+DemandRecord	TRUE	17215K000	CAV SQDRN (IBCT)	4	2	1	War		0				821		0	0
+DemandRecord	TRUE	17215K100	CAV SQDRN (IBCT)(ABN)	2	2	1	War		0				822		0	0
+DemandRecord	TRUE	17315K000	CAVALRY SQDRN (ABCT)	15	2	1	War		0				823		0	0
+DemandRecord	TRUE	19402K000	"HHC, MP BDE"	12	2	1	War		0				824		0	0
+DemandRecord	TRUE	19436KA00	MWD HQS TM	50	2	1	War		0				825		0	0
+DemandRecord	TRUE	19436KB00	MWD SQUAD	113	2	1	War		0				826		0	0
+DemandRecord	TRUE	19436KC00	MWD PDDD TRACKING TM	61	2	1	War		0				827		0	0
+DemandRecord	TRUE	19473K000	MP CO  CBT SPT	190	2	1	War		0				828		0	0
+DemandRecord	TRUE	19476K000	HHD MP BN	43	2	1	War		0				829		0	0
+DemandRecord	TRUE	19601K000	"HHC, MP CMD"	1	2	1	War		0				830		0	0
+DemandRecord	TRUE	19601KA00	"MP DET, TA DETAINEE REPTNG CTR"	1	2	1	War		0				831		0	0
+DemandRecord	TRUE	19646K000	"HHC, MP DETENTION BN"	7	2	1	War		0				832		0	0
+DemandRecord	TRUE	19653K000	MP DETENTION CO	8	2	1	War		0				833		0	0
+DemandRecord	TRUE	19713K000	MP LAW ENFORCEMENT DET	30	2	1	War		0				834		0	0
+DemandRecord	TRUE	19882K000	"HHD, CID GRP"	1	2	1	War		0				835		0	0
+DemandRecord	TRUE	19883K000	MP DET CID	32	2	1	War		0				836		0	0
+DemandRecord	TRUE	19886K000	"HHD, CID BN"	8	2	1	War		0				837		0	0
+DemandRecord	TRUE	20518KA00	MIL HISTORY DET TM A	1	2	1	War		0				838		0	0
+DemandRecord	TRUE	20518KB00	MIL HISTORY DET TM B	44	2	1	War		0				839		0	0
+DemandRecord	TRUE	20518KC00	MIL HISTORY DET TM C	12	2	1	War		0				840		0	0
+DemandRecord	TRUE	27473K000	SEN SPCL VICTM COUNS TM (S-SVCT)	13	2	1	War		0				841		0	0
+DemandRecord	TRUE	27523KA00	"HQ, LEGAL OPS DET - MULTI (LOD-M)"	13	2	1	War		0				842		0	0
+DemandRecord	TRUE	27523KB00	LEGAL OPS TM - SPECIAL (LOT-S)	33	2	1	War		0				843		0	0
+DemandRecord	TRUE	27523KC00	LEGAL OPS TM - GENERAL (LOT-G)	63	2	1	War		0				844		0	0
+DemandRecord	TRUE	27543KA00	"HQ LEGAL OPS DET, TRIAL DEF(LOD-TD)"	11	2	1	War		0				845		0	0
+DemandRecord	TRUE	27563KA00	"HQ, LEGAL OPS DET - (LOD-J)"	2	2	1	War		0				846		0	0
+DemandRecord	TRUE	27563KB00	SENIOR MIL JUDGE TM (MJT)	1	2	1	War		0				847		0	0
+DemandRecord	TRUE	27563KC00	MIL JUDGE TM -A (MJT-A)	6	2	1	War		0				848		0	0
+DemandRecord	TRUE	27563KD00	MIL JUDGE TM -B (MJT-B)	6	2	1	War		0				849		0	0
+DemandRecord	TRUE	27563KE00	MIL JUDGE TM -C (MJT-C)	7	2	1	War		0				850		0	0
+DemandRecord	TRUE	27573KB00	LEGAL OPS TM - EXPERT TM A	1	2	1	War		0				851		0	0
+DemandRecord	TRUE	27573KC00	LEGAL OPS TM - EXPERT TM B	13	2	1	War		0				852		0	0
+DemandRecord	TRUE	27583KA00	REGIONAL TRIAL DEFENSE TM (RTDT)	14	2	1	War		0				853		0	0
+DemandRecord	TRUE	27583KB00	SENIOR TRIAL DEFENSE TM (STDT)	42	2	1	War		0				854		0	0
+DemandRecord	TRUE	27583KC00	FIELD TRIAL DEFENSE TM (FTDT)	42	2	1	War		0				855		0	0
+DemandRecord	TRUE	27773K000	FIELD SPCL VICTM COUNS TM (S-SVCT)	40	2	1	War		0				856		0	0
+DemandRecord	TRUE	30620R100	MI CO (TECH INTELL)	1	2	1	War		0				857		0	0
+DemandRecord	TRUE	30702K000	HHC MI BDE (TIB)	1	2	1	War		0				858		0	0
+DemandRecord	TRUE	30705R200	MI BN (OPS)	1	2	1	War		0				859		0	0
+DemandRecord	TRUE	30715K200	MI BN (FWD COLLECT)	1	2	1	War		0				860		0	0
+DemandRecord	TRUE	30725K100	MI BN (INTEROG) (JIDC)(RECAP)	1	2	1	War		0				861		0	0
+DemandRecord	TRUE	30815R300	MI BN AERIAL RECON (AEB)(RECAP)	1	2	1	War		0				862		0	0
+DemandRecord	TRUE	30875K100	MI BN (THTR SUP)	1	2	1	War		0				863		0	0
+DemandRecord	TRUE	31715K000	SF BN (PE)	3	2	1	War		0				864		0	0
+DemandRecord	TRUE	31812K000	"HHC, SF GPS (ABN)"	3	2	1	War		0				865		0	0
+DemandRecord	TRUE	31815K000	"SF BN,  SF GP (ABN)"	9	2	1	War		0				866		0	0
+DemandRecord	TRUE	31825K000	SF GRP SPT BN	3	2	1	War		0				867		0	0
+DemandRecord	TRUE	33712K100	"HHC, PSYOP GRP (USAR)"	3	2	1	War		0				868		0	0
+DemandRecord	TRUE	33715K200	PSYOP DISSEM BN (ABN) (RECAP)	0	2	1	War		0				869		0	0
+DemandRecord	TRUE	33725K200	"HSC, PSYOP REGIONAL BN (ABN)"	1	2	1	War		0				870		0	0
+DemandRecord	TRUE	33735K200	MI SPT BN (TACT)	1	2	1	War		0				871		0	0
+DemandRecord	TRUE	33736K100	"H & S CO, PSYOP BN (USAR)"	10	2	1	War		0				872		0	0
+DemandRecord	TRUE	33737K100	TAC PSYOP CO (RECAP) (USAR)	32	2	1	War		0				873		0	0
+DemandRecord	TRUE	33757K100	PSYOP STRAT DISSEM CO (USAR)	3	2	1	War		0				874		0	0
+DemandRecord	TRUE	34402K000	"HHC, EXPEDITIONARY MI BDE"	3	2	1	War		0				875		0	0
+DemandRecord	TRUE	34425K000	EXPEDITIONARY MI BN	6	2	1	War		0				876		0	0
+DemandRecord	TRUE	34645K300	MI BN (LINGUIST)	1	2	1	War		0				877		0	0
+DemandRecord	TRUE	37342R200	"HHC, MAN ENHANCE BDE (MEB)"	10	2	1	War		0				878		0	0
+DemandRecord	TRUE	40500KA00	ARMY SPACE SPT TM	29	2	1	War		0				879		0	0
+DemandRecord	TRUE	40510KC00	SPACE CONTROL DET (E)	3	2	1	War		0				880		0	0
+DemandRecord	TRUE	41730K000	"HHC, CIVIL AFFAIRS BDE (RECAP)"	4	2	1	War		0				881		0	0
+DemandRecord	TRUE	41736K100	"HHC, CIVIL AFFAIRS BN (ABN)"	1	2	1	War		0				882		0	0
+DemandRecord	TRUE	41737K100	CA CO (CA BN) (ABN)	2	2	1	War		0				883		0	0
+DemandRecord	TRUE	41740K000	"HHC, CA BN (TAC)(USAR) (RECAP)"	13	2	1	War		0				884		0	0
+DemandRecord	TRUE	41750K000	CIVIL AFFAIRS CO (USAR) (RECAP)	63	2	1	War		0				885		0	0
+DemandRecord	TRUE	43433K000	SPT MAINT CO HQ	38	2	1	War		0				886		0	0
+DemandRecord	TRUE	43547RA00	AREA TMDE SPT TM	38	2	1	War		0				887		0	0
+DemandRecord	TRUE	44601R600	ARMY AIR & MSL DEFENSE CMD HQS	1	2	1	War		0				888		0	0
+DemandRecord	TRUE	44602K000	ADA BDE HQS (THTR)	8	2	1	War		0				889		0	0
+DemandRecord	TRUE	44615K600	ADA BN (AVENGER/SHORAD)	9	2	1	War		0				890		0	0
+DemandRecord	TRUE	44635K000	ADA BN (PATRIOT)	10	2	1	War		0				891		0	0
+DemandRecord	TRUE	44655K000	ADA BN (IFPC/AVENGER)	17	2	1	War		0				892		0	0
+DemandRecord	TRUE	44693K000	ADA BTRY (THAAD)(SEPARATE)	2	2	1	War		0				893		0	0
+DemandRecord	TRUE	45413K000	MOBILE PUBLIC AFF DET	18	2	1	War		0				894		0	0
+DemandRecord	TRUE	45423K000	THTR PUBLIC AFF SPT ELMT	2	2	1	War		0				895		0	0
+DemandRecord	TRUE	45503KB00	PUBLIC AFFAIRS DET	56	2	1	War		0				896		0	0
+DemandRecord	TRUE	45607K000	BROADCAST PUBLIC AFF DET	2	2	1	War		0				897		0	0
+DemandRecord	TRUE	47110K001	STRYKER BDE COMBAT TM (SBCT) #1	1	2	1	War		0				898		0	0
+DemandRecord	TRUE	47110K002	STRYKER BDE COMBAT TM (SBCT) #2	1	2	1	War		0				899		0	0
+DemandRecord	TRUE	47110K003	STRYKER BDE COMBAT TM (SBCT) #3	1	2	1	War		0				900		0	0
+DemandRecord	TRUE	47110K004	STRYKER BDE COMBAT TM (SBCT) #4	1	2	1	War		0				901		0	0
+DemandRecord	TRUE	47110K005	STRYKER BDE COMBAT TM (SBCT) #5	1	2	1	War		0				902		0	0
+DemandRecord	TRUE	47110K006	STRYKER BDE COMBAT TM (SBCT) #6	1	2	1	War		0				903		0	0
+DemandRecord	TRUE	47110K007	STRYKER BDE COMBAT TM (SBCT) #7	1	2	1	War		0				904		0	0
+DemandRecord	TRUE	47110K008	STRYKER BDE COMBAT TM (SBCT) #8	1	2	1	War		0				905		0	0
+DemandRecord	TRUE	47110K009	STRYKER BDE COMBAT TM (SBCT) #9	1	2	1	War		0				906		0	0
+DemandRecord	TRUE	47112K000	"HHC,  INF BDE (SBCT)"	9	2	1	War		0				907		0	0
+DemandRecord	TRUE	51600K700	HQ (USAREUR)	1	2	1	War		0				908		0	0
+DemandRecord	TRUE	51600KTDA	ARMY HQ TDA AUG +	1	2	1	War		0				909		0	0
+DemandRecord	TRUE	51632K000	"HHD, REGIONAL SPT GRP"	32	2	1	War		0				910		0	0
+DemandRecord	TRUE	51659R000	DIGITAL LIASON DET	2	2	1	War		0				911		0	0
+DemandRecord	TRUE	52400K300	CORPS HQ	3	2	1	War		0				912		0	0
+DemandRecord	TRUE	55423K000	COMPOSITE TRK CO LIGHT	4	2	1	War		0				913		0	0
+DemandRecord	TRUE	55433K000	COMPOSITE TRK CO HVY	8	2	1	War		0				914		0	0
+DemandRecord	TRUE	55508KA00	MOVEMENT CONT TM	94	2	1	War		0				915		0	0
+DemandRecord	TRUE	55509K000	THTR MOVE CONTROL ELMNT (TMCE)	1	2	1	War		0				916		0	0
+DemandRecord	TRUE	55577K000	AUTOMATED CARGO DOC	3	2	1	War		0				917		0	0
+DemandRecord	TRUE	55578K000	EXPED TERM OPNL ELE (ETOE)	3	2	1	War		0				918		0	0
+DemandRecord	TRUE	55606K000	"HHD, MVT CTL BN (EAC)"	13	2	1	War		0				919		0	0
+DemandRecord	TRUE	55609K000	EXPEDIT RAIL CTR (ERC)	1	2	1	War		0				920		0	0
+DemandRecord	TRUE	55633K000	TRANS LIGHT-MDM TRUCK CO	19	2	1	War		0				921		0	0
+DemandRecord	TRUE	55643K200	"T MDM TRK CO (POL, 5000 GAL)"	14	2	1	War		0				922		0	0
+DemandRecord	TRUE	55643K300	T MDM TRK CO PLS	14	2	1	War		0				923		0	0
+DemandRecord	TRUE	55653K100	T MDM TRK CO (CARGO) (EAC)	42	2	1	War		0				924		0	0
+DemandRecord	TRUE	55653K200	"T MDM TRK CO (POL, 5000 GAL)"	48	2	1	War		0				925		0	0
+DemandRecord	TRUE	55663K000	CBT HET CO	5	2	1	War		0				926		0	0
+DemandRecord	TRUE	55702K000	TRANS BDE (EXPED)	1	2	1	War		0				927		0	0
+DemandRecord	TRUE	55706K000	"HHD, TRANS TERM BN"	3	2	1	War		0				928		0	0
+DemandRecord	TRUE	55616K000	"HHD, TRANS MOTOR TRANS BN"	12	2	1	War		0				929		0	0
+DemandRecord	TRUE	55733K000	SEAPORT OPS CO	6	2	1	War		0				930		0	0
+DemandRecord	TRUE	55743K000	INLAND CARGO TRANSFER CO (ICTC)	22	2	1	War		0				931		0	0
+DemandRecord	TRUE	55753K000	TRANS MODULAR CAUSWAY CO	2	2	1	War		0				932		0	0
+DemandRecord	TRUE	55763K000	HARBORMASTER  DET	4	2	1	War		0				933		0	0
+DemandRecord	TRUE	55823K000	HEAVY WATERCRAFT CO	2	2	1	War		0				934		0	0
+DemandRecord	TRUE	55829KA00	WATERCRAFT FIELD MAINT CO HQ	1	2	1	War		0				935		0	0
+DemandRecord	TRUE	55829KB00	WATERCRAFT FIELD MAINT PLT	7	2	1	War		0				936		0	0
+DemandRecord	TRUE	55840K000	FLOATING CRAFT CO (RECAP)	2	2	1	War		0				937		0	0
+DemandRecord	TRUE	55863K000	TRANS MED BOAT DET	2	2	1	War		0				938		0	0
+DemandRecord	TRUE	55883K000	LOGISTICS SPT VESSEL	4	2	1	War		0				939		0	0
+DemandRecord	TRUE	63025K000	BDE SPT BN (ABCT)	15	2	1	War		0				940		0	0
+DemandRecord	TRUE	63035K000	BDE SPT BN W/FSC (IBCT)(RECAP)	4	2	1	War		0				941		0	0
+DemandRecord	TRUE	63045K000	BDE SPT BN W/FSC (IBCT)(ABN)	2	2	1	War		0				942		0	0
+DemandRecord	TRUE	63055K000	BDE SPT BN (SBCT)(RECAP)	9	2	1	War		0				943		0	0
+DemandRecord	TRUE	63302K000	"HHC, SUST BDE"	17	2	1	War		0				944		0	0
+DemandRecord	TRUE	63375K000	AVN SPT BN (CAB)	15	2	1	War		0				945		0	0
+DemandRecord	TRUE	63406K000	BSB HQ FA BDE	6	2	1	War		0				946		0	0
+DemandRecord	TRUE	63407K000	"FWD SPT CO, MLRS (2X8)"	27	2	1	War		0				947		0	0
+DemandRecord	TRUE	63426K000	"HHC, CBT SUST  SPT BN"	46	2	1	War		0				948		0	0
+DemandRecord	TRUE	63437K000	FWD SPT CO 155SP 3x6 FiB	15	2	1	War		0				949		0	0
+DemandRecord	TRUE	63447K000	FWD SPT CO HIMARS	9	2	1	War		0				950		0	0
+DemandRecord	TRUE	63467K000	FWD SPT CO 155T 3X6 FiB	15	2	1	War		0				951		0	0
+DemandRecord	TRUE	63472K000	ARMY FIELD SPT BDE (AFSB)	2	2	1	War		0				952		0	0
+DemandRecord	TRUE	63475K100	AVN SPT BN (ASB/TAB)(RECAP)	1	2	1	War		0				953		0	0
+DemandRecord	TRUE	63602K000	EXPEDIT SUST CMD	4	2	1	War		0				954		0	0
+DemandRecord	TRUE	63702K000	"HHC, THTR SUST CMD"	1	2	1	War		0				955		0	0
+DemandRecord	TRUE	77200K001	INFANTRY BDE COMBAT TM (IBCT) #1	1	2	1	War		0				956		0	0
+DemandRecord	TRUE	77200K002	INFANTRY BDE COMBAT TM (IBCT) #2	1	2	1	War		0				957		0	0
+DemandRecord	TRUE	77200K003	INFANTRY BDE COMBAT TM (IBCT) #3	1	2	1	War		0				958		0	0
+DemandRecord	TRUE	77200K004	INFANTRY BDE COMBAT TM (IBCT) #4	1	2	1	War		0				959		0	0
+DemandRecord	TRUE	77200K101	INFANTRY BDE COMBAT TM (IBCT ABN) #1	1	2	1	War		0				960		0	0
+DemandRecord	TRUE	77200K102	INFANTRY BDE COMBAT TM (IBCT ABN) #2	1	2	1	War		0				961		0	0
+DemandRecord	TRUE	77202K000	"HQ, INF BDE COMBAT TM (IBCT)"	6	2	1	War		0				962		0	0
+DemandRecord	TRUE	77202K100	"HQ, IN BDE CBT TM (IBCT)(ABN)"	2	2	1	War		0				963		0	0
+DemandRecord	TRUE	87000K000	DIVISION HQ	9	2	1	War		0				964		0	0
+DemandRecord	TRUE	87310K001	ARMOR BRIGADE COMBAT TEAM (ABCT) #1	1	2	1	War		0				965		0	0
+DemandRecord	TRUE	87310K002	ARMOR BRIGADE COMBAT TEAM (ABCT) #2	1	2	1	War		0				966		0	0
+DemandRecord	TRUE	87310K003	ARMOR BRIGADE COMBAT TEAM (ABCT) #3	1	2	1	War		0				967		0	0
+DemandRecord	TRUE	87310K004	ARMOR BRIGADE COMBAT TEAM (ABCT) #4	1	2	1	War		0				968		0	0
+DemandRecord	TRUE	87310K005	ARMOR BRIGADE COMBAT TEAM (ABCT) #5	1	2	1	War		0				969		0	0
+DemandRecord	TRUE	87310K006	ARMOR BRIGADE COMBAT TEAM (ABCT) #6	1	2	1	War		0				970		0	0
+DemandRecord	TRUE	87310K007	ARMOR BRIGADE COMBAT TEAM (ABCT) #7	1	2	1	War		0				971		0	0
+DemandRecord	TRUE	87310K008	ARMOR BRIGADE COMBAT TEAM (ABCT) #8	1	2	1	War		0				972		0	0
+DemandRecord	TRUE	87310K009	ARMOR BRIGADE COMBAT TEAM (ABCT) #9	1	2	1	War		0				973		0	0
+DemandRecord	TRUE	87310K010	ARMOR BRIGADE COMBAT TEAM (ABCT) #10	1	2	1	War		0				974		0	0
+DemandRecord	TRUE	87310K011	ARMOR BRIGADE COMBAT TEAM (ABCT) #11	1	2	1	War		0				975		0	0
+DemandRecord	TRUE	87310K012	ARMOR BRIGADE COMBAT TEAM (ABCT) #12	1	2	1	War		0				976		0	0
+DemandRecord	TRUE	87310K013	ARMOR BRIGADE COMBAT TEAM (ABCT) #13	1	2	1	War		0				977		0	0
+DemandRecord	TRUE	87310K014	ARMOR BRIGADE COMBAT TEAM (ABCT) #14	1	2	1	War		0				978		0	0
+DemandRecord	TRUE	87310K015	ARMOR BRIGADE COMBAT TEAM (ABCT) #15	1	2	1	War		0				979		0	0
+DemandRecord	TRUE	87312K000	"HHC, ARMOR BDE CBT TM (ABCT)"	15	2	1	War		0				980		0	0
+DemandRecord	TRUE	90376K000	HQ CONTRACTING BN	18	2	1	War		0				981		0	0
+DemandRecord	TRUE	90588KA00	CONTRACTING TM	78	2	1	War		0				982		0	0
+DemandRecord	TRUE	90873K000	CONTRACTING SPT BDE	5	2	1	War		0				983		0	0
+DemandRecord	TRUE	98EPW0005	"1,000 Enemy Prisoner of War"	24	2	1	War		0				984		0	0
+DemandRecord	TRUE	NATO BCT1	NATO MEC BDE #1	1	2	1	War		0				985		0	0
+DemandRecord	TRUE	NATO BCT2	NATO MEC BDE #2	1	2	1	War		0				986		0	0
+DemandRecord	TRUE	NATO BCT3	NATO MEC BDE #3	1	2	1	War		0				987		0	0
+DemandRecord	TRUE	NATO BCT4	NATO INF BDE #1	1	2	1	War		0				988		0	0
+DemandRecord	TRUE	NATO CORP	NATO CORPS HQ	1	2	1	War		0				989		0	0
+DemandRecord	TRUE	NATO_D-FA	NATO DIVISION ARTILLERY	1	2	1	War		0				990		0	0
+DemandRecord	TRUE	NATO--CAB	NATO CBT AVN BDE	1	2	1	War		0				991		0	0
+DemandRecord	TRUE	NATO--DIV	NATO DIVISION HEADQUARTERS	1	2	1	War		0				992		0	0
+DemandRecord	TRUE	NATO-IBCT	NATO INF BRIGADE COMBAT TEAM	1	2	1	War		0				993		0	0
+DemandRecord	TRUE	NATO-MBCT	NATO MEC BRIGADE COMBAT TEAM	3	2	1	War		0				994		0	0
+DemandRecord	TRUE	USMC--DIV	MARINE DIV HQ	1	2	1	War		0				995		0	0
+DemandRecord	TRUE	USMC-MEB1	USMC REG LANDING TM (MEB) #1	1	2	1	War		0				996		0	0
+DemandRecord	TRUE	USMC--RLT	USMC REG LANDING TM (MEB)	1	2	1	War		0				997		0	0

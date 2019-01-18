@@ -6,8 +6,11 @@
 
 (defn add-path [test-name]  (str "test/resources/" test-name))
 
+;;first item decides whether the policy string show the percentage
+;;of RC availability only or not.
 (def test-paths
-  [(add-path "snapchart_v7/")])
+  [[false (add-path "snapchart_v7/")]
+   [true (add-path "2125-19-3/")]])
 
 (def flatchartdata
 {:interest :text
@@ -37,13 +40,17 @@
                        :OItitle))
                        (into [] (tbl/tabdelimited->records root :schema flatchartdata))))
 
-  
+;;how to handle flatchartdata RC field when  ARinv and NGinv are missing.
+;;Solution: renamed RCinv to NGinv, AR inv is 0
 (defn flatdata-from
   "From a Marathon audit trail, using sparkchart functions, compute a sequence of FlatChartData records like from TADMUDI."
-  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  [root rc-avail? & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   (let [capacities (supply/capacity-by root :group-fn group-fn)
-        supply (supply/by-compo-supply-map-groupf root :group-fn group-fn)
-        policies (supply/policy-string root)
+        supply (supply/by-compo-supply-map-groupf root :group-fn
+                                                  group-fn)
+        policies (supply/policy-string root :period-fn (if rc-avail?
+                                                         supply/rc-availability
+                                                         supply/ra-rc))
         inscope? (fn [r] (contains? supply (group-fn (:SRC r))))]
     (for [{:keys [group period peak] :as p} (peaks-from root :group-fn group-fn :demand-filter inscope?)
           :let [capacity (supply/round-to 0 (capacities [group period]))]]
@@ -78,14 +85,24 @@
     res))
 
 (deftest compare-tadmudis
-  (doseq [t test-paths
-          :let [sparks (set (flatdata-from (str t "audit/") :group-fn (fn [s] s)))
+  (doseq [[rc-avail? t] test-paths
+          :let [sparks (set (flatdata-from (str t "audit/") rc-avail? :group-fn (fn [s] s)))
                 flats (set (flatdata-records (str t "flatchartdata.txt")))]]
     (testing "Test to see if the records of sparkcharts match the records of a flatdata tab-delimited text file. 
 Input data should be the same between spark and flatdata."
       (is (= (count sparks) (count flats)))
       (is (= sparks flats))
-      )))
+      ))
+  (println "Make sure that are 0 duplicate demand records for each test
+  since duplicates won't be counted in the spark chart data."))
+
+(defn tadmudis-diff "returns the difference between the sparks and
+  flats for one of the test-paths.  Helps when rectifying
+  differences."
+  [[rc-avail? t]]
+  (let [sparks (set (flatdata-from (str t "audit/") rc-avail? :group-fn (fn [s] s)))
+        flats (set (flatdata-records (str t "flatchartdata.txt")))]
+   (clojure.set/difference flats sparks)))
 
 ;;why not matching?
 ;;demands and periodrecords are the same
@@ -102,6 +119,11 @@ Input data should be the same between spark and flatdata."
 ;;1) warn about dupes, but run the code. done with duplicate-demands
 ;;2) make all duplicates non dupes-done by unique priority for each record.
 ;;what is a demand name?  Priority_vignette_SRC_[startday...endday]
+
+;;Update 01/18/2019: For sparkcharts and activity profiles, what
+;;really matters is that no two records are identical or one of the
+;;records will be skipped.  I fixed this with a unique DemandIndex for
+;;all records.
 (comment
 (def tp (add-path "snapchart_v7/"))
 (def sparks (set (flatdata-from (str tp "audit/") :group-fn (fn [s] s))))

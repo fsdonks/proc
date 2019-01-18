@@ -1,0 +1,539 @@
+Type	Enabled	SRC	OITitle	Component	Quantity	Policy	Tags	Behavior	Original	Name	SpawnTime	CycleTime	Location	Position
+Supply Record	TRUE	01205K000	Assault Bn	AC	11	Auto					1	1		
+Supply Record	TRUE	01205K000	Assault Bn	NG	18	Auto					1	1		
+Supply Record	TRUE	01225K000	GSAB	AC	11	Auto					1	1		
+Supply Record	TRUE	01225K000	GSAB	NG	15	Auto					1	1		
+Supply Record	TRUE	01285K000	Attack Bn	AC	11	Auto					1	1		
+Supply Record	TRUE	01285K000	Attack Bn	NG	4	Auto					1	1		
+Supply Record	TRUE	01285K100	Attack Sqdn	AC	11	Auto					1	1		
+Supply Record	TRUE	01285K100	Attack Sqdn	NG	0	Auto					1	1		
+Supply Record	TRUE	01302K000	"HHC, CAB"	AC	11	Auto					1	1		
+Supply Record	TRUE	01302K000	"HHC, CAB"	NG	2	Auto					1	1		
+Supply Record	TRUE	01605K200	Fixed Wing Bn	AC	0	Auto					1	1		
+Supply Record	TRUE	01605K200	Fixed Wing Bn	NG	4	Auto					1	1		
+Supply Record	TRUE	01612K000	"HHC, TAB"	AC	0	Auto					1	1		
+Supply Record	TRUE	01612K000	"HHC, TAB"	NG	2	Auto					1	1		
+Supply Record	TRUE	01622K000	"HHC, TAOG"	AC	1	Auto					1	1		
+Supply Record	TRUE	01622K000	"HHC, TAOG"	NG	1	Auto					1	1		
+Supply Record	TRUE	01623K000	Airfield Ops Bn	AC	2	Auto					1	1		
+Supply Record	TRUE	01623K000	Airfield Ops Bn	NG	4	Auto					1	1		
+Supply Record	TRUE	01655X000	S & S Bn	AC	0	Auto					1	1		
+Supply Record	TRUE	01655X000	S & S Bn	NG	6	Auto					1	1		
+Supply Record	TRUE	01707K000	Gray Eagle Co	AC	11	Auto					1	1		
+Supply Record	TRUE	01707K000	Gray Eagle Co	NG	0	Auto					1	1		
+Supply Record	TRUE	01808G000	GE Co (SOF)	AC	2	Auto					1	1		
+Supply Record	TRUE	01808G000	GE Co (SOF)	NG	0	Auto					1	1		
+Supply Record	TRUE	01825G000	SOAR Bn	AC	3	Auto					1	1		
+Supply Record	TRUE	01825G000	SOAR Bn	NG	0	Auto					1	1		
+Supply Record	TRUE	01980G000	TASM-G	AC	0	Auto					1	1		
+Supply Record	TRUE	01980G000	TASM-G	NG	5	Auto					1	1		
+Supply Record	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	AC	19	Auto					1	1		
+Supply Record	TRUE	02523KB00	MUSIC PERF TM B (CEREMONIAL)	NG	64	Auto					1	1		
+Supply Record	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	AC	33	Auto					1	1		
+Supply Record	TRUE	02523KC00	MUSIC PERF TM C (RHYTHM)	NG	72	Auto					1	1		
+Supply Record	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	AC	25	Auto					1	1		
+Supply Record	TRUE	02523KD00	MUSIC PERF TM D (BRASS)	NG	64	Auto					1	1		
+Supply Record	TRUE	02543KA00	HQ OF MPU A4	AC	19	Auto					1	1		
+Supply Record	TRUE	02543KA00	HQ OF MPU A4	NG	64	Auto					1	1		
+Supply Record	TRUE	03315K000	Hazard Response	AC	15	Auto					1	1		
+Supply Record	TRUE	03315K000	Hazard Response	NG	31	Auto					1	1		
+Supply Record	TRUE	03323K000	Tech Escort	AC	6	Auto					1	1		
+Supply Record	TRUE	03323K000	Tech Escort	NG	0	Auto					1	1		
+Supply Record	TRUE	03396K000	Battalion HQ	AC	5	Auto					1	1		
+Supply Record	TRUE	03396K000	Battalion HQ	NG	19	Auto					1	1		
+Supply Record	TRUE	03413K000	Area Support	AC	0	Auto					1	1		
+Supply Record	TRUE	03413K000	Area Support	NG	24	Auto					1	1		
+Supply Record	TRUE	03423K000	Biological	AC	0	Auto					1	1		
+Supply Record	TRUE	03423K000	Biological	NG	10	Auto					1	1		
+Supply Record	TRUE	03453K000	Coordination	AC	0	Auto					1	1		
+Supply Record	TRUE	03453K000	Coordination	NG	6	Auto					1	1		
+Supply Record	TRUE	03492K000	Brigade HQ	AC	1	Auto					1	1		
+Supply Record	TRUE	03492K000	Brigade HQ	NG	3	Auto					1	1		
+Supply Record	TRUE	03817K000	SOF Recon Det	AC	5	Auto					1	1		
+Supply Record	TRUE	03817K000	SOF Recon Det	NG	2	Auto					1	1		
+Supply Record	TRUE	05330K000	Sapper Co	AC	8	Auto					1	1		
+Supply Record	TRUE	05330K000	Sapper Co	NG	41	Auto					1	1		
+Supply Record	TRUE	05330K300	Clearance Co	AC	12	Auto					1	1		
+Supply Record	TRUE	05330K300	Clearance Co	NG	16	Auto					1	1		
+Supply Record	TRUE	05330K400	Mobility Aug Co	AC	3	Auto					1	1		
+Supply Record	TRUE	05330K400	Mobility Aug Co	NG	27	Auto					1	1		
+Supply Record	TRUE	05340K000	Construction Co	AC	10	Auto					1	1		
+Supply Record	TRUE	05340K000	Construction Co	NG	52	Auto					1	1		
+Supply Record	TRUE	05402K000	Brigade HQ	AC	4	Auto					1	1		
+Supply Record	TRUE	05402K000	Brigade HQ	NG	13	Auto					1	1		
+Supply Record	TRUE	05413K000	Engineer Utilities	AC	0	Auto					1	1		
+Supply Record	TRUE	05413K000	Engineer Utilities	NG	26	Auto					1	1		
+Supply Record	TRUE	05420K000	Vert Const Co	AC	0	Auto					1	1		
+Supply Record	TRUE	05420K000	Vert Const Co	NG	78	Auto					1	1		
+Supply Record	TRUE	05430K000	En Support Co	AC	8	Auto					1	1		
+Supply Record	TRUE	05430K000	En Support Co	NG	29	Auto					1	1		
+Supply Record	TRUE	05435K000	Battalion HQ	AC	12	Auto					1	1		
+Supply Record	TRUE	05435K000	Battalion HQ	NG	73	Auto					1	1		
+Supply Record	TRUE	05473K000	Bridge Co	AC	4	Auto					1	1		
+Supply Record	TRUE	05473K000	Bridge Co	NG	20	Auto					1	1		
+Supply Record	TRUE	05600K000	Engineer Cmd	AC	0	Auto					1	1		
+Supply Record	TRUE	05600K000	Engineer Cmd	NG	2	Auto					1	1		
+Supply Record	TRUE	05601KA00	Firefighter HQ	AC	0	Auto					1	1		
+Supply Record	TRUE	05601KA00	Firefighter HQ	NG	18	Auto					1	1		
+Supply Record	TRUE	05601KB00	Firefighter Team	AC	7	Auto					1	1		
+Supply Record	TRUE	05601KB00	Firefighter Team	NG	84	Auto					1	1		
+Supply Record	TRUE	05611KA00	Geo Planing Tm	AC	7	Auto					1	1		
+Supply Record	TRUE	05611KA00	Geo Planing Tm	NG	0	Auto					1	1		
+Supply Record	TRUE	05611KC00	FEST-M	AC	0	Auto					1	1		
+Supply Record	TRUE	05611KC00	FEST-M	NG	5	Auto					1	1		
+Supply Record	TRUE	05611KD00	FEST-A	AC	8	Auto					1	1		
+Supply Record	TRUE	05611KD00	FEST-A	NG	20	Auto					1	1		
+Supply Record	TRUE	05611KE00	Explosives Hzrd	AC	0	Auto					1	1		
+Supply Record	TRUE	05611KE00	Explosives Hzrd	NG	4	Auto					1	1		
+Supply Record	TRUE	05611KF00	Const Mgmt Tm	AC	4	Auto					1	1		
+Supply Record	TRUE	05611KF00	Const Mgmt Tm	NG	10	Auto					1	1		
+Supply Record	TRUE	05613K000	EN Facility Det	AC	0	Auto					1	1		
+Supply Record	TRUE	05613K000	EN Facility Det	NG	23	Auto					1	1		
+Supply Record	TRUE	05615K000	Prime Power Bn	AC	1	Auto					1	1		
+Supply Record	TRUE	05615K000	Prime Power Bn	NG	0	Auto					1	1		
+Supply Record	TRUE	05621KA00	Well Drilling HQ	AC	0	Auto					1	1		
+Supply Record	TRUE	05621KA00	Well Drilling HQ	NG	3	Auto					1	1		
+Supply Record	TRUE	05621KB00	Well Drilling Tm	AC	0	Auto					1	1		
+Supply Record	TRUE	05621KB00	Well Drilling Tm	NG	8	Auto					1	1		
+Supply Record	TRUE	05623K000	Mine Dog Det	AC	1	Auto					1	1		
+Supply Record	TRUE	05623K000	Mine Dog Det	NG	0	Auto					1	1		
+Supply Record	TRUE	05631KA00	EN Diving Tm	AC	5	Auto					1	1		
+Supply Record	TRUE	05631KA00	EN Diving Tm	NG	0	Auto					1	1		
+Supply Record	TRUE	05633K000	Asphalt Det	AC	0	Auto					1	1		
+Supply Record	TRUE	05633K000	Asphalt Det	NG	7	Auto					1	1		
+Supply Record	TRUE	05641KB00	Concrete Section	AC	0	Auto					1	1		
+Supply Record	TRUE	05641KB00	Concrete Section	NG	20	Auto					1	1		
+Supply Record	TRUE	05653K000	Quarry Plt	AC	0	Auto					1	1		
+Supply Record	TRUE	05653K000	Quarry Plt	NG	7	Auto					1	1		
+Supply Record	TRUE	05663K000	Area Clear Plt	AC	0	Auto					1	1		
+Supply Record	TRUE	05663K000	Area Clear Plt	NG	15	Auto					1	1		
+Supply Record	TRUE	06333K000	Division Artillery	AC	10	Auto					1	1		
+Supply Record	TRUE	06333K000	Division Artillery	NG	0	Auto					1	1		
+Supply Record	TRUE	06425K000	"FA BN, EAB 155T"	AC	0	Auto					1	1		
+Supply Record	TRUE	06425K000	"FA BN, EAB 155T"	NG	7	Auto					1	1		
+Supply Record	TRUE	06433K000	Field Artillery Bde	AC	5	Auto					1	1		
+Supply Record	TRUE	06433K000	Field Artillery Bde	NG	8	Auto					1	1		
+Supply Record	TRUE	06455K000	"FA BN, EAB 155SP"	AC	0	Auto					1	1		
+Supply Record	TRUE	06455K000	"FA BN, EAB 155SP"	NG	10	Auto					1	1		
+Supply Record	TRUE	06465K000	MLRS	AC	10	Auto					1	1		
+Supply Record	TRUE	06465K000	MLRS	NG	2	Auto					1	1		
+Supply Record	TRUE	06475K000	HIMARS	AC	5	Auto					1	1		
+Supply Record	TRUE	06475K000	HIMARS	NG	12	Auto					1	1		
+Supply Record	TRUE	06602K000	BFLD Coord Det	AC	4	Auto					1	1		
+Supply Record	TRUE	06602K000	BFLD Coord Det	NG	2	Auto					1	1		
+Supply Record	TRUE	06603K000	LNO Det (RECON)	AC	4	Auto					1	1		
+Supply Record	TRUE	06603K000	LNO Det (RECON)	NG	2	Auto					1	1		
+Supply Record	TRUE	06604K000	LNO Det (Ground)	AC	33	Auto					1	1		
+Supply Record	TRUE	06604K000	LNO Det (Ground)	NG	4	Auto					1	1		
+Supply Record	TRUE	07495K000	Battalion TF	AC	1	Auto					1	1		
+Supply Record	TRUE	07495K000	Battalion TF	NG	0	Auto					1	1		
+Supply Record	TRUE	07802K000	HHC Ranger Regimen	AC	1	Auto					1	1		
+Supply Record	TRUE	07802K000	HHC Ranger Regimen	NG	0	Auto					1	1		
+Supply Record	TRUE	07805K000	Ranger Special TRO	AC	1	Auto					1	1		
+Supply Record	TRUE	07805K000	Ranger Special TRO	NG	0	Auto					1	1		
+Supply Record	TRUE	07815K000	Ranger BN	AC	3	Auto					1	1		
+Supply Record	TRUE	07815K000	Ranger BN	NG	0	Auto					1	1		
+Supply Record	TRUE	08300K000	Vet Services Det	AC	7	Auto					1	1		
+Supply Record	TRUE	08300K000	Vet Services Det	NG	12	Auto					1	1		
+Supply Record	TRUE	08420K000	HHC Medical Brigade	AC	5	Auto					1	1		
+Supply Record	TRUE	08420K000	HHC Medical Brigade	NG	10	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08429K000	Preventive Medicine	AC	12	Auto					1	1		
+Supply Record	TRUE	08429K000	Preventive Medicine	NG	24	Auto					1	1		
+Supply Record	TRUE	08430K000	Blood Suppot Det	AC	5	Auto					1	1		
+Supply Record	TRUE	08430K000	Blood Suppot Det	NG	2	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08453K000	Ground Ambulance Co	AC	4	Auto					1	1		
+Supply Record	TRUE	08453K000	Ground Ambulance Co	NG	21	Auto					1	1		
+Supply Record	TRUE	08457K000	Area Support Medical Co	AC	14	Auto					1	1		
+Supply Record	TRUE	08457K000	Area Support Medical Co	NG	42	Auto					1	1		
+Supply Record	TRUE	08460K000	Combat Stress Control	AC	5	Auto					1	1		
+Supply Record	TRUE	08460K000	Combat Stress Control	NG	14	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08473K000	Area Support Dental Co	AC	4	Auto					1	1		
+Supply Record	TRUE	08473K000	Area Support Dental Co	NG	6	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08480K000	Medical Logistics Co	AC	6	Auto					1	1		
+Supply Record	TRUE	08480K000	Medical Logistics Co	NG	16	Auto					1	1		
+Supply Record	TRUE	08485K000	Medical Battalion	AC	5	Auto					1	1		
+Supply Record	TRUE	08485K000	Medical Battalion	NG	16	Auto					1	1		
+Supply Record	TRUE	08527KA00	Head & Neck Tm	AC	3	Auto					1	1		
+Supply Record	TRUE	08527KA00	Head & Neck Tm	NG	6	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08528KA00	FRST	AC	18	Auto					1	1		
+Supply Record	TRUE	08528KA00	FRST	NG	22	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08567KA00	Optometry Tm	AC	7	Auto					1	1		
+Supply Record	TRUE	08567KA00	Optometry Tm	NG	4	Auto					1	1		
+Supply Record	TRUE	08640K000	"HHC, Medical Command"	AC	1	Auto					1	1		
+Supply Record	TRUE	08640K000	"HHC, Medical Command"	NG	2	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08668K000	Area Medical Lab	AC	1	Auto					1	1		
+Supply Record	TRUE	08668K000	Area Medical Lab	NG	0	Auto					1	1		
+Supply Record	TRUE	08670K000	Med Log Management Ctr	AC	1	Auto					1	1		
+Supply Record	TRUE	08670K000	Med Log Management Ctr	NG	0	Auto					1	1		
+Supply Record	TRUE	08949K000	Minimal Care Det	AC	0	Auto					1	1		
+Supply Record	TRUE	08949K000	Minimal Care Det	NG	10	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08976K000	"HHD, Hospital Ctr"	AC	10	Auto					1	1		
+Supply Record	TRUE	08976K000	"HHD, Hospital Ctr"	NG	12	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08977K000	Aug Det 24 Bed	AC	9	Auto					1	1		
+Supply Record	TRUE	08977K000	Aug Det 24 Bed	NG	13	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08978K000	Aug Det 32 Bed	AC	9	Auto					1	1		
+Supply Record	TRUE	08978K000	Aug Det 32 Bed	NG	16	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08979K000	Aug Det ICW 60 Bed	AC	8	Auto					1	1		
+Supply Record	TRUE	08979K000	Aug Det ICW 60 Bed	NG	20	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	08988K000	Field Hospital 32 Bed	AC	11	Auto					1	1		
+Supply Record	TRUE	08988K000	Field Hospital 32 Bed	NG	24	TAA_2125-TADMUDI_Medical_RC					1	1		
+Supply Record	TRUE	09436K000	EOD Battalion HQ	AC	6	Auto					1	1		
+Supply Record	TRUE	09436K000	EOD Battalion HQ	NG	3	Auto					1	1		
+Supply Record	TRUE	09513KA00	"HQ, Ammo Co"	AC	6	Auto					1	1		
+Supply Record	TRUE	09513KA00	"HQ, Ammo Co"	NG	14	Auto					1	1		
+Supply Record	TRUE	09513KB00	Ammo Plt	AC	15	Auto					1	1		
+Supply Record	TRUE	09513KB00	Ammo Plt	NG	42	Auto					1	1		
+Supply Record	TRUE	09537KA00	"HQ, EOD Co"	AC	36	Auto					1	1		
+Supply Record	TRUE	09537KA00	"HQ, EOD Co"	NG	14	Auto					1	1		
+Supply Record	TRUE	09537KB00	EOD Plt	AC	106	Auto					1	1		
+Supply Record	TRUE	09537KB00	EOD Plt	NG	42	Auto					1	1		
+Supply Record	TRUE	09632K000	EOD Group HQ	AC	2	Auto					1	1		
+Supply Record	TRUE	09632K000	EOD Group HQ	NG	1	Auto					1	1		
+Supply Record	TRUE	10233K000	Bde ADS Co	AC	2	Auto					1	1		
+Supply Record	TRUE	10233K000	Bde ADS Co	NG	3	Auto					1	1		
+Supply Record	TRUE	10237KC00	Bde Parachute Office	AC	2	Auto					1	1		
+Supply Record	TRUE	10237KC00	Bde Parachute Office	NG	0	Auto					1	1		
+Supply Record	TRUE	10283K000	Division Aerial Delivery Co	AC	1	Auto					1	1		
+Supply Record	TRUE	10283K000	Division Aerial Delivery Co	NG	0	Auto					1	1		
+Supply Record	TRUE	10333K000	Division Personal Pack Co	AC	1	Auto					1	1		
+Supply Record	TRUE	10333K000	Division Personal Pack Co	NG	0	Auto					1	1		
+Supply Record	TRUE	10337KB00	Division Parachute Office	AC	1	Auto					1	1		
+Supply Record	TRUE	10337KB00	Division Parachute Office	NG	4	Auto					1	1		
+Supply Record	TRUE	10417K000	POL Pipeline Term Opsn Co 	AC	0	Auto					1	1		
+Supply Record	TRUE	10417K000	POL Pipeline Term Opsn Co 	NG	12	Auto					1	1		
+Supply Record	TRUE	10433K000	Corps Aerial Delivery Co	AC	1	Auto					1	1		
+Supply Record	TRUE	10433K000	Corps Aerial Delivery Co	NG	2	Auto					1	1		
+Supply Record	TRUE	10437KA00	Corps Parachute Office	AC	1	Auto					1	1		
+Supply Record	TRUE	10437KA00	Corps Parachute Office	NG	0	Auto					1	1		
+Supply Record	TRUE	10447K000	Field Service Co 	AC	0	Auto					1	1		
+Supply Record	TRUE	10447K000	Field Service Co 	NG	22	Auto					1	1		
+Supply Record	TRUE	10473K000	Composite Supply Co	AC	13	Auto					1	1		
+Supply Record	TRUE	10473K000	Composite Supply Co	NG	8	Auto					1	1		
+Supply Record	TRUE	10504K000	Force Provider Co	AC	0	Auto					1	1		
+Supply Record	TRUE	10504K000	Force Provider Co	NG	1	Auto					1	1		
+Supply Record	TRUE	10527KA00	POL Co HQ	AC	5	Auto					1	1		
+Supply Record	TRUE	10527KA00	POL Co HQ	NG	27	Auto					1	1		
+Supply Record	TRUE	10527KB00	Base Petro Lab Team	AC	2	Auto					1	1		
+Supply Record	TRUE	10527KB00	Base Petro Lab Team	NG	2	Auto					1	1		
+Supply Record	TRUE	10527KC00	POL Support Plt	AC	13	Auto					1	1		
+Supply Record	TRUE	10527KC00	POL Support Plt	NG	81	Auto					1	1		
+Supply Record	TRUE	10527KF00	Assault Hoseline Tm	AC	3	Auto					1	1		
+Supply Record	TRUE	10527KF00	Assault Hoseline Tm	NG	15	Auto					1	1		
+Supply Record	TRUE	10527KG00	Pipeline Ops Tm	AC	2	Auto					1	1		
+Supply Record	TRUE	10527KG00	Pipeline Ops Tm	NG	0	Auto					1	1		
+Supply Record	TRUE	10527KM00	POL Liaison Tm	AC	2	Auto					1	1		
+Supply Record	TRUE	10527KM00	POL Liaison Tm	NG	19	Auto					1	1		
+Supply Record	TRUE	10527KN00	Theater Petroleum Center	AC	1	Auto					1	1		
+Supply Record	TRUE	10527KN00	Theater Petroleum Center	NG	0	Auto					1	1		
+Supply Record	TRUE	10557KA00	"HQ, Field Feeding Co"	AC	17	Auto					1	1		
+Supply Record	TRUE	10557KA00	"HQ, Field Feeding Co"	NG	15	Auto					1	1		
+Supply Record	TRUE	10557KB00	"HQ, Field Feeding Plt"	AC	36	Auto					1	1		
+Supply Record	TRUE	10557KB00	"HQ, Field Feeding Plt"	NG	45	Auto					1	1		
+Supply Record	TRUE	10557KC00	Field Feeding Team	AC	145	Auto					1	1		
+Supply Record	TRUE	10557KC00	Field Feeding Team	NG	484	Auto					1	1		
+Supply Record	TRUE	10567KA00	Water Co HQ	AC	1	Auto					1	1		
+Supply Record	TRUE	10567KA00	Water Co HQ	NG	25	Auto					1	1		
+Supply Record	TRUE	10567KC00	Water Support Plt	AC	3	Auto					1	1		
+Supply Record	TRUE	10567KC00	Water Support Plt	NG	75	Auto					1	1		
+Supply Record	TRUE	10567KG00	Tactical Water Hoseline Tm	AC	0	Auto					1	1		
+Supply Record	TRUE	10567KG00	Tactical Water Hoseline Tm	NG	10	Auto					1	1		
+Supply Record	TRUE	10579KA00	Supply Co HQ	AC	0	Auto					1	1		
+Supply Record	TRUE	10579KA00	Supply Co HQ	NG	26	Auto					1	1		
+Supply Record	TRUE	10579KE00	Supply Plt	AC	0	Auto					1	1		
+Supply Record	TRUE	10579KE00	Supply Plt	NG	78	Auto					1	1		
+Supply Record	TRUE	10598KA00	Mortuary Affairs Co HQ	AC	2	Auto					1	1		
+Supply Record	TRUE	10598KA00	Mortuary Affairs Co HQ	NG	6	Auto					1	1		
+Supply Record	TRUE	10598KB00	Mortuary Affairs Plt	AC	8	Auto					1	1		
+Supply Record	TRUE	10598KB00	Mortuary Affairs Plt	NG	30	Auto					1	1		
+Supply Record	TRUE	10622K000	"HHC, Petroleum Group"	AC	0	Auto					1	1		
+Supply Record	TRUE	10622K000	"HHC, Petroleum Group"	NG	3	Auto					1	1		
+Supply Record	TRUE	10633K000	Theater Aerial Delivery Co	AC	2	Auto					1	1		
+Supply Record	TRUE	10633K000	Theater Aerial Delivery Co	NG	3	Auto					1	1		
+Supply Record	TRUE	10926K000	"HHD, POL Support Bn"	AC	1	Auto					1	1		
+Supply Record	TRUE	10926K000	"HHD, POL Support Bn"	NG	13	Auto					1	1		
+Supply Record	TRUE	11623K000	TIN-E Co	AC	0	Auto					1	1		
+Supply Record	TRUE	11623K000	TIN-E Co	NG	6	Auto					1	1		
+Supply Record	TRUE	11632K000	Theater Tactical Signal HHC	AC	3	Auto					1	1		
+Supply Record	TRUE	11632K000	Theater Tactical Signal HHC	NG	4	Auto					1	1		
+Supply Record	TRUE	11693K000	COMCAM Co	AC	1	Auto					1	1		
+Supply Record	TRUE	11693K000	COMCAM Co	NG	1	Auto					1	1		
+Supply Record	TRUE	11975K000	Expeditionary Signal	AC	11	Auto					1	1		
+Supply Record	TRUE	11975K000	Expeditionary Signal	NG	14	Auto					1	1		
+Supply Record	TRUE	12413K000	Human Resources Co	AC	11	Auto					1	1		
+Supply Record	TRUE	12413K000	Human Resources Co	NG	28	Auto					1	1		
+Supply Record	TRUE	12567KA00	Mail Terminal Tm	AC	3	Auto					1	1		
+Supply Record	TRUE	12567KA00	Mail Terminal Tm	NG	2	Auto					1	1		
+Supply Record	TRUE	12567KB00	Theater Gateway Tm	AC	2	Auto					1	1		
+Supply Record	TRUE	12567KB00	Theater Gateway Tm	NG	5	Auto					1	1		
+Supply Record	TRUE	12567KE00	Postal Plt	AC	13	Auto					1	1		
+Supply Record	TRUE	12567KE00	Postal Plt	NG	75	Auto					1	1		
+Supply Record	TRUE	12567KK00	Human Resources Plt	AC	22	Auto					1	1		
+Supply Record	TRUE	12567KK00	Human Resources Plt	NG	32	Auto					1	1		
+Supply Record	TRUE	12567KL00	Human Resources Ops Ctr	AC	13	Auto					1	1		
+Supply Record	TRUE	12567KL00	Human Resources Ops Ctr	NG	0	Auto					1	1		
+Supply Record	TRUE	12682K000	Human Resources Sust Ctr	AC	3	Auto					1	1		
+Supply Record	TRUE	12682K000	Human Resources Sust Ctr	NG	2	Auto					1	1		
+Supply Record	TRUE	14423K000	Finance Company	AC	11	Auto					1	1		
+Supply Record	TRUE	14423K000	Finance Company	NG	14	Auto					1	1		
+Supply Record	TRUE	14527KB00	Finance Detachment	AC	25	Auto					1	1		
+Supply Record	TRUE	14527KB00	Finance Detachment	NG	57	Auto					1	1		
+Supply Record	TRUE	14537K000	Finance Center	AC	3	Auto					1	1		
+Supply Record	TRUE	14537K000	Finance Center	NG	4	Auto					1	1		
+Supply Record	TRUE	16503KA00	Chaplain Det A	AC	0	Auto					1	1		
+Supply Record	TRUE	16503KA00	Chaplain Det A	NG	8	Auto					1	1		
+Supply Record	TRUE	16503KB00	Chaplain Det B	AC	0	Auto					1	1		
+Supply Record	TRUE	16503KB00	Chaplain Det B	NG	26	Auto					1	1		
+Supply Record	TRUE	16503KC00	Chaplain Det C	AC	0	Auto					1	1		
+Supply Record	TRUE	16503KC00	Chaplain Det C	NG	4	Auto					1	1		
+Supply Record	TRUE	16503KD00	Chaplain Det D	AC	0	Auto					1	1		
+Supply Record	TRUE	16503KD00	Chaplain Det D	NG	15	Auto					1	1		
+Supply Record	TRUE	19402K000	Brigade HQ	AC	5	Auto					1	1		
+Supply Record	TRUE	19402K000	Brigade HQ	NG	10	Auto					1	1		
+Supply Record	TRUE	19436KA00	MWD HQ	AC	31	Auto					1	1		
+Supply Record	TRUE	19436KA00	MWD HQ	NG	1	Auto					1	1		
+Supply Record	TRUE	19436KB00	MWD Squad	AC	55	Auto					1	1		
+Supply Record	TRUE	19436KB00	MWD Squad	NG	1	Auto					1	1		
+Supply Record	TRUE	19436KC00	MWD PDDD Team	AC	47	Auto					1	1		
+Supply Record	TRUE	19436KC00	MWD PDDD Team	NG	1	Auto					1	1		
+Supply Record	TRUE	19473K000	CS Company	AC	50	Auto					1	1		
+Supply Record	TRUE	19473K000	CS Company	NG	133	Auto					1	1		
+Supply Record	TRUE	19476K000	CS Battalion HQ	AC	13	Auto					1	1		
+Supply Record	TRUE	19476K000	CS Battalion HQ	NG	36	Auto					1	1		
+Supply Record	TRUE	19543RE00	Camp Liaison	AC	0	Auto					1	1		
+Supply Record	TRUE	19543RE00	Camp Liaison	NG	6	Auto					1	1		
+Supply Record	TRUE	19601K000	Command HQ	AC	0	Auto					1	1		
+Supply Record	TRUE	19601K000	Command HQ	NG	2	Auto					1	1		
+Supply Record	TRUE	19601KA00	TDRC	AC	0	Auto					1	1		
+Supply Record	TRUE	19601KA00	TDRC	NG	3	Auto					1	1		
+Supply Record	TRUE	19646K000	Detention Bn HQ	AC	4	Auto					1	1		
+Supply Record	TRUE	19646K000	Detention Bn HQ	NG	22	Auto					1	1		
+Supply Record	TRUE	19653K000	Detention Co	AC	6	Auto					1	1		
+Supply Record	TRUE	19653K000	Detention Co	NG	23	Auto					1	1		
+Supply Record	TRUE	19713K000	Law Enforcement Det	AC	29	Auto					1	1		
+Supply Record	TRUE	19713K000	Law Enforcement Det	NG	22	Auto					1	1		
+Supply Record	TRUE	19882K000	CID Group HQ	AC	2	Auto					1	1		
+Supply Record	TRUE	19882K000	CID Group HQ	NG	0	Auto					1	1		
+Supply Record	TRUE	19883K000	CID Det	AC	32	Auto					1	1		
+Supply Record	TRUE	19883K000	CID Det	NG	17	Auto					1	1		
+Supply Record	TRUE	19886K000	CID Battalion HQ	AC	6	Auto					1	1		
+Supply Record	TRUE	19886K000	CID Battalion HQ	NG	3	Auto					1	1		
+Supply Record	TRUE	20518KA00	Military History Tm A	AC	1	Auto					1	1		
+Supply Record	TRUE	20518KA00	Military History Tm A	NG	5	Auto					1	1		
+Supply Record	TRUE	20518KB00	Military History Tm B	AC	1	Auto					1	1		
+Supply Record	TRUE	20518KB00	Military History Tm B	NG	28	Auto					1	1		
+Supply Record	TRUE	20518KC00	Military History Tm C	AC	0	Auto					1	1		
+Supply Record	TRUE	20518KC00	Military History Tm C	NG	3	Auto					1	1		
+Supply Record	TRUE	27473K000	Senior Special Victim Counsel	AC	3	Auto					1	1		
+Supply Record	TRUE	27473K000	Senior Special Victim Counsel	NG	0	Auto					1	1		
+Supply Record	TRUE	27523KA00	"HQ, Legal Ops Det"	AC	0	Auto					1	1		
+Supply Record	TRUE	27523KA00	"HQ, Legal Ops Det"	NG	23	Auto					1	1		
+Supply Record	TRUE	27523KB00	Legal Ops Tm Special	AC	0	Auto					1	1		
+Supply Record	TRUE	27523KB00	Legal Ops Tm Special	NG	92	Auto					1	1		
+Supply Record	TRUE	27523KC00	Legal Ops Tm General	AC	0	Auto					1	1		
+Supply Record	TRUE	27523KC00	Legal Ops Tm General	NG	184	Auto					1	1		
+Supply Record	TRUE	27543KA00	HQ Legal Ops Det TD	AC	0	Auto					1	1		
+Supply Record	TRUE	27543KA00	HQ Legal Ops Det TD	NG	3	Auto					1	1		
+Supply Record	TRUE	27563KA00	HQ Legal Ops Det Judge	AC	0	Auto					1	1		
+Supply Record	TRUE	27563KA00	HQ Legal Ops Det Judge	NG	1	Auto					1	1		
+Supply Record	TRUE	27563KB00	Senior Military Judge Tm	AC	0	Auto					1	1		
+Supply Record	TRUE	27563KB00	Senior Military Judge Tm	NG	5	Auto					1	1		
+Supply Record	TRUE	27563KC00	Military Judge Tm A	AC	0	Auto					1	1		
+Supply Record	TRUE	27563KC00	Military Judge Tm A	NG	5	Auto					1	1		
+Supply Record	TRUE	27563KD00	Military Judge Tm B	AC	0	Auto					1	1		
+Supply Record	TRUE	27563KD00	Military Judge Tm B	NG	5	Auto					1	1		
+Supply Record	TRUE	27563KE00	Military Judge Tm C	AC	0	Auto					1	1		
+Supply Record	TRUE	27563KE00	Military Judge Tm C	NG	5	Auto					1	1		
+Supply Record	TRUE	27573KB00	Legal Ops Tm Expert A	AC	0	Auto					1	1		
+Supply Record	TRUE	27573KB00	Legal Ops Tm Expert A	NG	5	Auto					1	1		
+Supply Record	TRUE	27573KC00	Legal Ops Tm Expert B	AC	0	Auto					1	1		
+Supply Record	TRUE	27573KC00	Legal Ops Tm Expert B	NG	35	Auto					1	1		
+Supply Record	TRUE	27583KA00	Regional Trial Defense Tm	AC	3	Auto					1	1		
+Supply Record	TRUE	27583KA00	Regional Trial Defense Tm	NG	7	Auto					1	1		
+Supply Record	TRUE	27583KB00	Senior Trial Defense Tm	AC	13	Auto					1	1		
+Supply Record	TRUE	27583KB00	Senior Trial Defense Tm	NG	31	Auto					1	1		
+Supply Record	TRUE	27583KC00	Field Trial Defense Tm	AC	13	Auto					1	1		
+Supply Record	TRUE	27583KC00	Field Trial Defense Tm	NG	30	Auto					1	1		
+Supply Record	TRUE	27773K000	Field Special Vicitim Counsel	AC	9	Auto					1	1		
+Supply Record	TRUE	27773K000	Field Special Vicitim Counsel	NG	0	Auto					1	1		
+Supply Record	TRUE	30702K000	Theater MI Brigade	AC	6	Auto					1	1		
+Supply Record	TRUE	30702K000	Theater MI Brigade	NG	1	Auto					1	1		
+Supply Record	TRUE	30705R200	MI Ops BN	AC	6	Auto					1	1		
+Supply Record	TRUE	30705R200	MI Ops BN	NG	1	Auto					1	1		
+Supply Record	TRUE	30715K200	MI BN Forward Collect	AC	5	Auto					1	1		
+Supply Record	TRUE	30715K200	MI BN Forward Collect	NG	0	Auto					1	1		
+Supply Record	TRUE	30725K100	MI BN Interrogation	AC	0	Auto					1	1		
+Supply Record	TRUE	30725K100	MI BN Interrogation	NG	5	Auto					1	1		
+Supply Record	TRUE	30815R300	MI Battalion	AC	4	Auto					1	1		
+Supply Record	TRUE	30815R300	MI Battalion	NG	0	Auto					1	1		
+Supply Record	TRUE	30832K000	AE Brigade	AC	1	Auto					1	1		
+Supply Record	TRUE	30832K000	AE Brigade	NG	0	Auto					1	1		
+Supply Record	TRUE	30875K100	MI BN Theatre Support	AC	0	Auto					1	1		
+Supply Record	TRUE	30875K100	MI BN Theatre Support	NG	7	Auto					1	1		
+Supply Record	TRUE	31715K000	SF 4th Battalion	AC	5	Auto					1	1		
+Supply Record	TRUE	31715K000	SF 4th Battalion	NG	2	Auto					1	1		
+Supply Record	TRUE	31812K000	HHC SF Group	AC	5	Auto					1	1		
+Supply Record	TRUE	31812K000	HHC SF Group	NG	2	Auto					1	1		
+Supply Record	TRUE	31815K000	SF Battalion	AC	15	Auto					1	1		
+Supply Record	TRUE	31815K000	SF Battalion	NG	6	Auto					1	1		
+Supply Record	TRUE	31825K000	SF Group Spt Battalion	AC	5	Auto					1	1		
+Supply Record	TRUE	31825K000	SF Group Spt Battalion	NG	2	Auto					1	1		
+Supply Record	TRUE	33712K100	"HHC, Psyop Group"	AC	0	Auto					1	1		
+Supply Record	TRUE	33712K100	"HHC, Psyop Group"	NG	2	Auto					1	1		
+Supply Record	TRUE	33712K200	"HQ & HQ CO, MIL IN"	AC	2	Auto					1	1		
+Supply Record	TRUE	33712K200	"HQ & HQ CO, MIL IN"	NG	0	Auto					1	1		
+Supply Record	TRUE	33725K200	MIL INF SPT BN (RE	AC	5	Auto					1	1		
+Supply Record	TRUE	33725K200	MIL INF SPT BN (RE	NG	0	Auto					1	1		
+Supply Record	TRUE	33736K100	H&S Psyop BN 	AC	0	Auto					1	1		
+Supply Record	TRUE	33736K100	H&S Psyop BN 	NG	8	Auto					1	1		
+Supply Record	TRUE	33737K100	Tactical Company (GPF)	AC	0	Auto					1	1		
+Supply Record	TRUE	33737K100	Tactical Company (GPF)	NG	32	Auto					1	1		
+Supply Record	TRUE	33757K100	Dissemination (GPF)	AC	0	Auto					1	1		
+Supply Record	TRUE	33757K100	Dissemination (GPF)	NG	2	Auto					1	1		
+Supply Record	TRUE	34402K000	HHC MI Expeditionary	AC	3	Auto					1	1		
+Supply Record	TRUE	34402K000	HHC MI Expeditionary	NG	4	Auto					1	1		
+Supply Record	TRUE	34425K000	MI BN Expeditionary	AC	6	Auto					1	1		
+Supply Record	TRUE	34425K000	MI BN Expeditionary	NG	8	Auto					1	1		
+Supply Record	TRUE	34645K300	MI BN Linguist	AC	0	Auto					1	1		
+Supply Record	TRUE	34645K300	MI BN Linguist	NG	5	Auto					1	1		
+Supply Record	TRUE	37342R200	"HHC, MEB"	AC	0	Auto					1	1		
+Supply Record	TRUE	37342R200	"HHC, MEB"	NG	19	Auto					1	1		
+Supply Record	TRUE	37800K000	CBRNE Command	AC	1	Auto					1	1		
+Supply Record	TRUE	37800K000	CBRNE Command	NG	0	Auto					1	1		
+Supply Record	TRUE	40500KA00	Army Space Support Tm	AC	6	Auto					1	1		
+Supply Record	TRUE	40500KA00	Army Space Support Tm	NG	24	Auto					1	1		
+Supply Record	TRUE	40510KC00	Space Det E	AC	6	Auto					1	1		
+Supply Record	TRUE	40510KC00	Space Det E	NG	6	Auto					1	1		
+Supply Record	TRUE	40702K000	"HHB, GMD Brigade"	AC	0	Auto					1	1		
+Supply Record	TRUE	40702K000	"HHB, GMD Brigade"	NG	1	Auto					1	1		
+Supply Record	TRUE	40793K000	FW Based Mode Radar	AC	5	Auto					1	1		
+Supply Record	TRUE	40793K000	FW Based Mode Radar	NG	0	Auto					1	1		
+Supply Record	TRUE	40795K000	GMD Battalion	AC	0	Auto					1	1		
+Supply Record	TRUE	40795K000	GMD Battalion	NG	1	Auto					1	1		
+Supply Record	TRUE	40802K000	"HHC, Space Brigade"	AC	0	Auto					1	1		
+Supply Record	TRUE	40802K000	"HHC, Space Brigade"	NG	1	Auto					1	1		
+Supply Record	TRUE	40806K000	"HHC, Space Battalion"	AC	1	Auto					1	1		
+Supply Record	TRUE	40806K000	"HHC, Space Battalion"	NG	2	Auto					1	1		
+Supply Record	TRUE	40820K000	Theater Missile Warning Co	AC	1	Auto					1	1		
+Supply Record	TRUE	40820K000	Theater Missile Warning Co	NG	0	Auto					1	1		
+Supply Record	TRUE	41702K100	HHC CA Brigade (SOF)	AC	1	Auto					1	1		
+Supply Record	TRUE	41702K100	HHC CA Brigade (SOF)	NG	0	Auto					1	1		
+Supply Record	TRUE	41730K000	HHC CA Brigade (GPF)	AC	0	Auto					1	1		
+Supply Record	TRUE	41730K000	HHC CA Brigade (GPF)	NG	9	Auto					1	1		
+Supply Record	TRUE	41736K100	HHC CA Battalion (SOF)	AC	5	Auto					1	1		
+Supply Record	TRUE	41736K100	HHC CA Battalion (SOF)	NG	0	Auto					1	1		
+Supply Record	TRUE	41737K100	CA Co (SOF)	AC	30	Auto					1	1		
+Supply Record	TRUE	41737K100	CA Co (SOF)	NG	0	Auto					1	1		
+Supply Record	TRUE	41740K000	HHC CA Battalion (GPF)	AC	1	Auto					1	1		
+Supply Record	TRUE	41740K000	HHC CA Battalion (GPF)	NG	33	Auto					1	1		
+Supply Record	TRUE	41750K000	CA Co (GPF)	AC	6	Auto					1	1		
+Supply Record	TRUE	41750K000	CA Co (GPF)	NG	132	Auto					1	1		
+Supply Record	TRUE	43433K000	Support Maint Co	AC	14	Auto					1	1		
+Supply Record	TRUE	43433K000	Support Maint Co	NG	60	Auto					1	1		
+Supply Record	TRUE	43547RA00	TMDE	AC	14	Auto					1	1		
+Supply Record	TRUE	43547RA00	TMDE	NG	6	Auto					1	1		
+Supply Record	TRUE	44601R600	AAMDC	AC	3	Auto					1	1		
+Supply Record	TRUE	44601R600	AAMDC	NG	1	Auto					1	1		
+Supply Record	TRUE	44602K000	ADA BDE HQS	AC	6	Auto					1	1		
+Supply Record	TRUE	44602K000	ADA BDE HQS	NG	3	Auto					1	1		
+Supply Record	TRUE	44615K600	M-SHORAD Bn	AC	2	Auto					1	1		
+Supply Record	TRUE	44615K600	M-SHORAD Bn	NG	0	Auto					1	1		
+Supply Record	TRUE	44635K000	Patriot Bn	AC	15	Auto					1	1		
+Supply Record	TRUE	44635K000	Patriot Bn	NG	0	Auto					1	1		
+Supply Record	TRUE	44655K000	IFPC Bn	AC	2	Auto					1	1		
+Supply Record	TRUE	44655K000	IFPC Bn	NG	7	Auto					1	1		
+Supply Record	TRUE	44693K000	THAAD Btry	AC	8	Auto					1	1		
+Supply Record	TRUE	44693K000	THAAD Btry	NG	0	Auto					1	1		
+Supply Record	TRUE	45413K000	Mobile PA Det	AC	3	Auto					1	1		
+Supply Record	TRUE	45413K000	Mobile PA Det	NG	40	Auto					1	1		
+Supply Record	TRUE	45423K000	Theater PA Det	AC	1	Auto					1	1		
+Supply Record	TRUE	45423K000	Theater PA Det	NG	9	Auto					1	1		
+Supply Record	TRUE	45503KB00	Public Affairs Det	AC	8	Auto					1	1		
+Supply Record	TRUE	45503KB00	Public Affairs Det	NG	35	Auto					1	1		
+Supply Record	TRUE	45607K000	Broadcast PA Det	AC	0	Auto					1	1		
+Supply Record	TRUE	45607K000	Broadcast PA Det	NG	4	Auto					1	1		
+Supply Record	TRUE	47112K000	SBCT	AC	7	Auto					1	1		
+Supply Record	TRUE	47112K000	SBCT	NG	2	Auto					1	1		
+Supply Record	TRUE	51632K000	"HHC, REGIONAL SPT GRP"	AC	1	Auto					1	1		
+Supply Record	TRUE	51632K000	"HHC, REGIONAL SPT GRP"	NG	44	Auto					1	1		
+Supply Record	TRUE	51659R000	DIGITAL LIASON DET	AC	3	Auto					1	1		
+Supply Record	TRUE	51659R000	DIGITAL LIASON DET	NG	12	Auto					1	1		
+Supply Record	TRUE	52400K300	Corps HQ	AC	3	Auto					1	1		
+Supply Record	TRUE	52400K300	Corps HQ	NG	0	Auto					1	1		
+Supply Record	TRUE	53615K300	Information Operations BN	AC	0	Auto					1	1		
+Supply Record	TRUE	53615K300	Information Operations BN	NG	6	Auto					1	1		
+Supply Record	TRUE	55423K000	Light Composite Truck Co	AC	8	Auto					1	1		
+Supply Record	TRUE	55423K000	Light Composite Truck Co	NG	5	Auto					1	1		
+Supply Record	TRUE	55433K000	Heavy Composite Truck Co	AC	6	Auto					1	1		
+Supply Record	TRUE	55433K000	Heavy Composite Truck Co	NG	3	Auto					1	1		
+Supply Record	TRUE	55508KA00	Movement Cont TM	AC	38	Auto					1	1		
+Supply Record	TRUE	55508KA00	Movement Cont TM	NG	90	Auto					1	1		
+Supply Record	TRUE	55509K000	Theater Movement	AC	1	Auto					1	1		
+Supply Record	TRUE	55509K000	Theater Movement	NG	6	Auto					1	1		
+Supply Record	TRUE	55577K000	Automated Cargo Doc	AC	0	Auto					1	1		
+Supply Record	TRUE	55577K000	Automated Cargo Doc	NG	11	Auto					1	1		
+Supply Record	TRUE	55578K000	Exp Term Ops Element	AC	0	Auto					1	1		
+Supply Record	TRUE	55578K000	Exp Term Ops Element	NG	18	Auto					1	1		
+Supply Record	TRUE	55606K000	"HHD, MVT CTL BN"	AC	5	Auto					1	1		
+Supply Record	TRUE	55606K000	"HHD, MVT CTL BN"	NG	12	Auto					1	1		
+Supply Record	TRUE	55609K000	Exp Rail Center	AC	0	Auto					1	1		
+Supply Record	TRUE	55609K000	Exp Rail Center	NG	1	Auto					1	1		
+Supply Record	TRUE	55616K000	"HHD, Trans Motor BN"	AC	0	Auto					1	1		
+Supply Record	TRUE	55616K000	"HHD, Trans Motor BN"	NG	19	Auto					1	1		
+Supply Record	TRUE	55633K000	Light-Medium Truck Co	AC	0	Auto					1	1		
+Supply Record	TRUE	55633K000	Light-Medium Truck Co	NG	27	Auto					1	1		
+Supply Record	TRUE	55643K200	POL Truck Co TAC	AC	4	Auto					1	1		
+Supply Record	TRUE	55643K200	POL Truck Co TAC	NG	5	Auto					1	1		
+Supply Record	TRUE	55643K300	Medium Truck Co PLS	AC	2	Auto					1	1		
+Supply Record	TRUE	55643K300	Medium Truck Co PLS	NG	36	Auto					1	1		
+Supply Record	TRUE	55653K100	Medium Cargo Truck Co 	AC	4	Auto					1	1		
+Supply Record	TRUE	55653K100	Medium Cargo Truck Co 	NG	46	Auto					1	1		
+Supply Record	TRUE	55653K200	POL Truck Co LH	AC	0	Auto					1	1		
+Supply Record	TRUE	55653K200	POL Truck Co LH	NG	30	Auto					1	1		
+Supply Record	TRUE	55663K000	Combat HET Co	AC	3	Auto					1	1		
+Supply Record	TRUE	55663K000	Combat HET Co	NG	9	Auto					1	1		
+Supply Record	TRUE	55702K000	Transportation BDE Exp	AC	1	Auto					1	1		
+Supply Record	TRUE	55702K000	Transportation BDE Exp	NG	2	Auto					1	1		
+Supply Record	TRUE	55706K000	"HHD, Trans TERM BN"	AC	2	Auto					1	1		
+Supply Record	TRUE	55706K000	"HHD, Trans TERM BN"	NG	6	Auto					1	1		
+Supply Record	TRUE	55733K000	Seaport Ops Co	AC	2	Auto					1	1		
+Supply Record	TRUE	55733K000	Seaport Ops Co	NG	8	Auto					1	1		
+Supply Record	TRUE	55743K000	Inland Cargo Transfer Co	AC	10	Auto					1	1		
+Supply Record	TRUE	55743K000	Inland Cargo Transfer Co	NG	20	Auto					1	1		
+Supply Record	TRUE	55753K000	Modular Causeway Co	AC	1	Auto					1	1		
+Supply Record	TRUE	55753K000	Modular Causeway Co	NG	1	Auto					1	1		
+Supply Record	TRUE	55763K000	Harbormaster detachment	AC	3	Auto					1	1		
+Supply Record	TRUE	55763K000	Harbormaster detachment	NG	5	Auto					1	1		
+Supply Record	TRUE	55823K000	Heavy Watercraft Co	AC	1	Auto					1	1		
+Supply Record	TRUE	55823K000	Heavy Watercraft Co	NG	2	Auto					1	1		
+Supply Record	TRUE	55829KA00	Watercraft Fld Maint Co HQ	AC	1	Auto					1	1		
+Supply Record	TRUE	55829KA00	Watercraft Fld Maint Co HQ	NG	1	Auto					1	1		
+Supply Record	TRUE	55829KB00	Watercraft Fld Maint PLT	AC	2	Auto					1	1		
+Supply Record	TRUE	55829KB00	Watercraft Fld Maint PLT	NG	3	Auto					1	1		
+Supply Record	TRUE	55840K000	Floating Craft	AC	1	Auto					1	1		
+Supply Record	TRUE	55840K000	Floating Craft	NG	3	Auto					1	1		
+Supply Record	TRUE	55863K000	Med Boat Detachment	AC	1	Auto					1	1		
+Supply Record	TRUE	55863K000	Med Boat Detachment	NG	1	Auto					1	1		
+Supply Record	TRUE	55883K000	Logistics Support Vessel	AC	3	Auto					1	1		
+Supply Record	TRUE	55883K000	Logistics Support Vessel	NG	6	Auto					1	1		
+Supply Record	TRUE	63302K000	HHC Sustainment BDE	AC	11	Auto					1	1		
+Supply Record	TRUE	63302K000	HHC Sustainment BDE	NG	19	Auto					1	1		
+Supply Record	TRUE	63426K000	HHC Combat Sustainment Support BN	AC	17	Auto					1	1		
+Supply Record	TRUE	63426K000	HHC Combat Sustainment Support BN	NG	75	Auto					1	1		
+Supply Record	TRUE	63472K000	Army Field Support BDE (AFSB)	AC	7	Auto					1	1		
+Supply Record	TRUE	63472K000	Army Field Support BDE (AFSB)	NG	1	Auto					1	1		
+Supply Record	TRUE	63602K000	Expeditionary Sustainment Command	AC	4	Auto					1	1		
+Supply Record	TRUE	63602K000	Expeditionary Sustainment Command	NG	10	Auto					1	1		
+Supply Record	TRUE	77202K000	IBCT	AC	13	Auto					1	1		
+Supply Record	TRUE	77202K000	IBCT	NG	20	Auto					1	1		
+Supply Record	TRUE	77250K000	SFAB	AC	5	Auto					1	1		
+Supply Record	TRUE	77250K000	SFAB	NG	1	Auto					1	1		
+Supply Record	TRUE	87000K000	Division HQ	AC	10	Auto					1	1		
+Supply Record	TRUE	87000K000	Division HQ	NG	8	Auto					1	1		
+Supply Record	TRUE	87312K000	ABCT	AC	11	Auto					1	1		
+Supply Record	TRUE	87312K000	ABCT	NG	5	Auto					1	1		
+Supply Record	TRUE	90376K000	Contingency Contracting BN	AC	13	Auto					1	1		
+Supply Record	TRUE	90376K000	Contingency Contracting BN	NG	1	Auto					1	1		
+Supply Record	TRUE	90588KA00	Contracting Team	AC	71	Auto					1	1		
+Supply Record	TRUE	90588KA00	Contracting Team	NG	47	Auto					1	1		
+Supply Record	TRUE	90873K000	Contracting Support BDE	AC	8	Auto					1	1		
+Supply Record	TRUE	90873K000	Contracting Support BDE	NG	0	Auto					1	1		

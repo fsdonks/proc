@@ -558,7 +558,10 @@
   [root]
   (let [drecs (demand-records root)
         dupes (duplicate-demands drecs)]
-    (println "There are"(count dupes) "demand names with multiple demand records.")
+    (println "There are"(count dupes) "demand names with multiple
+  demand records.")
+    (println "There are " (- (count drecs) (count (into #{} drecs)))
+            " duplicate demand records.")
     drecs))
 
 (defn load-periods

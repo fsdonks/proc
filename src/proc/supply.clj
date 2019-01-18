@@ -170,17 +170,23 @@ of all units as records at time t.  Can also provide a substring of the unit nam
 
 (defn round-to "rounds a number, n to an integer number of (num) decimals" [num n]
   (read-string (format (str "%." num "f") (float n))))
-  
+
+(defn vba-round "rounds a number, n to 1 decimal place, but if the
+  number is whole, the .0 is dropped."
+  [n]
+  (let [x (str (round-to 1 n))
+        [o t] (clojure.string/split x #"\.")]
+    (if (= t "0") o x)))
+
 (defn policy-name
   "given a policy record and component, creates a name for the policy in terms of BOG:Dwell"
   [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable StartDeployable PolicyName] :as policy}
    component]
   (let [;for mobilization (only seen 95 recently)
-        bog (if (or (= component "RC") (= component "NG")) (+ MaxBOG 95) MaxBOG)
-        vba-round (fn [num] (let [x (str (round-to 1 num))
-                              [o t] (clojure.string/split x #"\.")]
-                          (if (= t "0") o x)))]
-      (str (vba-round (/ bog 365)) ":" (vba-round (/ StartDeployable 365)))))
+        bog (if (and (not= Template "MaxUtilization")
+                     (or (= component "RC") (= component "NG"))) (+ MaxBOG 95) MaxBOG)]
+      (str (vba-round (/ bog 365)) ":" (vba-round (/ StartDeployable
+                                                     365)))))
 
 (defn policy-info
   "given the path to a Marathon audit trail, return a map of {:composites {...} :policies {...}} where the composites map
@@ -220,11 +226,30 @@ of all units as records at time t.  Can also provide a substring of the unit nam
                    {nm :Name} periods]
                [[compo nm] (policy-record policy nm policies composites)]))))
 
+(defn ra-rc
+  "given the result of policies-by-period, compute the policy string in the form of
+  RABOG:RAStartDeployable/RCBOG:RCStartDeployable for the period."
+  [policies period]
+  (str (policy-name (policies ["AC" period]) "AC") "/"
+                                            (policy-name (policies ["NG" period]) "NG"))
+  )
+
+(defn rc-availability
+  "given the result of policies-by-period, compute the policy string
+  for % RC available in the form of int%RC for the period."
+  [policies period]
+  (let [{:keys [MaxBOG MaxDwell MinDwell Overlap Template StopDeployable
+           StartDeployable PolicyName] :as policy} (policies ["NG" period])
+        ;;for mobilization (only seen 95 recently)
+        bog (if (not= Template "MaxUtilization") (+ MaxBOG 95) MaxBOG)]
+    (str (round-to 0 (* 100 (/ bog (+ StartDeployable bog)))) "%RC")))
+  
 (defn policy-string
-  "given the path to a marathon audit trail, compute the policy string in the form of
-  RABOG:RAStartDeployable/RCBOG:RCStartDeployable for each period separated by ->.
-  Assumes that NG and RC follow the same policies."
-  [path]
+  "given the path to a marathon audit trail, compute a policy string
+  for each period separated by ->.  Define a separate fn called
+  period-fn, which takes the result of policies-by-period and the name
+  of a period to return a string for each period."
+  [path & {:keys [period-fn] :or {period-fn ra-rc}}]
   (let [policies (policies-by-period path)]
     (assert (->> (remove (fn [[[compo period] v]] (= compo "AC")) policies)
                  (group-by (fn [[[compo period] v]] period))
@@ -232,29 +257,50 @@ of all units as records at time t.  Can also provide a substring of the unit nam
             "Assume that NG and RC follow the same policies.")
                                         ;reduce over period recs,
                                         ;for ac and rc make this joined by ->
-    (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->") (policy-name (policies ["AC" Name]) "AC") "/"
-                                            (policy-name (policies ["NG" Name]) "NG")))
-            "" (util/load-periods path))))
+    (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->")
+  (period-fn policies Name)))
+            "" (util/load-periods path)))
+  )
 
 (defn discounts-by-period
   "Given the path to a Marathon audit trail, compute the rotational discount for
   the AC and RC for each period."
-  [path]
+  [path & {:keys [policyinfo periods active-policies]}]
   (into {}
-        (map (fn [[[compo nm] policyrec]] [[compo nm] (compute-discount policyrec)]) (policies-by-period path))))
+        (map (fn [[[compo nm] policyrec]] [[compo nm]
+  (compute-discount policyrec)]) (policies-by-period path :policyinfo
+  policyinfo :periods periods :active-policies active-policies))))
 
 (defn capacities
   "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
   [path & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
-  (let [discounts (discounts-by-period path)
+  (let [policyinfo (policy-info path)
+        periods (util/load-periods path)
+        active-policies (get-policies path)
+        discounts (discounts-by-period path :policyinfo policyinfo
+                                       :periods periods
+                                       :active-policies active-policies)
+        special-policies (atom #{})
+        auto? (fn [policy] (contains? #{"AUTO" ""}  (str/upper-case policy)))
         supprecs (->> (tbl/tabdelimited->table (slurp (str path "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
                       (tbl/table-records)
                       (filter supply-filter)
+                      (map (fn [{:keys [Policy] :as r}]
+                             (when (not (auto? Policy)) 
+                               (swap! special-policies conj Policy))
+                             r))
                                         ;multiple policies for one src will still exist after merging
-                      (merged-quantities))]
+                      (merged-quantities))
+        specials (discounts-by-period path
+                                      :policyinfo policyinfo
+                                       :periods periods
+                                       :active-policies
+                                       (map (fn [x] [x x]) @special-policies))]
     (for [{:keys [Policy Quantity Component SRC] :as r} supprecs
           {nm :Name} (util/load-periods path)]
-      {:src SRC :period nm :capacity (* Quantity (discounts [Component nm]))})))
+      {:src SRC :period nm :capacity (* Quantity (if (auto? Policy)
+                                                   (discounts [Component nm])
+                                                   (specials [Policy nm])))})))
 
 (defn capacity-by
   "Given a path to a Marathon audit trail, compute the theoretical capacity by period for each group

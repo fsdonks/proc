@@ -1,0 +1,22 @@
+ParameterName	Value
+LastDay	0
+LastDayDefault	4745
+Interval Length	365
+Number of Intervals	0
+ApplyAdjustments	1
+StartDate	42820.54686
+DefaultACPolicy	TAA_2125-TADMUDI_AC
+DefaultRCPolicy	TAA_2125-TADMUDI_RC
+DefaultNGPolicy	TAA_2125-TADMUDI_RC
+DefaultGhostPolicy	Ghost365_30
+ProjectPath	Default
+SpecialACPolicy	AC12
+SpecialRCPolicy	RC15
+SpecialNGPolicy	RC15
+SpecialGhostPolicy	Ghost365_30
+DefaultSupplyPriority	AC
+DefaultRecoveryTime	
+TAA1519MaxUtilizationHack	FALSE
+OldAC	TAA_2024_Capacity_AC
+OldRC	TAA_2024_Capacity_RC
+OldNG	TAA_2024_Capacity_RC

@@ -1,0 +1,6 @@
+Type	Name	FromDay	ToDay	PeriodCategory	Notes	Base
+PeriodRecord	Initialization	0	0	Initialization		
+PeriodRecord	Competition	1	1	PreSurge		OSD_Goal
+PeriodRecord	War	2	2	Surge		Max_NearMax_Ut
+PeriodRecord	War50	2	2	Surge		AltMax_NearMax_Ut
+PeriodRecord	War100	2	2	Surge		AllMax
