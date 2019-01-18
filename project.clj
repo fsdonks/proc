@@ -5,14 +5,17 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [spork "0.2.0.9-SNAPSHOT"]
-                 [joinr/incanter "1.9.3-SNAPSHOT"]
+                 [spork "0.2.1.1-SNAPSHOT"]
+                 [joinr/incanter-core "1.9.3-SNAPSHOT"   ]
+                 [joinr/incanter-charts "1.9.3-SNAPSHOT" ]
+                 [joinr/incanter-io "1.9.3-SNAPSHOT"     ]
+                 [joinr/incanter-excel "1.9.3-SNAPSHOT"  ]
                  ;;Note: the current release of incanter/incanter 1.9.1
                  ;;has a jacked dependency via swingrepl to an ancient clojure.
                  ;;This breaks the build process.  Fortunately, we don't need it.
                  ;;We just specify the individual modules and we're good to go.
                                         ;                 [incanter "1.5.8"]
-                 [iota "1.1.2"]
+                 [iota "1.1.3"]
                  ]
   :repl-options {:init (do (println "Loading post processor")
                            (require 'proc.example)
