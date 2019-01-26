@@ -38,7 +38,7 @@
     (case dimension
       0 (tbl/nth-row m i)
       1 (table-col m i)             
-    (throw (Exception. (str [:invalid-slice dimension i])))))
+     (throw (Exception. (str [:invalid-slice dimension i])))))
  
   mp/PMatrixRows 
 ;;"Protocol for accessing rows of a matrix"
@@ -90,9 +90,9 @@
       (mp/transpose cols)))
  #_mp/PColumnIndex 
   #_(column-index [ds column-name] 
-    (when-let [cnames (mp/column-names ds)] 
-      (let [cnames ^IPersistentVector (vec cnames)] 
-        (and cnames (first (tbl/find-where #{column-name} cnames))))))
+     (when-let [cnames (mp/column-names ds)] 
+       (let [cnames ^IPersistentVector (vec cnames)] 
+         (and cnames (first (tbl/find-where #{column-name} cnames))))))
   mp/PColumnSetting 
   (set-column [ds i column] 
     (let [scol   (mp/get-column ds 0) 
@@ -106,8 +106,8 @@
   (is-scalar? [m] false) 
   (get-shape [m] [(tbl/count-rows m) (count (tbl/table-fields m))])
   (dimension-count [m dim] 
-    (.nth ^IPersistentVector (.shape m) (long dim)))
-  )
+    (.nth ^IPersistentVector (mp/get-shape m) (long dim))))
+  
   
 
 
@@ -164,11 +164,11 @@
         (let [cols   (mapv #(mp/get-column ds2 %) rs)
               rcount (count (first cols))]
           (->> (tbl/conj-rows (tbl/table-columns ds1)
-                                           (for [i (range rcount)]
-                                             (mapv #(nth % i) cols)))
+                              (for [i (range rcount)]
+                                (mapv #(nth % i) cols)))
                (assoc ds1 :columns)))
-          (throw (Exception. (str "trying to join rows from tables with different column-names: "
-                                 [ls rs]))))))
+        (throw (Exception. (str "trying to join rows from tables with different column-names: "
+                               [ls rs]))))))
   ;;"Returns a dataset created by combining the columns of the given datasets"
   (join-columns [ds1 ds2]
     (let [ls (tbl/table-fields ds1)
@@ -181,7 +181,7 @@
   ;"Returns map of columns with associated list of values"
   (to-map [ds]
     (zipmap (tbl/table-fields ds)
-             (tbl/table-columns ds)))
+            (tbl/table-columns ds)))
                    
   ;"Returns seq of maps with row values"
   (row-maps [ds] (tbl/table-records ds)))
@@ -189,7 +189,7 @@
 
 (comment ;testing dataset api..
   (def res (tbl/make-table   {:name ["tom" "bill" "joe"], :age [1 2 3]}))
-  (def other (tbl/make-table {:name ["tom" "bill" "joe"], :age [1 2 3]}))
+  (def other (tbl/make-table {:year [10 20 30], :type [:A :B :C]}))
 
   (ds/join-columns res other)
   ;#spork.util.table.column-table{:fields [:name :age :year :type], :columns [["tom" "bill" "joe"] [1 2 3] [10 20 30] [:a :b :c]]}
@@ -211,6 +211,6 @@
   ;#spork.util.table.column-table{:fields [:name :age], :columns [["bill"] [2]]}
   (ds/select-rows res [0])
   ;#spork.util.table.column-table{:fields [:name :age], :columns [["tom"] [1]]}
-  (ds/select-rows res [0 1])
+  (ds/select-rows res [0 1]))
   ;#spork.util.table.column-table{:fields [:name :age], :columns [["tom" "bill"] [1 2]]}
-  )
+  
