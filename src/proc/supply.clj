@@ -10,6 +10,15 @@
             [clojure.string :as str])
   (:use [proc.core]))
 
+;;generic, re-inserted due to poor merge.
+(defn vba-round
+  "rounds a number, n to 1 decimal place, but if the number is whole,
+  the .0 is dropped."
+  [n]
+  (let [x (str (round-to 1 n))
+        [o t] (clojure.string/split x #"\.")]
+    (if (= t "0") o x)))
+
 ;;Generic
 (defn units-locs-at
   "Given a time, t, and the root directory to the marathon run, this function will
