@@ -35,7 +35,7 @@
                           :StartDay (+ (:StartDay row) (:Duration row))))]
     (group-by :StartDay (concat recs negs))))
 
-(defn quant-by-time+
+(defn quant-by-time
   "returns two vetors within a vector where the first vector is times and the
   second vector is quantities between the lowest time and highest time"
   [daymap]
@@ -123,7 +123,7 @@
                           peak (apply max quants)
                           samples (build-samples [times quants])
                           peakts (filter (fn [[t quant]] (= quant peak)) samples)]
-                      (conj acc {:group  :peak peak :times (map first peakts)})))]
+                      (conj acc {:group k :peak peak :times (map first peakts)})))]
     (reduce-kv  get-peaks [] bigmap)))
 
 ;;(filter (fn [[k v]] (= (:DemandGroup k) "Scenario9")) peaks)
@@ -309,7 +309,7 @@
                                           acc))) [] deltas)
         last-rec (last (:actives (last (last activities))))]
     ;;If the peak is 0, it's not really a peak.
-    {:peak peak :intervals (if (zero? peak) [] peaks)})
+    {:peak peak :intervals (if (zero? peak) [] peaks)}))
 
 (defn peak-times-by
   "Groups xs by a key function, f, and for each group, returns a map with
