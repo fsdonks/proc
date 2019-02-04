@@ -1328,7 +1328,10 @@
                                    :title fulltitle
                                    :x-label "Time (days)"
                                    :y-label "Dwell (years)")
-                     (no-d-plot "No deployments to plot" fulltitle)) ]
+                     (no-d-plot "No deployments to plot" fulltitle))
+        ;;Added to clean up chart y axis displaying duplicate values for small singleton y's
+        _            (stacked/set-autorange-minimum-size! plt :y 1.0)
+        ]
     (when d (doseq [[series d] (rest groups)]
               (add-points plt :DeployInterval :DwellYearsBeforeDeploy :series-label (:Component series) :legend true :data d))
       (set-xticks plt tickwidth)  

@@ -713,6 +713,33 @@
     (do (.setRange rx (.getRange (.getDomainAxis (.getXYPlot l)) ))
         (.setRange ry (.getRange (.getRangeAxis  (.getXYPlot l)))))))
 
+(defn get-axis [chart axis]
+  (case axis
+    :x (.getDomainAxis (.getXYPlot chart))
+    :y (.getRangeAxis (.getXYPlot chart))
+    (throw (ex-info "unknown axis!, expected :x or :y" {:axis axis}))))
+
+;;shady hack to cope with new jfreechart API.
+;;http://www.jfree.org/forum/viewtopic.php?t=117509
+(defn set-axis-decimals! [chart axis decimals]
+  (let [num-axis (get-axis chart axis)
+        decimals (long decimals)]
+    (if (zero?  decimals)
+      (.setStandardTickUnits num-axis (org.jfree.chart.axis.NumberAxis/createIntegerTickUnits))
+      (let [num-form (java.text.NumberFormat/getNumberInstance)
+            _ (.setMaximumFractionDigits num-form decimals)
+            _ (.setNumberFormatOverride num-axis num-form)]))))
+
+;;Added to fix a problem in test output, where tiny values on the
+;;y-axis were producing duplicates instead of an equally tiny
+;;autorange.
+;;http://www.jfree.org/forum/viewtopic.php?t=117649
+(defn set-autorange-minimum-size! [chart axis size]
+    (let [^org.jfree.chart.axis.ValueAxis num-axis (get-axis chart axis)
+          ]
+      (.setAutoRangeMinimumSize num-axis (double size))
+      chart))
+
 ;;if we wanted to order the xydataset, how would we? 
 ;;we'd have to removeall series....
 ;;then add them in the prescribed order.
@@ -789,7 +816,6 @@
         (.setAntiAlias chart false)
         chart)))
 
-
 (defn stacked-areaxy-chart2*
   [^xydataset xytable & options]
   (let [opts         (if options (apply assoc {:legend true :aa false} options)
@@ -805,6 +831,7 @@
         ;;group-by is now the series....
         x-label      (or (:x-label opts) "time (days)")
         y-label      (or (:y-label opts) "quantity required (units)")
+        y-decimals   (or (:y-decimals opts) 0)
         series-label (:series-label opts)
         vertical?    (if (false? (:vertical opts)) false true)
         legend?      (true? (:legend opts))
@@ -824,24 +851,22 @@
                       true
                       false)]
     ;;the difference between the regular area and this guy is that
-    ;;we have a category, defined by group-by, and the xs and ys....
-    ;;I'll rename _categories to xs at some point and values to ys......
-    (let [num-axis (.getRangeAxis (.getPlot chart))
-          num-form (java.text.NumberFormat/getNumberInstance)]
-      (do
-        (.setMaximumFractionDigits num-form 0)
-        (.setNumberFormatOverride num-axis num-form)
-                
+    ;;we have a category, defined by group-by, and the xs and ys...
+    ;;formatting bs that changed in the newer jfree dependency.
+    ;;this will now hose the chart if we don't use the approved
+    ;;path for creating IntegerTickUnits.
+    ;;http://www.jfree.org/forum/viewtopic.php?t=117509
+    (do (set-axis-decimals! chart :y 0)
         (.setAntiAlias chart  (get opts :aa))
         (set-colors    chart _color-by)
         (when tickwidth (set-xticks chart tickwidth))
         (set-theme     chart  theme)
-        chart))))
+        chart)))
 
 (defn sand-chart [ds & {:as opts}]
   (->> ds 
        (roll-sand)
-       (stacked-areaxy-chart2*  :start
+       (stacked-areaxy-chart2* :start
                                :quantity
                                :legend true
                                :group-by :Category :data)))
