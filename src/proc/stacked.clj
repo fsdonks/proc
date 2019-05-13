@@ -489,6 +489,24 @@
 
 (def default-color srm-color)
 
+(def cyan (java.awt.Color. 128 250 250))
+
+(def green (java.awt.Color. 128 250 128))
+
+(def blue (java.awt.Color. 127 127 250))
+
+(def red (java.awt.Color. 250 127 127))
+
+(def d-color {"Disrupt" red
+              "Defend" blue
+              "Deter" green
+              "Defeat" cyan})
+
+(def d-order ["Disrupt" "Deter" "Defend" "Defeat"])
+
+(def d-info {:color d-color :order d-order})
+
+
 ;;Dynamic var that lets us choose how to stylize and order our trends,
 ;;so we're consistent.  Ideally, all a use has to do is set
 ;;with-trend-info,  and as we create charts, we use said trend information.

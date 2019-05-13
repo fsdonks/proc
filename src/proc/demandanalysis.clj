@@ -28,9 +28,14 @@
 ;;sampler
 (defn add-deltas
   "takes DemandRecords. Adds a row for the end day of each demand with a negative
-  quantity. Groups by :StartDay"
-  [recs]
-  (let [negs (for [row recs]
+  quantity. Groups by :StartDay. Can supply a function that operates
+  on a demand record to return a response other than :Quantity like
+  (fn [r] (* (:Quantity r) (:Strength r)))."
+  [recs & {:keys [response] :or {response :Quantity}}]
+  (let [recs (if (= response :Quantity)
+               recs
+               (map (fn [r] (assoc r :Quantity (response r))) recs))
+        negs (for [row recs]
                (assoc row :Quantity (- (:Quantity row))
                           :StartDay (+ (:StartDay row) (:Duration row))))]
     (group-by :StartDay (concat recs negs))))
@@ -88,8 +93,8 @@
 (defn demand-quantities
   "calls this on a sequence of demand records, returns the result of
   quant-by-time."
-  [recs]
-  ((comp quant-by-time add-deltas) recs))
+  [recs & {:keys [response] :or {response :Quantity}}]
+  (quant-by-time (add-deltas recs :response response)))
 
 (defn get-peak-demands
   "tds is a dataset. Defaults to enabled is true and false.
@@ -134,6 +139,18 @@
 
 ;;(view (xy-plot (first qbt) (second qbt)))
 
+;;Auxillary fn for plotting, likely redundant (proc.stacked)
+(defn smooth
+  "Used when plotting x and y values.  When the xs are sparse, this
+  returns new xs and ys so that there are 90 degree angles between
+  each delta"
+  [xs ys]
+  (let [spliced (->> (for [x (range 1 (count xs))]
+                       [[(- (nth xs x) 0.00001) (nth xs x)] [(nth ys (- x 1)) (nth ys x)]])
+                     (concat [[[(first xs)] [(first ys)]]]))
+        agg (fn [f parts] (mapcat f parts))]
+    [(agg first spliced) (agg second spliced)]))
+
 ;;Generic?
 (defn graph-demand
   "these need to smoothed I think"
@@ -158,6 +175,40 @@
                  (.setLabel (.getRangeAxis (.getPlot c)) "Number of Units Required"))]
     (util/sync-scales cs)
     (doseq [c cs] (view c) cs)))
+
+(defn sand-demands
+  "Draw a sand chart of the demands grouped by k keyword called on
+  each demand record.  p specifies a path to AUDIT_DemandRecords.txt.
+  reponse is an alternate function for the vertical axis besides
+  :Quantity."
+  [p k & {:keys [response schema] :or {response :Quantity
+                                       schema schemas/drecordschema}}]
+  (let [xytable
+        (->> (tbl/tabdelimited->records p :schema schema)
+             (group-by k)
+             ((fn [m]
+                (for [[group recs] m
+                      :let [[xs ys] (apply smooth
+                                           (demand-quantities recs
+                                                              :response response))]
+                      i (range (count xs))]
+                  {:x (nth xs i) :y (nth ys i) :group group})))
+             (clojure.core.matrix.dataset/dataset)
+             (stacked/xy-table :x :y :group-by :group :data))]
+    (stacked/stacked-areaxy-chart2* xytable)))
+
+;;example usage to view a sandchart of demand records by :vignette
+;;where the y axis is total strength.
+(comment
+  (binding [stacked/*trend-info* stacked/d-info]
+    (view (sand-demands path
+                        :Vignette
+                        :response (fn [r] (* (:Strength r) (:Quantity
+                                                            r)))
+                        :schema (assoc schemas/drecordschema
+                                       "Strength" :int))))
+  )
+                                                        
 ;;___________________________________
 
 ;;spark charts
@@ -276,18 +327,6 @@
                 [interest
                  (map (fn [part] (map :t part)) partitions)
                  (map (fn [part] (map :percent part)) partitions)])))))
-
-;;Auxillary fn for plotting, likely redundant (proc.stacked)
-(defn smooth
-  "Used when plotting x and y values.  When the xs are sparse, this
-  returns new xs and ys so that there are 90 degree angles between
-  each delta"
-  [xs ys]
-  (let [spliced (->> (for [x (range 1 (count xs))]
-                       [[(- (nth xs x) 0.00001) (nth xs x)] [(nth ys (- x 1)) (nth ys x)]])
-                     (concat [[[(first xs)] [(first ys)]]]))
-        agg (fn [f parts] (mapcat f parts))]
-    [(agg first spliced) (agg second spliced)]))
 
 (def curr (atom nil))
 
