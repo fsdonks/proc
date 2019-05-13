@@ -283,16 +283,22 @@
           (recur (rest trends) (conj gapped-trends current) [(satisfaction trend)])
           )))))
 
+(def ^:dynamic demandfilter (fn [r] true))
+
 (defn condense-trends
   "Shrink each demandtrend record to the information we really need.
    Adds overlapping to totalrequired."
   [trends]
-  (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled deltaT]}]
+  (->> trends
+  (map (fn [{:keys [t SRC TotalRequired Overlapping TotalFilled deltaT
+  Vignette]}]
          {:SRC SRC
           :t t
           :req (+ TotalRequired Overlapping)
           :filled TotalFilled
-          :deltat deltaT}) trends))
+          :deltat deltaT
+          :vignette Vignette}))
+  (filter demandfilter)))
 
 (defn satisfaction-with-overlap
   "use demantrend records to get the percent demand satisfied."
