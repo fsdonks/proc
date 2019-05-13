@@ -28,7 +28,7 @@
                       "FollowOnCount"	:int
                       "DeploymentCount"	:int
                       "Category"	:text
-                      "DwellYearsBeforeDeploy"	:text
+                      "DwellYearsBeforeDeploy"	:float
                       "OITitle"	        :text})
 
 (def locschema {:T :int 

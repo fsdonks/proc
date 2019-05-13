@@ -682,6 +682,50 @@ satisfied.  "
        (into {}))
           :fname "%surgemet")])
 
+(defn demand-sats-prepostall
+  "demand-sat-from wrapper for audit-stats.  Includes fill for presurge,
+  surge, and presurge+surge periods."
+  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  (let [{PreSurge "PreSurge" Surge "Surge" :as period-map}
+        (util/period-map-from root)
+        fill (demand-sat-by-period root :group-fn group-fn :periods
+                                   (assoc period-map "entire" [(first PreSurge) (second Surge)]))
+        group-map (fn [recs p sname]
+                    (assoc
+                     (->> fill
+                          (filter (fn [[[group period] _]] (= period p)))
+                          (map (fn [[[group period] res]] [group
+                                                           (java.lang.Math/round (float res))]))
+                          (into {}))
+                     :fname sname))]
+    [(group-map fill "PreSurge" "%presurgemet")
+     (group-map fill "Surge" "%surgemet")
+     (group-map fill "entire" "entire%met")]))
+
+(defn average
+  "compute the average of a sequence of numbers."
+  [xs]
+  (float (/ (reduce + xs) (count xs))))
+
+;;might want to include non-deploying population in the future...
+(defn avg-dwell
+  "compute average dwell before deployment for deploying population
+  only. Used for audit-sats."
+  [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
+  [(assoc (->> (tbl/tabdelimited->records
+                (str root "AUDIT_Deployments.txt") :schema
+                schemas/deprecordschema)
+               (into [])
+               (remove (fn [{:keys [FollowOn DemandGroup]}]
+                         (or FollowOn (= DemandGroup
+                                         "RC_nonBOG-war"))))
+               (group-by (fn [r] (group-fn (:UnitType r))))
+               (map (fn [[group recs]] [group (average (map
+                                                        :DwellYearsBeforeDeploy
+                                                        recs))]))
+               (into {}))
+          :fname "avg_dwell")])
+
 ;;Generic
 (defn inventories-for
   "by-compo-supply-map-groupf wrapper for audit-stats."
@@ -709,7 +753,9 @@ satisfied.  "
 (def statfs
   {demand-sats-for ["%surgemet"]
    inventories-for ["ACsupply" "NGsupply" "RCsupply"]
-   surge-peaks ["surge_peak"]})
+   surge-peaks ["surge_peak"]
+   avg-dwell ["avg_dwell"]
+   demand-sats-prepostall ["%presurgemet" "%surgemet" "entire%met"]})
 
 (defn audit-stats
   "Compute statistics given a sequences of data functions called datafs.
@@ -851,13 +897,36 @@ satisfied.  "
                          "m4 TAA 21-25 % Surge Demand Met"
                          "change"])))
 
+(def prefixes2226 ["ACsupply" "NGsupply" "RCsupply" "entire%met"
+                   "%presurgemet" "%surgemet" "avg_dwell"])
+(def postfixes2236 ["non-bog" "no-non-bog" "delta"])
+(def order2 (concat ["group"] (for [prefix prefixes2226 postfix postfixes2266] (str
+                                                              prefix "_" postfix))))
+
 (defn spit-stats
   "spits the stats table to out."
-  [out path-pairs & {:keys [evolutions fns group-fn]
-                     :or {fns splus group-fn (fn [s] "All")}}]
+  [out path-pairs & {:keys [evolutions fns group-fn field-order]
+                     :or {fns splus group-fn (fn [s] "All")
+                          field-order []}}]
   (tbl/records->file (stats-with-deltas path-pairs :evolutions evolutions
-                                        :fns fns :group-fn group-fn) out))
+                                        :fns fns :group-fn group-fn)
+                     out
+                     :field-order field-order))
 
+(defn stats-2226
+  "Spit out the table of run statistics used to verify and produce
+  results for TAA2226."
+  [root]
+  (binding [demandfilter (fn [{:keys [vignette]}] (not= vignette
+                                                       "RC_NonBOG-War"))]
+    (spit-stats (str root "stats.txt") [[(str root "m4book-NonBOG\\")
+                                         "non-bog"]
+                                        [(str root
+                                              "m4book-No-NonBOG\\") "no-non-bog"]]
+                :fns [demand-sats-prepostall inventories-for
+                      avg-dwell]
+                :group-fn (fn [s] s)
+                :field-order order2)))
 
 ;;testing
 (comment
