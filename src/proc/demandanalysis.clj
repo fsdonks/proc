@@ -899,8 +899,8 @@ satisfied.  "
 
 (def prefixes2226 ["ACsupply" "NGsupply" "RCsupply" "entire%met"
                    "%presurgemet" "%surgemet" "avg_dwell"])
-(def postfixes2236 ["non-bog" "no-non-bog" "delta"])
-(def order2 (concat ["group"] (for [prefix prefixes2226 postfix postfixes2266] (str
+(def postfixes2226 ["non-bog" "no-non-bog" "delta"])
+(def order2 (concat ["group"] (for [prefix prefixes2226 postfix postfixes2226] (str
                                                               prefix "_" postfix))))
 
 (defn spit-stats
