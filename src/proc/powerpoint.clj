@@ -21,7 +21,12 @@
 ;;A map of typename to PictureData enumerated type values (ints),
 ;;scrapped programtically via reflection.
 (def picturedata-types
-  (into {} (eutil/get-enums XSLFPictureData PictureType)))
+  (into {} #_(eutil/get-enums XSLFPictureData PictureType) ;;legacy.
+        ;;had to patch this in during testing for some reason,
+        ;;perhaps new version of apache POI.  Looks like
+        ;;something changed in the release and we missed it.
+        (eutil/get-enums org.apache.poi.sl.usermodel.PictureData$PictureType
+                         PictureType)))
 
 (defn get-picturedata-type
   "Returns java XSLFPictureData.PictureType (int)  from string type-name"
