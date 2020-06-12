@@ -1040,8 +1040,6 @@
 
 (def ^:dynamic *sandtrends* false)
 
-(def tatom (atom nil))
-
 ;;revised version of dump-sandtrends, using multstreams to 
 ;;create multiple files simultaneously, save processing time.
 (defn dump-sandtrends ;we dump fills here, too!
@@ -1074,7 +1072,6 @@
                 dsamples    (sample-demand-trends (tbl/table-records dtrends)) ;dsamples is a map of demand name to a map of time to a record
                                                                                 ;from
                                         ;demandtrends
-                _ (reset! tatom dsamples)
                 headers     (into (tbl/table-fields loctable) [:DemandGroup :Vignette])
                 all-headers (conj headers :deltat)
                 get-group   (memoize (fn [^String nm] 
@@ -1113,7 +1110,7 @@
                             (util/new-line! w)
                             delta)))
                       1
-                      (reset! tatom (sample-sand-trends samples locsamples dsamples)))))
+                      (sample-sand-trends samples locsamples dsamples))))
           (println "Skipping sandtrends for " rootpath))))))
 
 (defn xs->src [^String ln]  (nth (tbl/split-by-tab ln) 8))
