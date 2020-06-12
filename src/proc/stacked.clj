@@ -14,7 +14,7 @@
                                 XYSeries XYSeriesCollection 
               XYDataItem]
              [org.jfree.data.general Series AbstractDataset]
-             [java.awt.Color]))
+             java.awt.Color))
 
 ;;This is an ugly hack to ditch errors.
 (defmacro do! [expr]

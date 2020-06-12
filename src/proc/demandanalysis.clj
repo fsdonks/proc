@@ -18,8 +18,8 @@
         [incanter.charts])
   (:import [org.jfree.chart.annotations XYLineAnnotation]
            [org.jfree.chart LegendItemCollection]
-           [java.awt.Color]
-           [java.lang.Math]))
+           [java.awt Color]
+           [java.lang Math]))
 
 ;;Idea was to compute the deltas in the demand signal by computing a net gain of
 ;;demand quantity each time we have events starting or ending.
