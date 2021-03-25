@@ -57,9 +57,7 @@
   and the values are nested maps where the keys are components and the values
   are quantities. Merges supply records according to merged-quantities."
   [root & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}]
-  (let [supprecs (->> (tbl/tabdelimited->table (slurp (str root "AUDIT_SupplyRecords.txt"))
-                                               :schema proc.schemas/supply-recs)
-                      (tbl/table-records)
+  (let [supprecs (->> (util/supply-records root)
                       (filter supply-filter)
                       (merged-quantities))]
     (reduce (fn [m r] (assoc m (:SRC r) (assoc (m (:SRC r)) (:Component r) (:Quantity r))))
@@ -370,6 +368,5 @@
   "given a path to a marathon audit trail, return a map of src to OI title.
    This data is pulled from audit supply records. Uses only enabled supply for now."
   [path]
-  (->> (util/load-supply path)
-       (filter (fn [{:keys [Enabled]}] Enabled))
+  (->> (util/supply-records path)
        (reduce (fn [a {:keys [SRC OITitle]}] (assoc a SRC OITitle)) {})))

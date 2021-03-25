@@ -399,8 +399,9 @@
   [path & {:keys [group-fn demand-filter periods]
            :or {group-fn (fn [s] "All")
                 demand-filter (fn [r] true)
-                periods (util/load-periods path)}}]
-  (let [demands (->> (util/enabled-demand path)
+                }}]
+  (let [periods (if (nil? periods) (util/load-periods path) periods)
+        demands (->> (util/enabled-demand path)
                      (filter demand-filter))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
     (peak-times-by-period (fn [r] (group-fn (:SRC r)))
@@ -977,10 +978,15 @@ satisfied.  "
   "For each group of demand records defined by group-fn, returns a map of :group :period :peak
   :demandgroup1 :demandgroup2 etc. for the first day of peak demand in each
   period ."
-  [path & {:keys [group-fn demand-filter] :or {group-fn (fn [s] "All")
-                                               demand-filter (fn [r] true)}}]
-  (let [sample-days (first-peak-day
-                     (peaks-from path :group-fn group-fn :demand-filter demand-filter))
+  [path & {:keys [group-fn demand-filter periods] :or {group-fn (fn [s] "All")
+                                               demand-filter (fn [r]
+                                                               true)
+                                                       }}]
+  (let [periods (if (nil? periods) (util/load-periods path) periods)
+        sample-days (first-peak-day
+                     (peaks-from path :group-fn group-fn
+                                 :demand-filter demand-filter :periods
+                                 periods))
         drecs (util/enabled-demand path)
         activity-map (->> (util/separate-by (fn [{:keys [SRC]}] (group-fn SRC)) drecs)
                           (map (fn [[g xs]] [g (temp/activity-profile xs :start-func :StartDay)]))
@@ -1017,7 +1023,7 @@ satisfied.  "
   If no Strength is present, return 'nostrength' Assume strenth is the same for
   every src."
   [path & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
-  (let [groups (->> (util/enabled-supply path)
+  (let [groups (->> (util/supply-records path)
                     (map (fn [r] (select-keys r [:SRC :Strength])))
                     (set)
                    (util/separate-by (fn [r] (group-fn (:SRC r)))))]

@@ -8,14 +8,25 @@
             [clojure.core.matrix.dataset :as ds]
             [clojure.core.reducers :as r]            
             [iota :as iota]
-            [spork.util [temporal :as temp]
-                        [io       :as io]
-                        [table    :as tbl]
-                        [parsing  :as parse]
-                        [zipfile  :as z]
-                        [general  :as general]
-                        [stream :as stream]]))
+            [spork.util
+             [temporal :as temp]
+             [io       :as io]
+             [table    :as tbl]
+             [parsing  :as parse]
+             [zipfile  :as z]
+             [general  :as general]
+             [stream :as stream]]
+            [spork.util.excel.core :as xl]))
 
+(defn load-records
+   "Function for loading records from one or more formats.
+   If obj is a string, it will be parsed as a path, for a tab
+  delimited table.  If obj is a sequence of maps, obj will be returned."
+  [obj & {:keys [schema]}]
+  (cond (string? obj) (tbl/table-records (tbl/tabdelimited->table (slurp obj)
+                                               :schema schema
+                                               :parsemode :noscience))
+        (and (seq? obj) (map? (first obj))) obj))
 
 (defn records
   "Aux function to wrap the legacy incanter dataset and new implementation.
@@ -503,21 +514,6 @@
 ;;from a compressed allfills.txt.gz|lz4 file.  Not sure yet.
 
 ;;generic
-(defn load-supply
-  [root]
-  (->> (tbl/tabdelimited->records (slurp (str root "AUDIT_SupplyRecords.txt"))
-           :schema proc.schemas/supply-recs)
-       (into [])))
-
-;;generic
-(defn enabled-supply
-  [root]
-  (->> (slurp (str root "AUDIT_SupplyRecords.txt"))
-       (tbl/tabdelimited->records)
-       (r/filter (fn [r] (:Enabled r)))
-       (into [])))
-
-;;generic
 (defn load-trends
   [root]
   (->> (tbl/tabdelimited->records (str root "DemandTrends.txt")
@@ -544,14 +540,55 @@
        (filter (fn [[dname recs]] (> (count recs) 1)))
        (map (fn [[dname recs]] dname))))
 
-(defn demand-records
-  "returns enabled demand records from an audit trail root dir."
-  [root]
-  (->> 
-   (tbl/tabdelimited->table (slurp (str root "AUDIT_DemandRecords.txt")) :parsemode :noscience 
-                            :schema schemas/drecordschema)
-   (tbl/table-records)
+(defn xl->records
+  "returns records from a table in a workbook within an Excel
+  workbook."
+  [wkbk-path wks-name]
+  (->
+   (xl/as-workbook wkbk-path)
+   (xl/wb->tables :sheetnames [wks-name])
+   ;;return the actual [sheetname table] tuple
+   (first)
+   ;;return the table
+   (second)
+   (tbl/keywordize-field-names)
+   (tbl/table-records)))
+
+(defn enabled-records
+  "returns enabled records from an audit trail root dir, xl file, or
+  if obj is already records, just returns obj. For now, the schema is
+  only used to parse the txt file."
+  [obj audit-file-name schema wks-name]
+  (->>
+   (if (string? obj)
+     (let [extension (.toLowerCase (io/fext obj))]
+       (case extension
+         "txt" 
+         (load-records (str obj audit-file-name) :schema
+                       schema)
+         "xlsx"
+         (xl->records obj wks-name)
+         ))
+     ;;otherwise, these are probably already records
+     ;;keep load-records to check if they are indeed records
+     (load-records obj))
    (filter (fn [{:keys [Enabled]}] Enabled))))
+
+(defn demand-records
+  "returns enabled demand records."
+  [obj]
+  (enabled-records obj
+                   "AUDIT_DemandRecords.txt"
+                   schemas/drecordschema
+                   "DemandRecords"))
+
+(defn supply-records
+  "returns enabled supply records."
+  [obj]
+  (enabled-records obj
+                   "AUDIT_SupplyRecords.txt"
+                   schemas/supply-recs
+                   "SupplyRecords"))
   
 (defn dups-from
   "returns duplicate demands from an audit trail root dir"
