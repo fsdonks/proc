@@ -1,11 +1,11 @@
 
-(defproject proc "0.2.7-SNAPSHOT"
+(defproject proc "0.2.8-SNAPSHOT"
   :description "Embeddable post-processor."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [spork "0.2.1.1-SNAPSHOT"]
+                 [spork "0.2.1.4-SNAPSHOT"]
                  [joinr/incanter-core "1.9.3-SNAPSHOT"   ]
                  [joinr/incanter-charts "1.9.3-SNAPSHOT" ]
                  [joinr/incanter-io "1.9.3-SNAPSHOT"     ]
@@ -18,7 +18,7 @@
                            (println "Switching to post processor namespace")
                            (ns proc.example))
                  :init-ns proc.example}
-  :source-paths ["src" "../spork/src" "../incanter/modules/incanter-charts/src"
+  :source-paths ["src" ;"../spork/src" "../incanter/modules/incanter-charts/src"
                  ]
   :profiles {:order {:aot [proc.example]}}
   ;;jvm-opts ^:replace ["-Xmx1g" "-XX:NewSize=197000"] ;200000 loads and runs run-sample! but 195000 won't load
