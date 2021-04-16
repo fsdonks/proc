@@ -26,7 +26,7 @@
   (cond (string? obj) (tbl/table-records (tbl/tabdelimited->table (slurp obj)
                                                :schema schema
                                                :parsemode :noscience))
-        (and (seq? obj) (map? (first obj))) obj))
+        (and (coll? obj) (map? (first obj))) obj))
 
 (defn records
   "Aux function to wrap the legacy incanter dataset and new implementation.

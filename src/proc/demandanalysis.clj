@@ -401,7 +401,7 @@
                 demand-filter (fn [r] true)
                 }}]
   (let [periods (if (nil? periods) (util/load-periods path) periods)
-        demands (->> (util/enabled-demand path)
+        demands (->> (util/demand-records path)
                      (filter demand-filter))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
     (peak-times-by-period (fn [r] (group-fn (:SRC r)))
@@ -966,35 +966,39 @@ satisfied.  "
 
 (defn quantities-by-demandgroup
   "given a map of {:actives [] :count}, where actives is a sequence of demand
-  records, returns a map of :demandgroup to quantity."
-  [m]
+  records, returns a map of :demand-group-key to quantity."
+  [m & {:keys [demand-group-key] :or {demand-group-key :DemandGroup}}]
   (->> (:actives m)
-       (group-by (fn [{:keys [DemandGroup]}] DemandGroup) )
+       (group-by (fn [r] (r demand-group-key)))
        (map (fn [[g xs]]  [g (reduce + (map :Quantity xs))]))
        (into {})))
 
 ;;Generic?
 (defn peak-parts
-  "For each group of demand records defined by group-fn, returns a map of :group :period :peak
-  :demandgroup1 :demandgroup2 etc. for the first day of peak demand in each
-  period ."
-  [path & {:keys [group-fn demand-filter periods] :or {group-fn (fn [s] "All")
-                                               demand-filter (fn [r]
-                                                               true)
-                                                       }}]
+  "For each group of demand records defined by group-fn which operates
+  on the src string and a demand-group-key that groups demands in the
+  first group, returns a map of :group :period :peak
+  :demand-group-key-value1 :demand-group-key-value2 etc. for the first day of peak demand in each
+  period."
+  [path & {:keys [group-fn demand-filter periods demand-group-key] :or
+           {group-fn (fn [src] "All")
+            demand-filter (fn [r]
+                            true)
+            demand-group-key :DemandGroup
+            }}]
   (let [periods (if (nil? periods) (util/load-periods path) periods)
         sample-days (first-peak-day
                      (peaks-from path :group-fn group-fn
                                  :demand-filter demand-filter :periods
                                  periods))
-        drecs (util/enabled-demand path)
+        drecs (util/demand-records path)
         activity-map (->> (util/separate-by (fn [{:keys [SRC]}] (group-fn SRC)) drecs)
                           (map (fn [[g xs]] [g (temp/activity-profile xs :start-func :StartDay)]))
                           (into {}))]
     (for [{:keys [peak group firstday period] :as r} sample-days]
       (merge (->> firstday
            (activity-at (activity-map group))
-           ((fn [x] (quantities-by-demandgroup (second x))))) r))))
+           ((fn [x] (quantities-by-demandgroup (second x) demand-group-key)))) r))))
 
 (defn columns->records
   "Given a sequence of records, keep all fields specified by a flds sequence and put remaining

@@ -78,12 +78,17 @@
 (defn print-inventory
   [total ng rc ac] (cl-format nil "~A/~A/~A//~A" ac ng rc total))
 
+(defn return-inv
+  "returns [NG RC AC] ints in a vector from an inventory map."
+  [inv]
+  (let [{:keys [total NG RC AC] :or {total 0 NG 0 RC 0 AC 0}}
+        (reduce-kv (fn [m k v] (assoc m (keyword k) v)) {} inv)]
+    [total NG RC AC]))
+  
 (defn print-inv
   "take one inventory and return a string"
   [inv] ;inv is one inventory map
-  (let [{:keys [total NG RC AC] :or {total 0 NG 0 RC 0 AC 0}}
-        (reduce-kv (fn [m k v] (assoc m (keyword k) v)) {} inv)]
-    (print-inventory total NG RC AC)))
+    (apply print-inventory (return-inv inv)))
 
 (defn print-all-invs [invs]
   (reduce-kv (fn [m k v] (assoc m k (print-inv v))) {} invs))
