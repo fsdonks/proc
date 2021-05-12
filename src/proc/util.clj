@@ -556,18 +556,20 @@
 
 (defn enabled-records
   "returns enabled records from an audit trail root dir, xl file, or
-  if obj is already records, just returns obj. For now, the schema is
-  only used to parse the txt file."
-  [obj audit-file-name schema wks-name]
+  if obj is already records, just returns obj. For now, input is the
+  schema used to parse the txt file or the worksheet name for an xlsx
+  file."
+  [obj input]
   (->>
    (if (string? obj)
-     (let [extension (.toLowerCase (io/fext obj))]
+     (let [extension (.toLowerCase (io/fext obj))
+           ]
        (case extension
          "txt" 
-         (load-records (str obj audit-file-name) :schema
-                       schema)
+         (load-records obj :schema
+                       input)
          "xlsx"
-         (xl->records obj wks-name)
+         (xl->records obj input)
          ))
      ;;otherwise, these are probably already records
      ;;keep load-records to check if they are indeed records
@@ -577,18 +579,27 @@
 (defn demand-records
   "returns enabled demand records."
   [obj]
-  (enabled-records obj
-                   "AUDIT_DemandRecords.txt"
-                   schemas/drecordschema
-                   "DemandRecords"))
+  (cond (coll? obj) (enabled-records obj "blah")
+    (io/folder? obj)
+    (enabled-records (str obj
+                          "AUDIT_DemandRecords.txt")
+                     schemas/drecordschema)
+    :else (enabled-records obj "DemandRecords")))
 
 (defn supply-records
   "returns enabled supply records."
   [obj]
-  (enabled-records obj
-                   "AUDIT_SupplyRecords.txt"
-                   schemas/supply-recs
-                   "SupplyRecords"))
+  (cond (coll? obj)
+        ;;already records
+        (enabled-records obj "blah")
+        (io/folder? obj)
+        (enabled-records (str obj
+                              "AUDIT_SupplyRecords.txt")
+                         schemas/supply-recs)
+        ;;must be an excel file, so pull the sheetname SupplyRecords.
+        :else (enabled-records obj
+                         "SupplyRecords") 
+        ))
   
 (defn dups-from
   "returns duplicate demands from an audit trail root dir"

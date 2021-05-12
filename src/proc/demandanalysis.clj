@@ -998,7 +998,8 @@ satisfied.  "
     (for [{:keys [peak group firstday period] :as r} sample-days]
       (merge (->> firstday
            (activity-at (activity-map group))
-           ((fn [x] (quantities-by-demandgroup (second x) demand-group-key)))) r))))
+           ((fn [x] (quantities-by-demandgroup (second x)
+                                               :demand-group-key demand-group-key)))) r))))
 
 (defn columns->records
   "Given a sequence of records, keep all fields specified by a flds sequence and put remaining
