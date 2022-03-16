@@ -1,5 +1,5 @@
 
-(defproject proc "0.2.8-SNAPSHOT"
+(defproject proc "0.2.9-SNAPSHOT"
   :description "Embeddable post-processor."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
