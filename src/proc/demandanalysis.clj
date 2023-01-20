@@ -396,14 +396,13 @@
    Supply an optional demand-filter for the demand records.
    group-fn accepts an SRC string as the argument and groups the records by this
    function in addition to by period."
-  [path & {:keys [group-fn demand-filter periods]
+  [path & {:keys [group-fn demand-filter periods peakfn]
            :or {group-fn (fn [s] "All")
                 demand-filter (fn [r] true)
-                }}]
+                peakfn  (fn [{:keys [actives]}] (apply + (map :Quantity actives)))}}]
   (let [periods (if (nil? periods) (util/load-periods path) periods)
         demands (->> (util/demand-records path)
-                     (filter demand-filter))
-        peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]
+                     (filter demand-filter))]
     (peak-times-by-period (fn [r] (group-fn (:SRC r)))
                           demands periods :StartDay :Duration peakfn)))
 

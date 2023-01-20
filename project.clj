@@ -1,15 +1,16 @@
 
-(defproject proc "0.2.9-SNAPSHOT"
+(defproject proc "0.3.1-SNAPSHOT"
   :description "Embeddable post-processor."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
-                 [spork "0.2.1.4-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "1.11.1"]
+                 [spork "0.2.1.6-SNAPSHOT"]
                  [joinr/incanter-core "1.9.3-SNAPSHOT"   ]
                  [joinr/incanter-charts "1.9.3-SNAPSHOT" ]
                  [joinr/incanter-io "1.9.3-SNAPSHOT"     ]
-                 [joinr/incanter-excel "1.9.3-SNAPSHOT"  ]
+                 [joinr/incanter-excel "1.9.3-SNAPSHOT"  :exclusions
+                  [org.apache.poi/poi-ooxml]]
                  ;;legacy, possibly deprecated.
                  [iota "1.1.3"]
                  ]

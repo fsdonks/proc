@@ -554,37 +554,62 @@
    (tbl/keywordize-field-names)
    (tbl/table-records)))
 
-(defn enabled-records
-  "returns enabled records from an audit trail root dir, xl file, or
+(defn records-from
+  "Returns records from an audit trail root dir, xl file, or
   if obj is already records, just returns obj. For now, input is the
   schema used to parse the txt file or the worksheet name for an xlsx
   file."
   [obj input]
-  (->>
-   (if (string? obj)
-     (let [extension (.toLowerCase (io/fext obj))
-           ]
-       (case extension
-         "txt" 
-         (load-records obj :schema
-                       input)
-         "xlsx"
-         (xl->records obj input)
-         ))
-     ;;otherwise, these are probably already records
-     ;;keep load-records to check if they are indeed records
-     (load-records obj))
+  (if (or (string? obj) (instance? java.net.URL obj))
+    (let [extension (.toLowerCase (io/fext obj))
+          ]
+      (case extension
+        "txt" 
+        (load-records obj :schema
+                      input)
+        "xlsx"
+        (xl->records obj input)
+        ))
+    ;;otherwise, these are probably already records
+    ;;keep load-records to check if they are indeed records
+    (load-records obj)))
+
+;;copy and paste three functions, noooo!
+(defn enabled-records
+  [obj input]
+  (->> (records-from obj input)
    (filter (fn [{:keys [Enabled]}] Enabled))))
 
+(defn make-record-fn
+  "Define a function for us that returns records from a resource, path
+  to an excel workbook, directory with a text file base on sheet-name,
+  or just returns the obj if it is already a collection. If we want to
+  only return the records that are :Enabled, then indicate so with enabled?."
+  [enabled? sheet-name schema]
+  (fn [obj]
+    (let [record-getter (if enabled? enabled-records records-from)]
+      (cond (coll? obj)
+            (record-getter obj "blah")
+            (io/folder? obj)
+            (record-getter (str obj
+                                "AUDIT_" sheet-name ".txt")
+                           schema)
+            :else (record-getter obj sheet-name)))))
+
+(defmacro defrecord-getter [fn-name enabled? sheet-name schema]
+  `(def ~fn-name
+     (make-record-fn ~enabled? ~sheet-name ~schema)))
+    
 (defn demand-records
   "returns enabled demand records."
   [obj]
-  (cond (coll? obj) (enabled-records obj "blah")
-    (io/folder? obj)
-    (enabled-records (str obj
-                          "AUDIT_DemandRecords.txt")
-                     schemas/drecordschema)
-    :else (enabled-records obj "DemandRecords")))
+  (cond (coll? obj)
+        (enabled-records obj "blah")
+        (io/folder? obj)
+        (enabled-records (str obj
+                              "AUDIT_DemandRecords.txt")
+                         schemas/drecordschema)
+        :else (enabled-records obj "DemandRecords")))
 
 (defn supply-records
   "returns enabled supply records."
@@ -600,7 +625,43 @@
         :else (enabled-records obj
                          "SupplyRecords") 
         ))
-  
+
+(defn period-records
+  "Returns the period records.  There is no Enabled for these!"
+  [obj]
+  (let [res (cond (coll? obj)
+        ;;already records
+        (records-from obj "blah")
+        (io/folder? obj)
+        (records-from (str obj
+                           "AUDIT_PeriodRecords.txt")
+                      schemas/periodrecs)
+        ;;must be an excel file, so pull the sheetname SupplyRecords.
+        :else (records-from obj
+                            "PeriodRecords"))]
+    (filter (fn [r] (not (= (:Name r) "Initialization"))) res)))
+
+;; (defn parameter-records
+;;   "Returns the parameters.  There is no Enabled for these!"
+;;   [obj]
+;;   (cond (coll? obj)
+;;         ;;already records
+;;         (records-from obj "blah")
+;;         (io/folder? obj)
+;;         (records-from (str obj
+;;                            "AUDIT_Parameters.txt")
+;;                       schemas/parameters)
+;;         ;;must be an excel file, so pull the sheetname SupplyRecords.
+;;         :else (records-from obj
+;;                             "Parameters")))
+
+;; (defn parameter-records
+;;   [obj]
+;;   ((make-record-fn obj false "Parameters" schemas/parameters) obj))
+
+(defrecord-getter parameter-records false "Parameters"
+  schemas/parameters)
+
 (defn dups-from
   "returns duplicate demands from an audit trail root dir"
   [root]
@@ -620,9 +681,7 @@
 (defn load-periods
   "Returns the records of AUDIT_PeriodRecords.txt in the root dir."
   [root]
-  (->> (tbl/tabdelimited->records (str root "AUDIT_PeriodRecords.txt") :parsemode :noscience :schema schemas/periodrecs)
-       (into [])
-       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
+  (period-records root))
 
 (defn period-map
   "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
@@ -648,12 +707,15 @@
 (defn last-day-default 
   "Returns last day default from Parameters."
   [root]
-  (with-rdrs [rdr (str root "AUDIT_Parameters.txt")]
-    (-> (nth (line-seq rdr) 2)
-      (tbl/split-by-tab)
-      (second)
-      (Integer/parseInt))))
- 
+  (let [last-day
+        (->> (parameter-records root)
+             (filter (fn [{:keys [ParameterName]}]
+                       (= ParameterName "LastDayDefault")))
+             (:Value))]
+    (if (string? last-day)
+      (read-string last-day)
+      last-day)))
+       
 (defn last-day
   "Returns the last processed day of the simulation as computed by m4."
   [root]
