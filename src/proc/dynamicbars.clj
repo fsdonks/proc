@@ -18,7 +18,7 @@
 (defn peaks-by-interest 
   "Returns the last max peak found for each interest"
   [root interests & {:keys [groupfn]}]
-  (let [drecs (util/enabled-demand root)
+  (let [drecs (util/demand-records root)
         rev-ints (srcs-ints interests)
         groupfn  (if groupfn groupfn (fn [{:keys [SRC DemandGroup]}] (rev-ints SRC)))
         peakfn (fn [{:keys [actives]}] (apply + (map :Quantity actives)))]

@@ -2,15 +2,17 @@
   (:require [clojure.test :refer :all]
             [proc.demandanalysis :refer :all]
             [spork.util.table :as tbl]
-            [proc.supply :as supply]))
+            [proc.supply :as supply]
+            [proc.util :as util]))
 
+;;This root is on resource-paths now so it's not needed.
 (defn add-path [test-name]  (str "test/resources/" test-name))
 
 ;;first item decides whether the policy string show the percentage
 ;;of RC availability only or not.
 (def test-paths
-  [[false (add-path "snapchart_v7/")]
-   [true (add-path "2125-19-3/")]])
+  [[false "snapchart_v7/"]
+   [true "2125-19-3/"]])
 
 (def flatchartdata
 {:interest :text
@@ -38,7 +40,8 @@
                        :periodpolicy
                        :demand
                        :OItitle))
-                       (into [] (tbl/tabdelimited->records root :schema flatchartdata))))
+                       (into [] (tbl/tabdelimited->records
+  (slurp (util/resource-check root)) :schema flatchartdata))))
 
 ;;how to handle flatchartdata RC field when  ARinv and NGinv are missing.
 ;;Solution: renamed RCinv to NGinv, AR inv is 0
@@ -129,7 +132,7 @@ Input data should be the same between spark and flatdata."
 (def sparks (set (flatdata-from (str tp "audit/") :group-fn (fn [s] s))))
 (def flats (set (flatdata-records (str tp "flatchartdata.txt"))))
 (require '[proc.util :as util])
-(first (util/duplicate-demands (util/enabled-demand (str tp "audit/"))))
+(first (util/duplicate-demands (util/demand-records (str tp "audit/"))))
 
 (count sparks)
 885

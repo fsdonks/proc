@@ -19,6 +19,7 @@
                            (println "Switching to post processor namespace")
                            (ns proc.example))
                  :init-ns proc.example}
+  :resource-paths ["test/resources"]
   :source-paths ["src" ;"../spork/src" "../incanter/modules/incanter-charts/src"
                  ]
   :profiles {:order {:aot [proc.example]}}

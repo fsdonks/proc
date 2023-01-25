@@ -7,7 +7,9 @@
             [clojure.pprint :refer [cl-format]]
             [spork.util.general :refer [line-reducer]]
             [spork.util.excel.core :as xl]
-            [clojure.string :as str])
+            [spork.util.io :as io]
+            [clojure.string :as str]
+            [clojure.java.io :as java.io])
   (:use [proc.core]))
 
 ;;Generic
@@ -126,14 +128,19 @@
   "Returns the path of the marathon workbook if given the path of the audit trail."
   [auditpath]
   (let [mpath (str/join "/" (butlast (str/split auditpath #"[/\\\\]")))
-        run-name (get-run-name auditpath)]
-    (str mpath "/" run-name ".xlsx")))
+        run-name (get-run-name auditpath)
+        wbpath (str mpath "/" run-name ".xlsx")]
+    (if (io/fexists? wbpath)
+      wbpath
+      (java.io/resource wbpath))))
 
 ;;Generic?
 (defn get-policies
   "Returns a map of compo to policy name for each component given the path to the audit trail"
   [path]
-  (->> (line-reducer (str path "AUDIT_Parameters.txt"))
+  (->> (line-reducer (util/resource-check (str path
+                                               "AUDIT_Parameters.txt"))
+                     :reader-fn clojure.java.io/reader)
        (into [])
        (map tbl/split-by-tab)
        (reduce (fn [acc line-vec] (case (first line-vec)
@@ -269,7 +276,7 @@
   (let [active-policies (if active-policies active-policies (get-policies path))
         {:keys [composites policies]} (if policyinfo policyinfo
                                           (policy-info path))
-        periods (if periods periods (util/load-periods path))]
+        periods (if periods periods (util/period-records path))]
     (into {} (for [[compo policy] active-policies
                    {nm :Name} periods]
                [[compo nm] (policy-record policy nm policies composites)]))))
@@ -309,7 +316,7 @@
                                         ;for ac and rc make this joined by ->
     (reduce (fn [acc {:keys [Name]}] (str acc (if (= acc "") "" "->")
   (period-fn policies Name)))
-            "" (util/load-periods path)))
+            "" (util/period-records path)))
   )
 
 ;;Generic
@@ -328,14 +335,18 @@
   "Given the root directory to a Marathon audit trail, returns a map of [int period] to theoretical capacity."
   [path & {:keys [supply-filter] :or {supply-filter (fn [r] (:Enabled r))}}] 
   (let [policyinfo (policy-info path)
-        periods (util/load-periods path)
+        periods (util/period-records path)
         active-policies (get-policies path)
         discounts (discounts-by-period path :policyinfo policyinfo
                                        :periods periods
                                        :active-policies active-policies)
         special-policies (atom #{})
         auto? (fn [policy] (contains? #{"AUTO" ""}  (str/upper-case policy)))
-        supprecs (->> (tbl/tabdelimited->table (slurp (str path "AUDIT_SupplyRecords.txt")) :schema proc.schemas/supply-recs)
+        supprecs (->>
+                  (tbl/tabdelimited->table
+                   (slurp (util/resource-check
+                           (str path "AUDIT_SupplyRecords.txt")))
+                   :schema proc.schemas/supply-recs)
                       (tbl/table-records)
                       (filter supply-filter)
                       (map (fn [{:keys [Policy] :as r}]
@@ -350,7 +361,7 @@
                                        :active-policies
                                        (map (fn [x] [x x]) @special-policies))]
     (for [{:keys [Policy Quantity Component SRC] :as r} supprecs
-          {nm :Name} (util/load-periods path)]
+          {nm :Name} (util/period-records path)]
       {:src SRC :period nm :capacity (* Quantity (if (auto? Policy)
                                                    (discounts [Component nm])
                                                    (specials [Policy nm])))})))

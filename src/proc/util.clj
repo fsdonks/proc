@@ -6,7 +6,8 @@
             [proc.schemas          :as schemas]
             [proc.dataset] ;incanter dataset wrapper for tables.
             [clojure.core.matrix.dataset :as ds]
-            [clojure.core.reducers :as r]            
+            [clojure.core.reducers :as r]
+            [clojure.java.io :as jio]
             [iota :as iota]
             [spork.util
              [temporal :as temp]
@@ -20,10 +21,11 @@
 
 (defn load-records
    "Function for loading records from one or more formats.
-   If obj is a string, it will be parsed as a path, for a tab
+   If obj is a string or a resource, it will be slurped and parsed, for a tab
   delimited table.  If obj is a sequence of maps, obj will be returned."
   [obj & {:keys [schema]}]
-  (cond (string? obj) (tbl/table-records (tbl/tabdelimited->table (slurp obj)
+  (cond (or (instance? java.net.URL obj) (string? obj))
+        (tbl/table-records (tbl/tabdelimited->table (slurp obj)
                                                :schema schema
                                                :parsemode :noscience))
         (and (coll? obj) (map? (first obj))) obj))
@@ -122,7 +124,7 @@
 
 ;;This lets us extract unfilled-trends from demand-trends.
 (defn first-line [path]
-  (with-open [rdr (clojure.java.io/reader path)]
+  (with-open [rdr (jio/reader path)]
     (first (line-seq rdr))))
 
 (defn raw-headers [path] 
@@ -193,7 +195,7 @@
            (range (tbl/record-count t))))))
 
 (defn spit-table [path t]
-  (with-open [^java.io.BufferedWriter out (clojure.java.io/writer path)]
+  (with-open [^java.io.BufferedWriter out (jio/writer path)]
     (doseq [^String ln (table->lines t)]
       (io/writeln! out ln))))
 
@@ -280,7 +282,7 @@
 
 ;didn't finish after a while... Not sure if this works. Do i still need this?
 (defn fills->records [fillp]
-  (with-open [rdr (clojure.java.io/reader fillp)]
+  (with-open [rdr (jio/reader fillp)]
           (tbl/table-records 
             (tbl/lines->table  (line-seq rdr) :parsemode :noscience :schema schemas/fillrecord))))
  
@@ -312,7 +314,7 @@
 (defn files-in 
   "useful for pulling out all of the root directories for a set of marathon runs in a folder located at path"
   [path]
-  (let [paths (map (fn [p] (.getPath p)) (vec (.listFiles (clojure.java.io/file path))))]
+  (let [paths (map (fn [p] (.getPath p)) (vec (.listFiles (jio/file path))))]
     (do (spit (str path "filenames.txt") (clojure.string/join "\r\n" paths))
       paths)))
 
@@ -376,32 +378,32 @@
 (defn check-row-val-count 
   "does every row have the same number of values in it?"
   [path]
-  (with-open [rdr (clojure.java.io/reader path)] 
+  (with-open [rdr (jio/reader path)] 
     (every? (fn [[count1 count2]] (= count1 count2))
             (partition 2 1 (map (comp count tbl/split-by-tab) (line-seq rdr))))))
 
 (defn files=
   "Are these two files the same?  Compares the two files line-by-line."
   [file1 file2]
-  (with-open [rdr1 (clojure.java.io/reader file1)
-              rdr2 (clojure.java.io/reader file2)]
+  (with-open [rdr1 (jio/reader file1)
+              rdr2 (jio/reader file2)]
     (every? (fn [[line1 line2]] (= line1 line2))
             (map vector (rest (line-seq rdr1)) (rest (line-seq rdr2))))))
 
 (defn vis-files=? [file1 file2]
-  (with-open [rdr1 (clojure.java.io/reader file1)
-              rdr2 (clojure.java.io/reader file2)]
+  (with-open [rdr1 (jio/reader file1)
+              rdr2 (jio/reader file2)]
     (first (remove (fn [[line1 line2]] (= line1 line2))
                    (map vector (rest (line-seq rdr1)) (rest (line-seq rdr2)))))))
 
 (defn line-count [path]
-  (with-open [rdr (clojure.java.io/reader path)] 
+  (with-open [rdr (jio/reader path)] 
     (count (line-seq rdr))))
 
 (defn bad-rows 
   "returns the rows that don't have the same number of values in them"
   [path]
-  (with-open [rdr (clojure.java.io/reader path)] 
+  (with-open [rdr (jio/reader path)] 
     (filter (fn [[row1 row2]] (= (count row1) (count row2)))
             (partition 2 1  (map tbl/split-by-tab (line-seq rdr))))))
 
@@ -411,8 +413,8 @@
   [filepath]
   (let [infilename (last (clojure.string/split filepath #"/"))
         outfile (str (up-one filepath) "hashes-" infilename) ]
-    (with-open [w (clojure.java.io/writer outfile)
-                rdr (clojure.java.io/reader filepath)]
+    (with-open [w (jio/writer outfile)
+                rdr (jio/reader filepath)]
       (doseq [l (line-seq rdr)]
         (io/writeln! w (str (hash l)))))))
 
@@ -441,7 +443,7 @@
 (defmacro with-rdrs [rdr-paths & body]
   `(with-open ~(reduce (fn [acc [l r]] (conj acc l r)) '[]
                          (for [[rdr path] (partition 2 rdr-paths)]
-                           [rdr `(clojure.java.io/reader ~path)]))
+                           [rdr `(jio/reader ~path)]))
      ~@body))
                                
 (defn filter-by-vals [column oper values xs]
@@ -559,26 +561,31 @@
   if obj is already records, just returns obj. For now, input is the
   schema used to parse the txt file or the worksheet name for an xlsx
   file."
-  [obj input]
-  (if (or (string? obj) (instance? java.net.URL obj))
-    (let [extension (.toLowerCase (io/fext obj))
-          ]
+  [obj sheet-name schema]
+  (if (or (instance? java.lang.String obj) (instance? java.net.URL obj))
+    (let [extension (.toLowerCase (io/fext obj))]
       (case extension
         "txt" 
         (load-records obj :schema
-                      input)
+                      schema)
         "xlsx"
-        (xl->records obj input)
+        (xl->records obj sheet-name)
         ))
     ;;otherwise, these are probably already records
     ;;keep load-records to check if they are indeed records
     (load-records obj)))
 
-;;copy and paste three functions, noooo!
 (defn enabled-records
-  [obj input]
-  (->> (records-from obj input)
+  [obj sheet-name schema]
+  (->> (records-from obj sheet-name schema)
    (filter (fn [{:keys [Enabled]}] Enabled))))
+
+(defn resource-check "If the file doesn't exist as a local file path,
+  check to see if it's on the resources path."
+  [obj]
+  (if (or (coll? obj) (io/file? obj))
+    obj
+    (jio/resource obj)))
 
 (defn make-record-fn
   "Define a function for us that returns records from a resource, path
@@ -587,90 +594,42 @@
   only return the records that are :Enabled, then indicate so with enabled?."
   [enabled? sheet-name schema]
   (fn [obj]
-    (let [record-getter (if enabled? enabled-records records-from)]
-      (cond (coll? obj)
-            (record-getter obj "blah")
-            (io/folder? obj)
-            (record-getter (str obj
-                                "AUDIT_" sheet-name ".txt")
-                           schema)
-            :else (record-getter obj sheet-name)))))
+    (let [record-getter (if enabled? enabled-records records-from)
+          ;;to add the standard file name if needed.
+          file-path (str obj "AUDIT_" sheet-name ".txt")
+          checked-file (if (or (io/folder? obj) (jio/resource file-path))
+                           file-path
+                           ;;Filepath or records are being passed directly
+                           obj)]
+            (record-getter (resource-check checked-file) sheet-name schema))))
 
 (defmacro defrecord-getter [fn-name enabled? sheet-name schema]
   `(def ~fn-name
      (make-record-fn ~enabled? ~sheet-name ~schema)))
-    
-(defn demand-records
-  "returns enabled demand records."
-  [obj]
-  (cond (coll? obj)
-        (enabled-records obj "blah")
-        (io/folder? obj)
-        (enabled-records (str obj
-                              "AUDIT_DemandRecords.txt")
-                         schemas/drecordschema)
-        :else (enabled-records obj "DemandRecords")))
 
-(defn supply-records
-  "returns enabled supply records."
-  [obj]
-  (cond (coll? obj)
-        ;;already records
-        (enabled-records obj "blah")
-        (io/folder? obj)
-        (enabled-records (str obj
-                              "AUDIT_SupplyRecords.txt")
-                         schemas/supply-recs)
-        ;;must be an excel file, so pull the sheetname SupplyRecords.
-        :else (enabled-records obj
-                         "SupplyRecords") 
-        ))
+(defrecord-getter demand-records-init true "DemandRecords"
+  schemas/drecordschema)
+
+(defrecord-getter supply-records true "SupplyRecords"
+  schemas/supply-recs)
+
+(defrecord-getter period-records-init false "PeriodRecords"
+  schemas/periodrecs)
 
 (defn period-records
   "Returns the period records.  There is no Enabled for these!"
   [obj]
-  (let [res (cond (coll? obj)
-        ;;already records
-        (records-from obj "blah")
-        (io/folder? obj)
-        (records-from (str obj
-                           "AUDIT_PeriodRecords.txt")
-                      schemas/periodrecs)
-        ;;must be an excel file, so pull the sheetname SupplyRecords.
-        :else (records-from obj
-                            "PeriodRecords"))]
-    (filter (fn [r] (not (= (:Name r) "Initialization"))) res)))
-
-;; (defn parameter-records
-;;   "Returns the parameters.  There is no Enabled for these!"
-;;   [obj]
-;;   (cond (coll? obj)
-;;         ;;already records
-;;         (records-from obj "blah")
-;;         (io/folder? obj)
-;;         (records-from (str obj
-;;                            "AUDIT_Parameters.txt")
-;;                       schemas/parameters)
-;;         ;;must be an excel file, so pull the sheetname SupplyRecords.
-;;         :else (records-from obj
-;;                             "Parameters")))
-
-;; (defn parameter-records
-;;   [obj]
-;;   ((make-record-fn obj false "Parameters" schemas/parameters) obj))
+  (->> (period-records-init obj)
+       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
 
 (defrecord-getter parameter-records false "Parameters"
   schemas/parameters)
 
-(defn dups-from
-  "returns duplicate demands from an audit trail root dir"
+(defn demand-records
+  "Return enabled DemandRecords and prints the number of duplicate
+  demand records."
   [root]
-  (duplicate-demands (demand-records root)))
-
-(defn enabled-demand
-  "Return enabled DemandRecords as a sequence of records given a path to an audit trail dir."
-  [root]
-  (let [drecs (demand-records root)
+  (let [drecs (demand-records-init root)
         dupes (duplicate-demands drecs)]
     (println "There are"(count dupes) "demand names with multiple
   demand records.")
@@ -678,10 +637,10 @@
             " duplicate demand records.")
     drecs))
 
-(defn load-periods
-  "Returns the records of AUDIT_PeriodRecords.txt in the root dir."
+(defn dups-from
+  "returns duplicate demands from an audit trail root dir"
   [root]
-  (period-records root))
+  (duplicate-demands (demand-records root)))
 
 (defn period-map
   "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
@@ -700,7 +659,7 @@
   "Returns the day of the last inscope demand deactivation."
   [root]
   (let [inscopes (inscope-srcs (str root "AUDIT_InScope.txt"))]
-  (->> (enabled-demand root)
+  (->> (demand-records root)
        (filter (fn [r] (contains? inscopes (:SRC r))))
        (reduce (fn [acc {:keys [StartDay Duration]}] (max acc (+ StartDay Duration))) 0))))
 
@@ -724,7 +683,7 @@
 (defn period-map-from
   "load a period map from a marathon audit trail. Compute last-day instead of using ToDay from period records."
   [root]
-  (let [keyvals (period-map (load-periods root))
+  (let [keyvals (period-map (period-records root))
         [nm [from to]] (last keyvals)
         lastperiod [nm [from (last-day root)]]]
     (into {} (conj (pop keyvals) lastperiod))))

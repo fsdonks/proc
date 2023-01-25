@@ -400,7 +400,7 @@
            :or {group-fn (fn [s] "All")
                 demand-filter (fn [r] true)
                 peakfn  (fn [{:keys [actives]}] (apply + (map :Quantity actives)))}}]
-  (let [periods (if (nil? periods) (util/load-periods path) periods)
+  (let [periods (if (nil? periods) (util/period-records path) periods)
         demands (->> (util/demand-records path)
                      (filter demand-filter))]
     (peak-times-by-period (fn [r] (group-fn (:SRC r)))
@@ -614,7 +614,7 @@
   "Save the spark charts for the period named by period"
   [in out period group-fn]
   (let [[{:keys [Name FromDay ToDay]} :as periods]
-        (filter (fn [{:keys [Name]}] (= Name period)) (util/load-periods in))]
+        (filter (fn [{:keys [Name]}] (= Name period)) (util/period-records in))]
     (when (not= (count periods) 1)
       (throw (ex-info (str "There needs to be only one period with that name.  There are "
                            (count periods) " with that name.") {})))
@@ -742,7 +742,7 @@ satisfied.  "
   "Uses peaks-from to return the surge period peaks."
   [root & {:keys [group-fn] :or {group-fn (fn [s] "All")}}]
   [(assoc (->> (peaks-from root :periods (filter (fn [r] (= "Surge" (:Name r)))
-                                                 (util/load-periods root))
+                                                 (util/period-records root))
                            :group-fn group-fn)
        (map (fn [r] [(:group r) (:peak r)]))
        (into {}))
@@ -985,7 +985,7 @@ satisfied.  "
                             true)
             demand-group-key :DemandGroup
             }}]
-  (let [periods (if (nil? periods) (util/load-periods path) periods)
+  (let [periods (if (nil? periods) (util/period-records path) periods)
         sample-days (first-peak-day
                      (peaks-from path :group-fn group-fn
                                  :demand-filter demand-filter :periods
