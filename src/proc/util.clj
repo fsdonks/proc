@@ -597,10 +597,11 @@
     (let [record-getter (if enabled? enabled-records records-from)
           ;;to add the standard file name if needed.
           file-path (str obj "AUDIT_" sheet-name ".txt")
-          checked-file (if (or (io/folder? obj) (jio/resource file-path))
+          checked-file (cond (coll? obj) obj ;;already records
+                             (or (io/folder? obj) (jio/resource file-path))
                            file-path
                            ;;Filepath or records are being passed directly
-                           obj)]
+                          :else obj)]
             (record-getter (resource-check checked-file) sheet-name schema))))
 
 (defmacro defrecord-getter [fn-name enabled? sheet-name schema]
