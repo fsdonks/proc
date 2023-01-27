@@ -616,12 +616,6 @@
 (defrecord-getter period-records-init false "PeriodRecords"
   schemas/periodrecs)
 
-(defn period-records
-  "Returns the period records.  There is no Enabled for these!"
-  [obj]
-  (->> (period-records-init obj)
-       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
-
 (defrecord-getter parameter-records false "Parameters"
   schemas/parameters)
 
@@ -636,16 +630,6 @@
     (println "There are " (- (count drecs) (count (into #{} drecs)))
             " duplicate demand records.")
     drecs))
-
-(defn dups-from
-  "returns duplicate demands from an audit trail root dir"
-  [root]
-  (duplicate-demands (demand-records root)))
-
-(defn period-map
-  "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
- [recs]
-  (reduce (fn [acc {:keys [Name FromDay ToDay]}] (conj acc [Name [FromDay ToDay]])) [] recs))
 
 ;;Changed 
 ;this is a hack to ensure we are generating demand names just like Marathon (without Out-ofscope)
@@ -670,15 +654,70 @@
         (->> (parameter-records root)
              (filter (fn [{:keys [ParameterName]}]
                        (= ParameterName "LastDayDefault")))
+             (first)
              (:Value))]
-    (if (string? last-day)
-      (read-string last-day)
+    (case  (type last-day)
+      java.lang.String (read-string last-day)
+      ;;a big number.  Activities will be cut off at last
+      ;;deactivation anyways
+      nil 9999999
+      ;;Already a number
       last-day)))
        
 (defn last-day
   "Returns the last processed day of the simulation as computed by m4."
   [root]
   (inc (min (last-day-default root) (last-deactivation root))))
+
+(defn replace-inf
+  "Replace any inf ToDays in the PeriodRecords with
+  the LastDayDefault for  now since we don't necessarily have
+  AUDIT_InScope.txt to compute the last deactivation."
+  [period-recs last-day-pulled]
+  (map (fn [{:keys [ToDay] :as r}]
+         (if (= ToDay "inf")
+           (assoc r :ToDay last-day-pulled)
+           r))
+       period-recs))
+
+(defn period-records-from
+  "Returns the period records.  There is no Enabled for these!"
+  [obj]
+  (->> (period-records-init obj)
+       (filter (fn [r] (not (= (:Name r) "Initialization"))))))
+
+(defn audit-trail? "Can we access our marathon tables from either an
+  audit trail on the filesystem or resources on the classpath?"
+  [path]
+  (let [audit-files (map (fn [file-name] (str path file-name))
+                         ["AUDIT_Parameters.txt"])]
+    (or
+     (and (io/folder? path)
+          (every? io/file? audit-files))
+     (every? jio/resource audit-files))))
+     
+(defn tables-available? "Is this an audit-trail or m4 workbook path from
+  which we can pull any of our m4 input tables from?"
+  [obj]
+  (let [extension (.toLowerCase (io/fext obj))]
+    (or (= extension "xlsx") (audit-trail? obj))))
+  
+(defn period-records
+  [obj]
+  (let [period-recs (period-records-from obj)]
+    (if (tables-available? obj)
+      (replace-inf period-recs (last-day-default obj))
+      period-recs)))
+
+(defn dups-from
+  "returns duplicate demands from an audit trail root dir"
+  [root]
+  (duplicate-demands (demand-records root)))
+
+(defn period-map
+  "Given period records, returns vectors of key, value pairs  where keys are the period names and vals are two item vectors with start and end of each period."
+ [recs]
+  (reduce (fn [acc {:keys [Name FromDay ToDay]}] (conj acc [Name [FromDay ToDay]])) [] recs))
 
 (defn period-map-from
   "load a period map from a marathon audit trail. Compute last-day instead of using ToDay from period records."
