@@ -562,8 +562,10 @@
   schema used to parse the txt file or the worksheet name for an xlsx
   file."
   [obj sheet-name schema]
-  (if (or (instance? java.lang.String obj) (instance? java.net.URL obj))
-    (let [extension (.toLowerCase (io/fext obj))]
+  (if (or (instance? java.lang.String obj)
+          (instance? java.net.URL obj))
+    ;;Might need to cast java.new.URL to str for this to work.
+    (let [extension (.toLowerCase (io/fext (str obj)))]
       (case extension
         "txt" 
         (load-records obj :schema
@@ -583,7 +585,7 @@
 (defn resource-check "If the file doesn't exist as a local file path,
   check to see if it's on the resources path."
   [obj]
-  (if (or (coll? obj) (io/file? obj))
+  (if (or (coll? obj) (instance? java.net.URL obj) (io/file? obj))
     obj
     (jio/resource obj)))
 
@@ -597,11 +599,14 @@
     (let [record-getter (if enabled? enabled-records records-from)
           ;;to add the standard file name if needed.
           file-path (str obj "AUDIT_" sheet-name ".txt")
-          checked-file (cond (coll? obj) obj ;;already records
-                             (or (io/folder? obj) (jio/resource file-path))
-                           file-path
-                           ;;Filepath or records are being passed directly
-                          :else obj)]
+          checked-file (cond (or (coll? obj)
+                                 (instance? java.net.URL obj))
+                             obj ;;already cast
+                             (or (io/folder? obj)
+                                 (jio/resource file-path))
+                             file-path
+                             ;;Passing the path directly.
+                           :else obj)]
             (record-getter (resource-check checked-file) sheet-name schema))))
 
 (defmacro defrecord-getter [fn-name enabled? sheet-name schema]
