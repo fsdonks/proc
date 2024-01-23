@@ -79,8 +79,7 @@
 ;;Make Generic.
 (defn filtered-demand
   [root & {:keys [pred] :or {pred enabled?}}]
-  (->> (tbl/tabdelimited->records (str root "AUDIT_DemandRecords.txt")
-                                  :paresmode :noscience :schema schemas/drecordschema)
+  (->> (util/demand-records root)
        (into [] (filter pred))))
 
 ;;Make Generic.
@@ -159,6 +158,18 @@
         [times quants] (quant-by-time (add-deltas recs))]
     (xy-plot times quants)))
 
+(defn set-axis-title-on [jchart axis-getter title]
+  (->
+   jchart
+   (.getPlot)
+   (axis-getter)
+   (.setLabel title)))
+    
+(defn set-axis-title [jchart title & {:keys [y-axis] :or {y-axis
+                                                          true}}]
+  (let [setter (if y-axis #(.getRangeAxis %) #(.getDomainAxis %))]
+    (set-axis-title-on jchart setter title)))
+    
 ;;generic?
 (defn graph-demand-for
   "Given a sequence of srcs, graph-demand for each. Set xlow and xmax for the x
@@ -181,10 +192,11 @@
   each demand record.  p specifies a path to AUDIT_DemandRecords.txt.
   reponse is an alternate function for the vertical axis besides
   :Quantity."
-  [p k & {:keys [response schema] :or {response :Quantity
-                                       schema schemas/drecordschema}}]
+  [p k & {:keys [response schema preprocess] :or {response :Quantity
+                                       schema schemas/drecordschema
+                                       preprocess identity}}]
   (let [xytable
-        (->> (tbl/tabdelimited->records p :schema schema)
+        (->> (util/demand-records p)
              (group-by k)
              ((fn [m]
                 (for [[group recs] m
@@ -193,6 +205,7 @@
                                                               :response response))]
                       i (range (count xs))]
                   {:x (nth xs i) :y (nth ys i) :group group})))
+             (map preprocess)
              (clojure.core.matrix.dataset/dataset)
              (stacked/xy-table :x :y :group-by :group :data))]
     (stacked/stacked-areaxy-chart2* xytable)))

@@ -3,7 +3,10 @@
             [proc.demandanalysis :refer :all]
             [spork.util.table :as tbl]
             [proc.supply :as supply]
-            [proc.util :as util]))
+            [proc.util :as util]
+            [proc.charts :as charts]
+            [proc.core :as core]
+            [clojure.java.io :as jio]))
 
 ;;This root is on resource-paths now so it's not needed.
 (defn add-path [test-name]  (str "test/resources/" test-name))
@@ -151,3 +154,43 @@ Input data should be the same between spark and flatdata."
 ;;solved
 )
 
+;;Example of Tsunami/Sand Charts
+(def wkbk (jio/resource (str "../" (add-path
+                                    "snapchart_v7/audit.xlsx"))))
+(defn days->years [days]
+  (/ days 365))
+
+(defn x->years [chart-rec]
+  (update chart-rec :x days->years))
+
+(defn get-personnel
+  "Some function that takes an SRC and looksup the personnel in each
+  unit."
+  [src]
+  1)
+
+(defn personnel-fn
+  "Don't plot the cannibalization demand. Convert unit count to total personnel."
+  [{:keys [Quantity SRC DemandGroup]}]
+  (if (= DemandGroup "RC_NonBOG-War")
+    0
+    (* Quantity (get-personnel SRC))))
+    
+(def tsunami (sand-demands wkbk
+                            ;;Put everything into one group
+                                        ;;(fn [x] "PAX")
+                           ;;Group by DemandGroup
+                           :DemandGroup
+                            :response personnel-fn
+                            :preprocess x->years))
+
+(set-axis-title tsunami "PAX Required")
+(set-axis-title tsunami "Time (years)" :y-axis false)
+
+(defn process-phases [[period day]]
+  [period (days->years day)])
+
+(core/phases-to-chart tsunami wkbk :preprocess process-phases)
+(deftest tsunami-chart
+  (is (nil? (charts/simple-save-jfree-chart tsunami "test/output/tsunami.png"))
+   "Can we build a tsnumai chart without error?"))

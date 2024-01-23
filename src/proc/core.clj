@@ -1526,13 +1526,13 @@
 (defn phase-starts 
   "Will return a map of phase name to phase start"
   [root]
-  (let [phaserecs (->> 
-                (tbl/tabdelimited->table (slurp (str root "AUDIT_PeriodRecords.txt")) :parsemode :noscience 
-                                         ;:schema schemas/periodrecs
-                                         )
-                (tbl/table-records)
-                (filter (fn [r] (not (or (= (:Name r) "Initialization") (= (:Name r) "PreSurge"))))) ;probably don't need lines for these
-                (map (juxt :Name :FromDay)))]
+  (let [phaserecs (->>
+                   (util/period-records root)
+                   ;probably don't need lines for these
+                   (filter (fn [r] (not (or (= (:Name r)
+                                               "Initialization")
+                                            (= (:Name r) "PreSurge"))))) 
+                   (map (juxt :Name :FromDay)))]
     phaserecs))
 
 (defn add-phase-lines 
@@ -1541,10 +1541,13 @@
   (reduce (fn [cht [title ph-start]] (add-polygon cht [[ph-start lbound] [ph-start ubound]])) chart ph-starts))
 
 (defn phases-to-chart
-  "Given the path to a Marathon audit trail, add phase lines to the chart"
-  [chart root]
+  "Given the path to a Marathon audit trail, add phase lines to the
+  chart.  Calling preprocess on each period vector before adding them
+  to the chart."
+  [chart root & {:keys [preprocess] :or {preprocess identity}}]
   (let [y-axis (:y-axis (util/state chart))]
-  (add-phase-lines (phase-starts root) (.getLowerBound y-axis) (.getUpperBound y-axis) chart)))
+    (add-phase-lines (map preprocess (phase-starts root))
+                     (.getLowerBound y-axis) (.getUpperBound y-axis) chart)))
 
 (defn show-stack [[pane dwell fill]]
   ;(let [_ (println (type (chart! fill)))

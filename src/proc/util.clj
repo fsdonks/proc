@@ -542,19 +542,30 @@
        (filter (fn [[dname recs]] (> (count recs) 1)))
        (map (fn [[dname recs]] dname))))
 
+(defn parse-enabled
+  "To prevent librecalc from converting false to =FALSE() which won't
+  parse in spork, we use 'false, which will parse as \"false\" so now
+  we need to read-string that."
+  [{:keys [Enabled] :as r}]
+  (assoc r :Enabled
+         (if (string? Enabled)
+           (read-string Enabled)
+           Enabled)))
+  
 (defn xl->records
   "returns records from a table in a workbook within an Excel
   workbook."
   [wkbk-path wks-name]
-  (->
-   (xl/as-workbook wkbk-path)
-   (xl/wb->tables :sheetnames [wks-name])
-   ;;return the actual [sheetname table] tuple
-   (first)
-   ;;return the table
-   (second)
-   (tbl/keywordize-field-names)
-   (tbl/table-records)))
+    (->
+     (xl/as-workbook wkbk-path)
+     (xl/wb->tables :sheetnames [wks-name])
+     ;;return the actual [sheetname table] tuple
+     (first)
+     ;;return the table
+     (second)
+     (tbl/keywordize-field-names)
+     (tbl/table-records)
+     ((fn [recs] (map parse-enabled recs)))))
 
 (defn records-from
   "Returns records from an audit trail root dir, xl file, or
@@ -580,8 +591,8 @@
 (defn enabled-records
   [obj sheet-name schema]
   (->> (records-from obj sheet-name schema)
-   (filter (fn [{:keys [Enabled]}] Enabled))))
-
+       (filter (fn [{:keys [Enabled]}] Enabled))))
+  
 (defn resource-check "If the file doesn't exist as a local file path,
   check to see if it's on the resources path."
   [obj]
